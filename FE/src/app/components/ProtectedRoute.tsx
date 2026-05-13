@@ -1,11 +1,7 @@
-import { Navigate } from "react-router";
+import { Navigate, Outlet } from "react-router";
 import { useAuth } from "../context/AuthContext";
 
-interface ProtectedRouteProps {
-  children: React.ReactNode;
-}
-
-export function ProtectedRoute({ children }: ProtectedRouteProps) {
+export function ProtectedRoute() {
   const { isAuthenticated, user } = useAuth();
 
   if (!isAuthenticated) {
@@ -20,5 +16,5 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/staff" replace />;
   }
 
-  return <>{children}</>;
+  return <Outlet />;
 }

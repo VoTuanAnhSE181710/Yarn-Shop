@@ -1,12 +1,23 @@
 import { useState } from "react";
-import { Search, CheckCircle, XCircle, Clock } from "lucide-react";
 import { useAdmin } from "../../context/AdminContext";
 import { toast } from "sonner";
+import { SearchInput } from "../../../components/common/SearchInput";
+import { FilterTabBar } from "../../../components/common/FilterTabBar";
+import { OrderStatusBadge } from "../../../components/admin/OrderStatusBadge";
+
+type OrderFilter = "all" | "pending" | "confirmed" | "cancelled";
+
+const filterOptions = [
+  { id: "all", label: "All" },
+  { id: "pending", label: "Pending" },
+  { id: "confirmed", label: "Confirmed" },
+  { id: "cancelled", label: "Cancelled" },
+];
 
 export function AdminOrders() {
   const { orders, confirmPayment, cancelOrder, logActivity } = useAdmin();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filter, setFilter] = useState<"all" | "pending" | "confirmed" | "cancelled">("all");
+  const [filter, setFilter] = useState<OrderFilter>("all");
 
   const filteredOrders = orders.filter((order) => {
     const matchesSearch =
@@ -18,15 +29,12 @@ export function AdminOrders() {
 
   const handleConfirmPayment = (orderId: string) => {
     confirmPayment(orderId, "Admin");
-    const order = orders.find((o) => o.id === orderId);
-    if (order) {
-      logActivity({
-        type: "payment_confirmed",
-        userId: "admin",
-        userName: "Admin",
-        description: `Confirmed payment for order ${orderId}`,
-      });
-    }
+    logActivity({
+      type: "payment_confirmed",
+      userId: "admin",
+      userName: "Admin",
+      description: `Confirmed payment for order ${orderId}`,
+    });
     toast.success("Payment confirmed");
   };
 
@@ -44,34 +52,19 @@ export function AdminOrders() {
         <p className="text-muted-foreground">View and manage all orders</p>
       </div>
 
-      <div className="flex gap-3 overflow-x-auto pb-2">
-        {["all", "pending", "confirmed", "cancelled"].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilter(status as any)}
-            className={`px-6 py-2 rounded-full whitespace-nowrap transition-colors capitalize ${
-              filter === status
-                ? "bg-primary text-primary-foreground"
-                : "bg-card text-foreground border border-border hover:bg-muted"
-            }`}
-          >
-            {status}
-          </button>
-        ))}
-      </div>
+      <FilterTabBar
+        options={filterOptions}
+        value={filter}
+        onChange={(v) => setFilter(v as OrderFilter)}
+      />
 
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         <div className="p-6 border-b border-border">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search orders..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-input-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-            />
-          </div>
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search orders..."
+          />
         </div>
 
         <div className="divide-y divide-border">
@@ -89,26 +82,7 @@ export function AdminOrders() {
               </div>
 
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  {order.paymentStatus === "confirmed" && (
-                    <span className="flex items-center gap-2 text-sm bg-secondary/20 text-secondary px-3 py-1 rounded-full">
-                      <CheckCircle className="w-4 h-4" />
-                      Confirmed
-                    </span>
-                  )}
-                  {order.paymentStatus === "pending" && (
-                    <span className="flex items-center gap-2 text-sm bg-accent/20 text-accent px-3 py-1 rounded-full">
-                      <Clock className="w-4 h-4" />
-                      Pending
-                    </span>
-                  )}
-                  {order.paymentStatus === "cancelled" && (
-                    <span className="flex items-center gap-2 text-sm bg-destructive/20 text-destructive px-3 py-1 rounded-full">
-                      <XCircle className="w-4 h-4" />
-                      Cancelled
-                    </span>
-                  )}
-                </div>
+                <OrderStatusBadge status={order.paymentStatus} />
 
                 {order.paymentStatus === "pending" && (
                   <div className="flex gap-2">

@@ -1,14 +1,12 @@
 import { useParams, Link, useNavigate } from "react-router";
 import { ArrowLeft, Heart, ShoppingCart } from "lucide-react";
 import { products } from "../data/products";
+import { useCart } from "../../hooks/useCart";
 
-interface ProductDetailProps {
-  onAddToCart: (productId: string) => void;
-}
-
-export function ProductDetail({ onAddToCart }: ProductDetailProps) {
+export function ProductDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   const product = products.find((p) => p.id === id);
 
   if (!product) {
@@ -25,7 +23,7 @@ export function ProductDetail({ onAddToCart }: ProductDetailProps) {
   }
 
   const handleAddToCart = () => {
-    onAddToCart(product.id);
+    addToCart(product.id);
     navigate("/cart");
   };
 

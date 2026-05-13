@@ -1,44 +1,7 @@
-import { createContext, useContext, useState, ReactNode, useEffect } from "react";
-import { Product } from "../data/products";
+import { createContext, useContext, useState, type ReactNode, useEffect } from "react";
+import type { AdminUser, Order, Activity } from "../../types/admin";
 
-export interface AdminUser {
-  id: string;
-  name: string;
-  email: string;
-  phone: string;
-  role: "admin" | "staff" | "user";
-  createdAt: string;
-  lastLogin?: string;
-}
-
-export interface Order {
-  id: string;
-  userId: string;
-  userName: string;
-  userEmail: string;
-  items: {
-    productId: string;
-    productName: string;
-    quantity: number;
-    price: number;
-  }[];
-  total: number;
-  paymentMethod: "bank" | "cash";
-  paymentStatus: "pending" | "confirmed" | "cancelled";
-  createdAt: string;
-  confirmedAt?: string;
-  confirmedBy?: string;
-}
-
-export interface Activity {
-  id: string;
-  type: "login" | "purchase" | "payment_confirmed" | "user_created" | "product_created" | "product_updated" | "product_deleted";
-  userId: string;
-  userName: string;
-  description: string;
-  timestamp: string;
-  metadata?: any;
-}
+export type { AdminUser, Order, Activity };
 
 interface AdminContextType {
   users: AdminUser[];
@@ -157,7 +120,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
         order.id === orderId
           ? {
               ...order,
-              paymentStatus: "confirmed",
+              paymentStatus: "confirmed" as const,
               confirmedAt: new Date().toISOString(),
               confirmedBy,
             }
@@ -169,7 +132,7 @@ export function AdminProvider({ children }: { children: ReactNode }) {
   const cancelOrder = (orderId: string) => {
     setOrders((prev) =>
       prev.map((order) =>
-        order.id === orderId ? { ...order, paymentStatus: "cancelled" } : order
+        order.id === orderId ? { ...order, paymentStatus: "cancelled" as const } : order
       )
     );
   };

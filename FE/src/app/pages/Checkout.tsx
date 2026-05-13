@@ -3,26 +3,22 @@ import { useNavigate } from "react-router";
 import { QrCode, DollarSign, Check } from "lucide-react";
 import { useAdmin } from "../context/AdminContext";
 import { useAuth } from "../context/AuthContext";
+import { useCart } from "../../hooks/useCart";
+import { products } from "../data/products";
 import { toast } from "sonner";
 
-interface CheckoutProps {
-  cartItems: { productId: string; quantity: number }[];
-  onClearCart: () => void;
-}
-
-export function Checkout({ cartItems, onClearCart }: CheckoutProps) {
+export function Checkout() {
   const [paymentMethod, setPaymentMethod] = useState<"bank" | "cash">("bank");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
   const [showSuccess, setShowSuccess] = useState(false);
   const { createOrder, logActivity } = useAdmin();
   const { user } = useAuth();
+  const { cartItems, clearCart } = useCart();
   const navigate = useNavigate();
 
-  const { products } = require("../data/products");
-
   const orderItems = cartItems.map((item) => {
-    const product = products.find((p: any) => p.id === item.productId);
+    const product = products.find((p) => p.id === item.productId);
     return {
       productId: item.productId,
       productName: product?.name || "Unknown",
@@ -57,7 +53,7 @@ export function Checkout({ cartItems, onClearCart }: CheckoutProps) {
     });
 
     setShowSuccess(true);
-    onClearCart();
+    clearCart();
 
     setTimeout(() => {
       if (paymentMethod === "cash") {

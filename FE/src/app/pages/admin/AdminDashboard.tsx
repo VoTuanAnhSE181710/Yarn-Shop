@@ -1,7 +1,7 @@
-import { useState } from "react";
 import { Users, Package, ShoppingCart, Activity, TrendingUp, DollarSign } from "lucide-react";
 import { useAdmin } from "../../context/AdminContext";
 import { products } from "../../data/products";
+import { StatCard } from "../../../components/common/StatCard";
 
 export function AdminDashboard() {
   const { users, orders, activities } = useAdmin();
@@ -18,28 +18,28 @@ export function AdminDashboard() {
       title: "Total Users",
       value: users.length,
       icon: Users,
-      color: "bg-primary/10 text-primary",
+      colorClass: "bg-primary/10 text-primary",
       change: "+12%",
     },
     {
       title: "Total Products",
       value: products.length,
       icon: Package,
-      color: "bg-secondary/10 text-secondary",
+      colorClass: "bg-secondary/10 text-secondary",
       change: "+3",
     },
     {
       title: "Total Orders",
       value: orders.length,
       icon: ShoppingCart,
-      color: "bg-accent/10 text-accent",
+      colorClass: "bg-accent/10 text-accent",
       change: `${pendingOrders} pending`,
     },
     {
       title: "Total Revenue",
       value: `$${totalRevenue.toFixed(2)}`,
       icon: DollarSign,
-      color: "bg-primary/10 text-primary",
+      colorClass: "bg-primary/10 text-primary",
       change: "+18%",
     },
   ];
@@ -56,24 +56,9 @@ export function AdminDashboard() {
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => {
-          const Icon = stat.icon;
-          return (
-            <div
-              key={index}
-              className="bg-card rounded-2xl p-6 border border-border hover:shadow-lg transition-shadow"
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className={`w-12 h-12 rounded-full flex items-center justify-center ${stat.color}`}>
-                  <Icon className="w-6 h-6" />
-                </div>
-                <span className="text-sm text-secondary">{stat.change}</span>
-              </div>
-              <h3 className="text-3xl font-bold mb-1">{stat.value}</h3>
-              <p className="text-sm text-muted-foreground">{stat.title}</p>
-            </div>
-          );
-        })}
+        {stats.map((stat, index) => (
+          <StatCard key={index} {...stat} />
+        ))}
       </div>
 
       <div className="grid lg:grid-cols-2 gap-6">

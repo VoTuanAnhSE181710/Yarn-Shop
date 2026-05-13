@@ -1,4 +1,4 @@
-import { Instagram, Youtube, MessageCircle } from "lucide-react";
+import { Camera, Play, MessageCircle } from "lucide-react";
 import { Link } from "react-router";
 
 export function Footer() {
@@ -80,13 +80,13 @@ export function Footer() {
                 href="#"
                 className="w-10 h-10 bg-muted rounded-full flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
               >
-                <Instagram className="w-5 h-5" />
+                <Camera className="w-5 h-5" />
               </a>
               <a
                 href="#"
                 className="w-10 h-10 bg-muted rounded-full flex items-center justify-center hover:bg-primary hover:text-primary-foreground transition-colors"
               >
-                <Youtube className="w-5 h-5" />
+                <Play className="w-5 h-5" />
               </a>
               <a
                 href="#"

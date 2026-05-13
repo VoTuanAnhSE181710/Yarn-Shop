@@ -1,6 +1,6 @@
 import { useState } from "react";
-import { Search } from "lucide-react";
 import { products } from "../../data/products";
+import { SearchInput } from "../../../components/common/SearchInput";
 
 export function AdminProducts() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -18,34 +18,21 @@ export function AdminProducts() {
 
       <div className="bg-card rounded-2xl border border-border overflow-hidden">
         <div className="p-6 border-b border-border">
-          <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-            <input
-              type="text"
-              placeholder="Search products..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-input-background border border-border rounded-xl focus:outline-none focus:ring-2 focus:ring-primary transition-all"
-            />
-          </div>
+          <SearchInput
+            value={searchTerm}
+            onChange={setSearchTerm}
+            placeholder="Search products..."
+          />
         </div>
 
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-muted/50">
               <tr>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">
-                  Product
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">
-                  Category
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">
-                  Price
-                </th>
-                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">
-                  Stock
-                </th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Product</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Category</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Price</th>
+                <th className="text-left px-6 py-4 text-sm font-medium text-muted-foreground">Stock</th>
               </tr>
             </thead>
             <tbody>
