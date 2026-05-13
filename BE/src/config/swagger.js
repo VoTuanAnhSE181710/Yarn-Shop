@@ -112,7 +112,7 @@ const options = {
                                 },
                                 name: {
                                     type: 'string',
-                                    example: 'Engineer'
+                                    example: 'Staff'
                                 }
                             }
                         },
@@ -240,7 +240,7 @@ const options = {
                             type: 'string',
                             pattern: '^[0-9a-fA-F]{24}$',
                             example: '65be000000000000000002',
-                            description: 'MongoDB ObjectId of Supervisor or Engineer role'
+                            description: 'MongoDB ObjectId of Staff or Customer role'
                         }
                     }
                 },

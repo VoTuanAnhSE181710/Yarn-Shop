@@ -32,7 +32,7 @@ const url = "/api/v1"
 // Swagger documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
     customCss: '.swagger-ui .topbar { display: none }',
-    customSiteTitle: 'Oil & Gas API Documentation'
+    customSiteTitle: 'Yarn Shop API Documentation'
 }));
 
 //use routes

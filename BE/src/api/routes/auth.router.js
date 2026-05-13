@@ -48,7 +48,7 @@ router.post("/login", validateData(loginSchema), async (req, res, next) => {
  * /auth/register:
  *   post:
  *     summary: Register new user
- *     description: Create a new user account. Only Admin can register new users (Supervisor or Engineer).
+ *     description: Create a new user account. Only Admin can register new users (Staff or Customer).
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []

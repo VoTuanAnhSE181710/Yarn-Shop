@@ -30,8 +30,8 @@ export const initializeSocket = (httpServer) => {
             socket.join(`admin`)
         }
 
-        if (roleName === "Engineer") {
-            socket.join(`engineer`)
+        if (roleName === "Staff") {
+            socket.join(`staff`)
         }
 
         socket.on("disconnect", () => {

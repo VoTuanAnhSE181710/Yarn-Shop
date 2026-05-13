@@ -1,4 +1,4 @@
-# Oil & Gas Management Backend API
+# Yarn Shop Backend API
 
 ## 🏗️ Clean Architecture với Repository Pattern
 

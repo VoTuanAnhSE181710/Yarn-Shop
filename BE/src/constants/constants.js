@@ -34,7 +34,7 @@ export const NOTIFICATION_TYPE = {
 }
 
 export const NOTIFICATION_TARGET_ROLE = {
-    ENGINEER: "ENGINEER",
+    STAFF: "STAFF",
 }
 
 export const MAX_LOGIN_ATTEMPTS = 5;

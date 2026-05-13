@@ -12,18 +12,9 @@ class PermissionService {
     getAvailableResources = async () => {
         const resources = [
             "User",
-            "Warehouse",
             "Role",
             "Permission",
-            "Equipment",
-            "Instrument",
-            "InventoryItem",
-            "MaintenanceHistory",
-            "Incident",
-            "Log",
-            "MaintenanceSchedule",
-            "Engineer",
-            "OilOutput"
+            "Log"
         ];
 
         const actions = ["create", "read", "update", "delete", "manage", "assign", "receive", "dispatch", "unassign"];

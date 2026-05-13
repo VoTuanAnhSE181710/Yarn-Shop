@@ -38,7 +38,7 @@ export default class EmailService {
      * Gửi email chào mừng
      */
     async sendWelcomeEmail(email, name) {
-        const subject = 'Welcome to Oil & Gas Management System';
+        const subject = 'Welcome to Yarn Shop!';
         const html = `
             <h1>Welcome, ${name}!</h1>
             <p>Your account has been created successfully.</p>

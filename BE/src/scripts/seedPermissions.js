@@ -141,7 +141,7 @@ const seedPermissions = async () => {
                 name: "Update Instrument",
                 resource: "Instrument",
                 action: "update",
-                description: "Permission to update instrument information and assign engineers"
+                description: "Permission to update instrument information and assign staff"
             },
             {
                 name: "Delete Instrument",

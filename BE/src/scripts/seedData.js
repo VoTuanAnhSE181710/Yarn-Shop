@@ -16,7 +16,7 @@ const uri = configDB.uri;
  * This script will:
  * 1. Connect to MongoDB
  * 2. Clear all existing data (Users, Roles)
- * 3. Create sample Roles (Admin, Supervisor, Customer)
+ * 3. Create sample Roles (Admin, Staff, Customer)
  * 4. Create sample Users with hashed passwords
  * 
  * Usage: npm run seed
@@ -39,13 +39,13 @@ const seedData = async () => {
         // 1. Tạo Roles
         const roles = await Role.insertMany([
             { roleName: "Admin" },
-            { roleName: "Supervisor" },
+            { roleName: "Staff" },
             { roleName: "Customer" }
         ]);
 
         console.log('✅ Roles created:', roles.length);
 
-        const [adminRole, supervisorRole, customerRole] = roles;
+        const [adminRole, staffRole, customerRole] = roles;
 
         // 2. Hash password
         const hashService = new HashService()
@@ -67,27 +67,27 @@ const seedData = async () => {
                 status: "ACTIVE"
             },
             {
-                username: "supervisor1",
-                email: "supervisor1@example.com",
+                username: "staff1",
+                email: "staff1@example.com",
                 password: hashedPassword,
                 phone: "0902345678",
-                fullName: "John Supervisor",
+                fullName: "John Staff",
                 gender: "MALE",
                 dateOfBirth: new Date("1988-05-20"),
-                address: "Supervisor Office, Building B",
-                roleId: supervisorRole._id,
+                address: "Staff Office, Building B",
+                roleId: staffRole._id,
                 status: "ACTIVE"
             },
             {
-                username: "supervisor2",
-                email: "supervisor2@example.com",
+                username: "staff2",
+                email: "staff2@example.com",
                 password: hashedPassword,
                 phone: "0903456789",
-                fullName: "Sarah Supervisor",
+                fullName: "Sarah Staff",
                 gender: "FEMALE",
                 dateOfBirth: new Date("1990-08-12"),
-                address: "Supervisor Office, Building C",
-                roleId: supervisorRole._id,
+                address: "Staff Office, Building C",
+                roleId: staffRole._id,
                 status: "ACTIVE"
             },
             {
@@ -135,9 +135,9 @@ const seedData = async () => {
         console.log('═══════════════════════════════════════════════════════════');
         console.log('👨‍💼 Admin:');
         console.log('   Username: admin | Email: admin@example.com');
-        console.log('\n👔 Supervisors:');
-        console.log('   Username: supervisor1 | Email: supervisor1@example.com');
-        console.log('   Username: supervisor2 | Email: supervisor2@example.com');
+        console.log('\n👔 Staff:');
+        console.log('   Username: staff1 | Email: staff1@example.com');
+        console.log('   Username: staff2 | Email: staff2@example.com');
         console.log('\n� Customers (Active):');
         console.log('   Username: customer1 | Email: customer1@example.com');
         console.log('   Username: customer2 | Email: customer2@example.com');
