@@ -39,6 +39,14 @@ const options = {
             {
                 name: 'Roles',
                 description: 'Role management endpoints'
+            },
+            {
+                name: 'Mail & OTP',
+                description: 'Email sending and OTP verification endpoints'
+            },
+            {
+                name: 'Logs',
+                description: 'System activity logs endpoints'
             }
         ],
         components: {
@@ -562,6 +570,86 @@ const options = {
                                     type: 'integer',
                                     example: 5,
                                     description: 'Total number of pages'
+                                }
+                            }
+                        }
+                    }
+                },
+                GetLogsResponse: {
+                    type: 'object',
+                    properties: {
+                        status: {
+                            type: 'string',
+                            example: 'success'
+                        },
+                        data: {
+                            type: 'object',
+                            properties: {
+                                logs: {
+                                    type: 'array',
+                                    items: {
+                                        type: 'object',
+                                        properties: {
+                                            _id: {
+                                                type: 'string',
+                                                example: '65be000000000000000001'
+                                            },
+                                            action: {
+                                                type: 'string',
+                                                example: 'CREATE'
+                                            },
+                                            targetType: {
+                                                type: 'string',
+                                                example: 'USER'
+                                            },
+                                            targetId: {
+                                                type: 'string',
+                                                example: '65be000000000000000002'
+                                            },
+                                            outcome: {
+                                                type: 'string',
+                                                example: 'SUCCESS'
+                                            },
+                                            actorId: {
+                                                type: 'object',
+                                                properties: {
+                                                    _id: {
+                                                        type: 'string',
+                                                        example: '65be000000000000000003'
+                                                    },
+                                                    username: {
+                                                        type: 'string',
+                                                        example: 'admin'
+                                                    }
+                                                }
+                                            },
+                                            metadata: {
+                                                type: 'object',
+                                                example: {}
+                                            },
+                                            createdAt: {
+                                                type: 'string',
+                                                format: 'date-time',
+                                                example: '2026-02-24T10:30:00.000Z'
+                                            }
+                                        }
+                                    }
+                                },
+                                total: {
+                                    type: 'integer',
+                                    example: 50
+                                },
+                                page: {
+                                    type: 'integer',
+                                    example: 1
+                                },
+                                limit: {
+                                    type: 'integer',
+                                    example: 10
+                                },
+                                totalPages: {
+                                    type: 'integer',
+                                    example: 5
                                 }
                             }
                         }
