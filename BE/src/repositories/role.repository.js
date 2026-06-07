@@ -7,6 +7,10 @@ export default class RoleRepository {
         return Role.findById(roleId).populate('permission');
     }
 
+    async findByRoleName({ roleName }){
+        return Role.findOne({ roleName }).populate('permission');
+    }
+
     async create(data){
         if (data.permission && data.permission.length > 0) {
             const validPermissions = await Permission.find({ _id: { $in: data.permission } });

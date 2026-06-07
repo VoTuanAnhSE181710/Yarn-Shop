@@ -23,6 +23,8 @@ import permissionRouter from "./src/api/routes/permission.router.js"
 import roleRouter from "./src/api/routes/role.router.js"
 import mailRouter from "./src/api/routes/mail.router.js"
 import logRouter from "./src/api/routes/log.router.js"
+import videoRouter from "./src/api/routes/video.router.js"
+import categoryRouter from "./src/api/routes/category.router.js"
 
 app.get("/", (req, res) => {
     res.send(`Hello World!`);
@@ -43,6 +45,8 @@ app.use(`${url}/permissions`, permissionRouter)
 app.use(`${url}/roles`, roleRouter)
 app.use(`${url}/mail`, mailRouter)
 app.use(`${url}/logs`, logRouter)
+app.use(`${url}/videos`, videoRouter)
+app.use(`${url}/categories`, categoryRouter)
 
 app.use(handleError)
 

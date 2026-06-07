@@ -1,5 +1,5 @@
 import express from 'express';
-import { changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema } from '../../validators/user.validator.js';
+import { changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema, publicRegisterSchema } from '../../validators/user.validator.js';
 import { authentication, authorizationByRole, checkPermission, validateData, verifyDevice } from '../middlewares/middleware.js';
 
 const router = express.Router();
@@ -47,8 +47,8 @@ router.post("/login", validateData(loginSchema), async (req, res, next) => {
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Register new user
- *     description: Create a new user account. Only Admin can register new users (Staff or Customer).
+ *     summary: Register new user (Admin only - create Staff or Customer accounts)
+ *     description: Create a new user account. Only Admin can register new users.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -61,40 +61,107 @@ router.post("/login", validateData(loginSchema), async (req, res, next) => {
  *     responses:
  *       201:
  *         description: User registered successfully
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/RegisterResponse'
  *       400:
- *         description: Bad request - Validation error or user already exists
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Bad request
  *       401:
- *         description: Unauthorized - Invalid or missing token
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
+ *         description: Unauthorized
  *       403:
  *         description: Forbidden - Only Admin can register users
- *         content:
- *           application/json:
- *             schema:
- *               $ref: '#/components/schemas/Error'
  */
 router.post(
     "/register", 
     validateData(registerSchema, "body"),
     authentication,
     checkPermission('User', 'create'),
-    // authorizationByRole(["Admin"]),
     verifyDevice,
     async (req, res, next) => {
         const authController = req.container.resolve("authController");
-
         await authController.register(req, res, next);
+    }
+)
+
+/**
+ * @swagger
+ * /auth/signup:
+ *   post:
+ *     summary: Public user registration
+ *     description: Register a new user account without authentication. New users are automatically assigned Customer role and Freemium subscription.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - username
+ *               - email
+ *               - password
+ *               - fullName
+ *               - phone
+ *               - address
+ *               - gender
+ *               - dateOfBirth
+ *             properties:
+ *               username:
+ *                 type: string
+ *                 minLength: 3
+ *                 maxLength: 30
+ *                 pattern: "^[a-zA-Z0-9_.-]+$"
+ *               email:
+ *                 type: string
+ *                 format: email
+ *               password:
+ *                 type: string
+ *                 minLength: 8
+ *               fullName:
+ *                 type: string
+ *               phone:
+ *                 type: string
+ *                 pattern: "^0[0-9]{9}$"
+ *               address:
+ *                 type: string
+ *               gender:
+ *                 type: string
+ *                 enum: [MALE, FEMALE]
+ *               dateOfBirth:
+ *                 type: string
+ *                 format: date
+ *                 example: "01/15/1990"
+ *     responses:
+ *       201:
+ *         description: User registered successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     userId:
+ *                       type: string
+ *                     username:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *                     subscription:
+ *                       type: string
+ *                       example: Freemium
+ *       400:
+ *         description: Bad request - Validation error or user already exists
+ *       409:
+ *         description: Conflict - Duplicate username/email/phone
+ */
+router.post(
+    "/signup",
+    validateData(publicRegisterSchema, "body"),
+    async (req, res, next) => {
+        const authController = req.container.resolve("authController");
+        await authController.publicRegister(req, res, next);
     }
 )
 

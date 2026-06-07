@@ -129,9 +129,41 @@ const forgotPasswordSchema = Joi.object({
     uuid: Joi.string().uuid().required(),
 })
 
+const publicRegisterSchema = Joi.object({
+    fullName: Joi.string().required(),
+    username: Joi.string()
+                .pattern(/^[a-zA-Z0-9_.-]+$/)
+                .min(3).max(30)
+                .messages({
+                    'string.pattern.base': 'username contains invalid characters (allowed: -_.)',
+                    'string.min': 'username must be at least {#limit} characters long',
+                    'string.max': 'username cannot exceed {#limit} characters',
+                }).required(),
+    email: Joi.string().email().required(),
+    password: Joi.string()
+                .min(8)
+                .messages({
+                    'string.min': 'Password must be at least {#limit} characters long',
+                    'any.required': 'Password is required',
+                })
+                .required(),
+    address: Joi.string().required(),
+    phone: Joi.string().pattern(/^0[0-9]{9}$/).required(),
+    gender: Joi.string().valid('MALE', 'FEMALE').messages({
+        'any.only': 'Gender must be either MALE or FEMALE.'
+    }).required(),
+    dateOfBirth: Joi.date()
+                    .format('MM/DD/YYYY')
+                    .less('now')
+                    .messages({
+                        'date.format': 'format: MM/DD/YYYY'
+                    }).required(),
+})
+
 export {
     loginSchema,
     registerSchema,
+    publicRegisterSchema,
     updateUserSchema, 
     updateStatusSchema,
     getAllUserSchema,

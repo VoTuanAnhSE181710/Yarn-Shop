@@ -31,7 +31,7 @@ class AuthController {
 
             const deviceName = this.#getUserDeviceName(req, res, next);
     
-            const { accessToken, refreshToken } = await this.#authService.login({
+            const { accessToken, refreshToken, subscription, user } = await this.#authService.login({
                 username, 
                 email, 
                 password, 
@@ -43,10 +43,45 @@ class AuthController {
                 data: {
                     accessToken,
                     refreshToken,
+                    subscription,
+                    user,
                 },
             })
         } catch (error) {
             next(error);
+        }
+    }
+
+    publicRegister = async (req, res, next) => {
+        try {
+            const {
+                username,
+                email,
+                password,
+                phone,
+                address,
+                fullName,
+                gender,
+                dateOfBirth,
+            } = req.body
+
+            const newUser = await this.#authService.publicRegister({
+                username,
+                email,
+                password,
+                phone,
+                address,
+                fullName,
+                gender,
+                dateOfBirth,
+            });
+
+            res.status(201).json({
+                status: "success",
+                data: newUser,
+            })
+        } catch (error) {
+            next(error)
         }
     }
 

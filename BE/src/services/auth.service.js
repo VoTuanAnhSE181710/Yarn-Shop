@@ -1,5 +1,6 @@
 import { ACTIONS, LOGIN_STATUS, MAX_LOGIN_ATTEMPTS, OUTCOMES, TARGET_TYPES } from "../constants/constants.js";
 import { AuthenticationError, AuthorizationError, BadRequestError } from "../error/error.js";
+import User from "../models/user.js";
 
 class AuthService {
     #userRepository;
@@ -121,7 +122,17 @@ class AuthService {
             deviceName: deviceName
         });
 
-        return { accessToken, refreshToken }
+        return { 
+            accessToken, 
+            refreshToken,
+            subscription: existingUser.subscription || "Freemium",
+            user: {
+                userId: existingUser.userId,
+                fullName: existingUser.fullName,
+                email: existingUser.email,
+                username: existingUser.username,
+            }
+        }
     }
 
     logout = async ({
@@ -147,6 +158,61 @@ class AuthService {
         }
 
         return true;
+    }
+
+    /**
+     * Public registration - auto assigns Customer role + Freemium subscription
+     */
+    publicRegister = async ({
+        username,
+        email,
+        password,
+        phone,
+        address,
+        fullName,
+        gender,
+        dateOfBirth,
+    }) => {
+        const normalizedEmail = email.trim().toLowerCase();
+        const normalizedUsername = username.trim().toLowerCase();
+        
+        const existingUser = await this.#userRepository.findUserByEmail({
+            email: normalizedEmail,
+        }) || await this.#userRepository.findByUsername({
+            username: normalizedUsername
+        })
+
+        if (existingUser) {
+            throw new BadRequestError("This user already exists!")
+        }
+
+        // Auto-find Customer role
+        const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Customer" });
+
+        if (!customerRole) {
+            throw new BadRequestError("Customer role not found. Please run seed data first.");
+        }
+
+        const hashedPassword = await this.#hashService.hash({ string: password });
+
+        const newUser = await User.create({
+            username: normalizedUsername,
+            email: normalizedEmail,
+            password: hashedPassword,
+            phone,
+            address,
+            fullName,
+            gender,
+            dateOfBirth,
+            roleId: customerRole._id,
+            subscription: "Freemium",
+            status: "ACTIVE",
+        });
+
+        return {
+            ...newUser.toObject(),
+            password: undefined,
+        };
     }
 
     register = async ({

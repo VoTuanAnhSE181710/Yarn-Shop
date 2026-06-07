@@ -47,6 +47,11 @@ const userSchema = new mongoose.Schema({
         },
         required: false,
     },
+    subscription: {
+        type: String,
+        enum: ["Freemium", "Premium"],
+        default: "Freemium"
+    },
     roleId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Role",
