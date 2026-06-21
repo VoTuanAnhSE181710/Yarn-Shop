@@ -25,6 +25,8 @@ import mailRouter from "./src/api/routes/mail.router.js"
 import logRouter from "./src/api/routes/log.router.js"
 import videoRouter from "./src/api/routes/video.router.js"
 import categoryRouter from "./src/api/routes/category.router.js"
+import kitRouter from "./src/api/routes/kit.router.js"
+import adminKitRouter from "./src/api/routes/admin.kit.router.js"
 
 app.get("/", (req, res) => {
     res.send(`Hello World!`);
@@ -47,6 +49,8 @@ app.use(`${url}/mail`, mailRouter)
 app.use(`${url}/logs`, logRouter)
 app.use(`${url}/videos`, videoRouter)
 app.use(`${url}/categories`, categoryRouter)
+app.use(`${url}/kits`, kitRouter)
+app.use(`${url}/admin/kits`, adminKitRouter)
 
 app.use(handleError)
 
