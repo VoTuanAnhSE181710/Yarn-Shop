@@ -54,44 +54,44 @@ export const handleError = (err, req, res, next) => {
     })
 }
 
-export const validateData = (schema, property = "body") => 
-                            (req, res, next) => {
-    const dataNeedToValidate = req[property];
+export const validateData = (schema, property = "body") =>
+    (req, res, next) => {
+        const dataNeedToValidate = req[property];
 
-    // Cho phép query params và params rỗng, nhưng body phải có data
-    if (!dataNeedToValidate && property === "body") {
-        throw new BadRequestError(`Missing ${property} in request!`)
+        // Cho phép query params và params rỗng, nhưng body phải có data
+        if (!dataNeedToValidate && property === "body") {
+            throw new BadRequestError(`Missing ${property} in request!`)
+        }
+
+        // Nếu không có data nhưng không phải body thì validate với object rỗng
+        const { error } = schema.validate(dataNeedToValidate || {});
+
+        if (error) {
+            const errorMessage = error.details[0].message;
+            throw new BadRequestError(errorMessage);
+        }
+
+        next();
     }
-
-    // Nếu không có data nhưng không phải body thì validate với object rỗng
-    const { error } = schema.validate(dataNeedToValidate || {});
-
-    if (error) {
-        const errorMessage = error.details[0].message;
-        throw new BadRequestError(errorMessage);
-    }
-
-    next();
-}
 
 export const verifyDevice = async (req, res, next) => {
     try {
         const { userId, deviceId } = req.user
-    
+
         if (!userId || !deviceId) {
             throw new BadRequestError(`Missing token from header`)
         }
-    
+
         const tokenService = req.container.resolve("tokenService");
         const isValidDevice = await tokenService.verifyDeviceId({
             userId,
             deviceId,
         })
-    
+
         if (isValidDevice !== 1) {
             throw new BadRequestError(`Wrong device detected`)
         }
-    
+
         next();
     } catch (error) {
         next(error)
@@ -112,11 +112,10 @@ export const checkPermission = (resource, action) => async (req, res, next) => {
         if (!role) {
             throw new ForbiddenError("User's role not found.");
         }
-        
+
         //check neu role co permission nay
         const hasPermission = role.permission.some(permission =>
-            permission.resource === resource && (permission.action === action || permission.action === "Staff,Admin")
-            
+            permission.resource === resource && (permission.action === action || permission.action === "Staff,Admin")     
         );
         if (!hasPermission) {
             throw new ForbiddenError("User does not have permission to perform this action.");

@@ -8,32 +8,33 @@ const kitSchema = new mongoose.Schema({
     },
     description: {
         type: String,
-        required: [true, "Description is required!"],
+        default: ""
     },
     thumbnail: {
         type: String,
-        required: [true, "Thumbnail is required!"],
+        default: ""
     },
     level: {
         type: String,
         enum: ["beginner", "intermediate", "advanced"],
-        required: [true, "Level is required!"],
+        default: "beginner"
     },
     price: {
         type: Number,
-        required: [true, "Price is required!"],
+        required: true,
+        default: 0
     },
     productIds: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Product",
+        ref: "Product"
     }],
     linkedCourseIds: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "Course",
+        ref: "Course"
     }],
     isActive: {
         type: Boolean,
-        default: true,
+        default: true
     }
 }, {
     timestamps: true

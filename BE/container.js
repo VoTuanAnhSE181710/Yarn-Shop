@@ -10,6 +10,7 @@ import PermissionController from "./src/api/controllers/permission.controller.js
 import RoleController from "./src/api/controllers/role.controller.js";
 import MailController from "./src/api/controllers/mail.controller.js";
 import VideoController from "./src/api/controllers/video.controller.js";
+import KitController from "./src/api/controllers/kit.controller.js";
 import CustomerController from "./src/api/controllers/customer.controller.js";
 import CourseController from "./src/api/controllers/course.controller.js";
 import LessonController from "./src/api/controllers/lesson.controller.js";
@@ -23,6 +24,7 @@ import PermissionService from "./src/services/permission.service.js";
 import RoleService from "./src/services/role.service.js";
 import MailService from "./src/services/mail.service.js";
 import VideoService from "./src/services/video.service.js";
+import KitService from "./src/services/kit.service.js";
 import CustomerService from "./src/services/customer.service.js";
 import CourseService from "./src/services/course.service.js";
 import LessonService from "./src/services/lesson.service.js";
@@ -33,6 +35,7 @@ import UserRepository from "./src/repositories/user.repository.js";
 import PermissionRepository from "./src/repositories/permission.repository.js";
 import RoleRepository from "./src/repositories/role.repository.js";
 import LogRepository from "./src/repositories/log.repository.js";
+import KitRepository from "./src/repositories/kit.repository.js";
 
 //3rd party
 import redisClient from "./src/utils/redisClient.js";
@@ -77,6 +80,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         logRepository: asClass(LogRepository, {
             lifetime: Lifetime.SCOPED,
         }),
+        kitRepository: asClass(KitRepository, {
+            lifetime: Lifetime.SCOPED,
+        }),
 
         //Services
         authService: asClass(AuthService, {
@@ -103,6 +109,7 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         videoService: asClass(VideoService, {
             lifetime: Lifetime.SCOPED,
         }),
+        kitService: asClass(KitService, {
         customerService: asClass(CustomerService, {
             lifetime: Lifetime.SCOPED,
         }),
@@ -138,6 +145,7 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
             lifetime: Lifetime.SCOPED,
         }),
 
+        kitController: asClass(KitController, {
         customerController: asClass(CustomerController, {
             lifetime: Lifetime.SCOPED,
         }),
