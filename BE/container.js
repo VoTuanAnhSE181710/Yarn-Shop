@@ -10,6 +10,7 @@ import PermissionController from "./src/api/controllers/permission.controller.js
 import RoleController from "./src/api/controllers/role.controller.js";
 import MailController from "./src/api/controllers/mail.controller.js";
 import VideoController from "./src/api/controllers/video.controller.js";
+import CustomerController from "./src/api/controllers/customer.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -20,6 +21,7 @@ import PermissionService from "./src/services/permission.service.js";
 import RoleService from "./src/services/role.service.js";
 import MailService from "./src/services/mail.service.js";
 import VideoService from "./src/services/video.service.js";
+import CustomerService from "./src/services/customer.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -97,6 +99,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         videoService: asClass(VideoService, {
             lifetime: Lifetime.SCOPED,
         }),
+        customerService: asClass(CustomerService, {
+            lifetime: Lifetime.SCOPED,
+        }),
 
         // Controllers
         authController: asClass(AuthController, {
@@ -120,6 +125,10 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         }),
 
         videoController: asClass(VideoController, {
+            lifetime: Lifetime.SCOPED,
+        }),
+
+        customerController: asClass(CustomerController, {
             lifetime: Lifetime.SCOPED,
         }),
     });
