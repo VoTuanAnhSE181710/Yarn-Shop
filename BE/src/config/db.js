@@ -8,7 +8,7 @@ const connectDB = async () => {
         await mongoose.connect(configDB.uri);
         console.log(`Connecting to DB ${process.env.NODE_ENV} environment`);
     } catch (error) {
-        console.error("Cannot connect to DB:");
+        console.error("Cannot connect to DB:", error.message);
         process.exit(1);
     }
 };

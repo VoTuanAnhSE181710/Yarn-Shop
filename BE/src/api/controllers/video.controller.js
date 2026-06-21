@@ -14,6 +14,12 @@ class VideoController {
             const { userId } = req.user;
             const videoData = req.body;
 
+            // If file was uploaded via multipart, set video URL from Cloudinary
+            if (req.file) {
+                videoData.url = req.file.path;
+                videoData.duration = videoData.duration || 0;
+            }
+
             const video = await this.#videoService.createVideo({
                 ...videoData,
                 uploader: userId,
@@ -22,6 +28,33 @@ class VideoController {
             res.status(201).json({
                 status: 'success',
                 data: { video },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/v1/videos/upload - Upload video file (multipart)
+     * Access: All authenticated users (with type restrictions)
+     */
+    uploadFile = async (req, res, next) => {
+        try {
+            if (!req.file) {
+                const error = new Error("No video file uploaded");
+                error.statusCode = 400;
+                throw error;
+            }
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    url: req.file.path,
+                    publicId: req.file.filename,
+                    originalName: req.file.originalname,
+                    size: req.file.size,
+                    mimetype: req.file.mimetype,
+                },
             });
         } catch (error) {
             next(error);

@@ -2,6 +2,7 @@ import express from 'express';
 import { authentication, validateData } from '../middlewares/middleware.js';
 import { requireSubscription, requireCanCreateVideoType } from '../middlewares/subscription.middleware.js';
 import { createVideoSchema, updateVideoSchema, videoQuerySchema } from '../../validators/video.validator.js';
+import { uploadVideo } from '../../utils/multerStorage.js';
 
 const router = express.Router();
 
@@ -301,6 +302,68 @@ router.post(
     async (req, res, next) => {
         const videoController = req.container.resolve("videoController");
         await videoController.create(req, res, next);
+    }
+)
+
+/**
+ * @swagger
+ * /videos/upload:
+ *   post:
+ *     summary: Upload a video file
+ *     description: |
+ *       Upload a video file to Cloudinary via multipart/form-data.
+ *       Returns the Cloudinary URL and metadata to use with POST /videos.
+ *     tags: [Videos]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - video
+ *             properties:
+ *               video:
+ *                 type: string
+ *                 format: binary
+ *                 description: Video file (mp4, mov, avi, webm, mkv) max 500MB
+ *     responses:
+ *       200:
+ *         description: Video uploaded successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     url:
+ *                       type: string
+ *                     publicId:
+ *                       type: string
+ *                     originalName:
+ *                       type: string
+ *                     size:
+ *                       type: number
+ *                     mimetype:
+ *                       type: string
+ *       400:
+ *         description: No file uploaded
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+    "/upload",
+    authentication,
+    uploadVideo.single("video"),
+    async (req, res, next) => {
+        const videoController = req.container.resolve("videoController");
+        await videoController.uploadFile(req, res, next);
     }
 )
 
