@@ -11,6 +11,9 @@ import RoleController from "./src/api/controllers/role.controller.js";
 import MailController from "./src/api/controllers/mail.controller.js";
 import VideoController from "./src/api/controllers/video.controller.js";
 import KitController from "./src/api/controllers/kit.controller.js";
+import CustomerController from "./src/api/controllers/customer.controller.js";
+import CourseController from "./src/api/controllers/course.controller.js";
+import LessonController from "./src/api/controllers/lesson.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -22,6 +25,9 @@ import RoleService from "./src/services/role.service.js";
 import MailService from "./src/services/mail.service.js";
 import VideoService from "./src/services/video.service.js";
 import KitService from "./src/services/kit.service.js";
+import CustomerService from "./src/services/customer.service.js";
+import CourseService from "./src/services/course.service.js";
+import LessonService from "./src/services/lesson.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -104,6 +110,13 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
             lifetime: Lifetime.SCOPED,
         }),
         kitService: asClass(KitService, {
+        customerService: asClass(CustomerService, {
+            lifetime: Lifetime.SCOPED,
+        }),
+        courseService: asClass(CourseService, {
+            lifetime: Lifetime.SCOPED,
+        }),
+        lessonService: asClass(LessonService, {
             lifetime: Lifetime.SCOPED,
         }),
 
@@ -133,6 +146,15 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         }),
 
         kitController: asClass(KitController, {
+        customerController: asClass(CustomerController, {
+            lifetime: Lifetime.SCOPED,
+        }),
+
+        courseController: asClass(CourseController, {
+            lifetime: Lifetime.SCOPED,
+        }),
+
+        lessonController: asClass(LessonController, {
             lifetime: Lifetime.SCOPED,
         }),
     });

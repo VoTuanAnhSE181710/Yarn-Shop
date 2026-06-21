@@ -27,6 +27,9 @@ import videoRouter from "./src/api/routes/video.router.js"
 import categoryRouter from "./src/api/routes/category.router.js"
 import kitRouter from "./src/api/routes/kit.router.js"
 import adminKitRouter from "./src/api/routes/admin.kit.router.js"
+import customerRouter from "./src/api/routes/customer.router.js"
+import adminCustomerRouter from "./src/api/routes/adminCustomer.router.js"
+import courseRouter from "./src/api/routes/course.router.js"
 
 app.get("/", (req, res) => {
     res.send(`Hello World!`);
@@ -51,6 +54,10 @@ app.use(`${url}/videos`, videoRouter)
 app.use(`${url}/categories`, categoryRouter)
 app.use(`${url}/kits`, kitRouter)
 app.use(`${url}/admin/kits`, adminKitRouter)
+app.use(`/api/customers`, customerRouter)
+app.use(`/api/admin/customers`, adminCustomerRouter)
+app.use(`${url}/courses`, courseRouter)
+app.use(`${url}/admin/courses`, courseRouter)
 
 app.use(handleError)
 

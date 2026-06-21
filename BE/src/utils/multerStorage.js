@@ -35,3 +35,18 @@ const messageStorage = new CloudinaryStorage({
 });
 
 export const uploadMessageMedia = multer({ storage: messageStorage });
+
+const videoStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'videos',
+        allowed_formats: ['mp4', 'mov', 'avi', 'webm', 'mkv'],
+        resource_type: 'video',
+        transformation: [{ quality: "auto", fetch_format: "auto" }]
+    }
+});
+
+export const uploadVideo = multer({
+    storage: videoStorage,
+    limits: { fileSize: 500 * 1024 * 1024 } // 500MB
+});
