@@ -4,7 +4,10 @@ import Role from "./role.js";
 import Permission from "./permission.js";
 import Category from "./category.js";
 import Video from "./video.js";
+import Product from "./product.js";
 import Course from "./course.js";
 import Lesson from "./lesson.js";
+import Kit from "./kit.js";
+import DIYPost from "./diyPost.js";
 
-export { User, Role, RefreshToken, Permission, Category, Video, Course, Lesson };
+export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost };

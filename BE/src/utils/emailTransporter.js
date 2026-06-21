@@ -6,7 +6,11 @@ configDotenv();
 if (!process.env.SENDGRID_API_KEY) {
     throw new Error("Missing SendGrid API Key!");
 }
-
+// if (process.env.SENDGRID_API_KEY) {
+//     sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+// } else {
+//     console.warn("⚠️  SENDGRID_API_KEY not configured. Email functionality disabled.");
+// }
 sgMail.setApiKey(process.env.SENDGRID_API_KEY)
 
 // const transporter = nodemailer.createTransport({

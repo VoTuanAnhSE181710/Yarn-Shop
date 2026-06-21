@@ -8,37 +8,37 @@ const linkedProductSchema = new mongoose.Schema({
     },
     timestamp: {
         type: Number,
-        required: true,
+        required: [true, "Timestamp is required!"],
     },
     name: {
         type: String,
-        required: true,
+        required: [true, "Name is required!"],
+        trim: true,
     },
     price: {
         type: Number,
-        required: true,
+        required: [true, "Price is required!"],
     },
     thumbnail: {
         type: String,
-        default: null,
-    },
+        required: [true, "Thumbnail is required!"],
+    }
 }, { _id: false });
 
 const lessonSchema = new mongoose.Schema({
     courseId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Course",
-        required: [true, "Course ID is required!"],
-        index: true,
+        required: true,
     },
     title: {
         type: String,
-        required: [true, "Lesson title is required!"],
+        required: [true, "Title is required!"],
         trim: true,
     },
     order: {
         type: Number,
-        required: [true, "Lesson order is required!"],
+        required: [true, "Order is required!"],
     },
     videoUrl: {
         type: String,
@@ -46,21 +46,16 @@ const lessonSchema = new mongoose.Schema({
     },
     duration: {
         type: Number,
-        default: 0,
+        required: [true, "Duration is required!"],
     },
-    linkedProducts: {
-        type: [linkedProductSchema],
-        default: [],
-    },
+    linkedProducts: [linkedProductSchema],
     isPreview: {
         type: Boolean,
         default: false,
-    },
+    }
 }, {
-    timestamps: true,
+    timestamps: true
 });
-
-lessonSchema.index({ courseId: 1, order: 1 }, { unique: true });
 
 const Lesson = mongoose.model("Lesson", lessonSchema, "lessons");
 export default Lesson;

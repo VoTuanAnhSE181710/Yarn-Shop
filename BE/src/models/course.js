@@ -3,30 +3,29 @@ import mongoose from "mongoose";
 const courseSchema = new mongoose.Schema({
     title: {
         type: String,
-        required: [true, "Course title is required!"],
+        required: [true, "Title is required!"],
         trim: true,
     },
     description: {
         type: String,
-        default: "",
+        required: [true, "Description is required!"],
     },
     thumbnail: {
         type: String,
-        default: null,
+        required: [true, "Thumbnail is required!"],
     },
     level: {
         type: String,
         enum: ["beginner", "intermediate", "advanced"],
-        required: [true, "Course level is required!"],
+        required: [true, "Level is required!"],
     },
     tags: [{
         type: String,
-        trim: true,
     }],
     creatorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: [true, "Creator is required!"],
+        required: true,
     },
     totalDuration: {
         type: Number,
@@ -39,8 +38,6 @@ const courseSchema = new mongoose.Schema({
     rating: {
         type: Number,
         default: 0,
-        min: 0,
-        max: 5,
     },
     enrolledCount: {
         type: Number,
@@ -48,24 +45,15 @@ const courseSchema = new mongoose.Schema({
     },
     linkedComboIds: [{
         type: mongoose.Schema.Types.ObjectId,
-        ref: "KitCombo",
+        ref: "Kit",
     }],
     isPublished: {
         type: Boolean,
         default: false,
-    },
-    deletedAt: {
-        type: Date,
-        default: null,
-    },
+    }
 }, {
-    timestamps: true,
+    timestamps: true
 });
-
-courseSchema.index({ title: "text", description: "text", tags: "text" });
-courseSchema.index({ level: 1 });
-courseSchema.index({ creatorId: 1 });
-courseSchema.index({ isPublished: 1, deletedAt: 1 });
 
 const Course = mongoose.model("Course", courseSchema, "courses");
 export default Course;
