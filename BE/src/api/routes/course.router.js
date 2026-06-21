@@ -1,0 +1,320 @@
+import express from 'express';
+import { authentication } from '../middlewares/middleware.js';
+
+const router = express.Router();
+
+/**
+ * @swagger
+ * components:
+ *   schemas:
+ *     Course:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         title:
+ *           type: string
+ *         description:
+ *           type: string
+ *         thumbnail:
+ *           type: string
+ *         level:
+ *           type: string
+ *           enum: [beginner, intermediate, advanced]
+ *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *         creatorId:
+ *           type: object
+ *           properties:
+ *             _id:
+ *               type: string
+ *             username:
+ *               type: string
+ *             fullName:
+ *               type: string
+ *             avatar:
+ *               type: object
+ *         totalDuration:
+ *           type: number
+ *         totalLessons:
+ *           type: number
+ *         rating:
+ *           type: number
+ *         enrolledCount:
+ *           type: number
+ *         linkedComboIds:
+ *           type: array
+ *           items:
+ *             type: string
+ *         isPublished:
+ *           type: boolean
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ *     Lesson:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         courseId:
+ *           type: string
+ *         title:
+ *           type: string
+ *         order:
+ *           type: number
+ *         videoUrl:
+ *           type: string
+ *         duration:
+ *           type: number
+ *         linkedProducts:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               productId:
+ *                 type: string
+ *               timestamp:
+ *                 type: number
+ *               name:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               thumbnail:
+ *                 type: string
+ *         isPreview:
+ *           type: boolean
+ *         createdAt:
+ *           type: string
+ *           format: date-time
+ *         updatedAt:
+ *           type: string
+ *           format: date-time
+ */
+
+/**
+ * @swagger
+ * /courses:
+ *   get:
+ *     summary: Get courses list
+ *     description: Get paginated list of published courses. Public access.
+ *     tags: [Courses]
+ *     parameters:
+ *       - in: query
+ *         name: level
+ *         schema:
+ *           type: string
+ *           enum: [beginner, intermediate, advanced]
+ *         description: Filter by course level
+ *       - in: query
+ *         name: tag
+ *         schema:
+ *           type: string
+ *         description: Filter by tag
+ *       - in: query
+ *         name: creatorId
+ *         schema:
+ *           type: string
+ *         description: Filter by creator ObjectId
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 20
+ *       - in: query
+ *         name: sort
+ *         schema:
+ *           type: string
+ *           enum: [newest, oldest, rating, enrolled]
+ *           default: newest
+ *     responses:
+ *       200:
+ *         description: Courses retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     courses:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Course'
+ *                     pagination:
+ *                       type: object
+ *                       properties:
+ *                         page:
+ *                           type: integer
+ *                         limit:
+ *                           type: integer
+ *                         total:
+ *                           type: integer
+ *                         totalPages:
+ *                           type: integer
+ */
+router.get(
+    "/",
+    async (req, res, next) => {
+        const courseController = req.container.resolve("courseController");
+        await courseController.getAll(req, res, next);
+    }
+)
+
+/**
+ * @swagger
+ * /courses/{id}:
+ *   get:
+ *     summary: Get course by ID
+ *     description: Get detailed course information with lessons list.
+ *     tags: [Courses]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ObjectId
+ *     responses:
+ *       200:
+ *         description: Course retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     course:
+ *                       allOf:
+ *                         - $ref: '#/components/schemas/Course'
+ *                         - type: object
+ *                           properties:
+ *                             lessons:
+ *                               type: array
+ *                               items:
+ *                                 $ref: '#/components/schemas/Lesson'
+ *       404:
+ *         description: Course not found
+ */
+router.get(
+    "/:id",
+    async (req, res, next) => {
+        const courseController = req.container.resolve("courseController");
+        await courseController.getById(req, res, next);
+    }
+)
+
+/**
+ * @swagger
+ * /courses/{id}/lessons:
+ *   get:
+ *     summary: Get all lessons of a course
+ *     description: Get all lessons of a course sorted by order.
+ *     tags: [Courses]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ObjectId
+ *     responses:
+ *       200:
+ *         description: Lessons retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     lessons:
+ *                       type: array
+ *                       items:
+ *                         $ref: '#/components/schemas/Lesson'
+ *       404:
+ *         description: Course not found
+ */
+router.get(
+    "/:id/lessons",
+    async (req, res, next) => {
+        const lessonController = req.container.resolve("lessonController");
+        await lessonController.getByCourseId(req, res, next);
+    }
+)
+
+/**
+ * @swagger
+ * /courses/{id}/lessons/{lessonId}:
+ *   get:
+ *     summary: Get lesson detail
+ *     description: |
+ *       Get detailed information of a specific lesson.
+ *       Authentication is required if the lesson is not marked as preview.
+ *     tags: [Courses]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ObjectId
+ *       - in: path
+ *         name: lessonId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lesson ObjectId
+ *     responses:
+ *       200:
+ *         description: Lesson retrieved successfully
+ *       401:
+ *         description: Authentication required for non-preview lessons
+ *       404:
+ *         description: Lesson not found
+ */
+router.get(
+    "/:id/lessons/:lessonId",
+    async (req, res, next) => {
+        // Optional authentication - try to parse token if available
+        const authHeader = req.headers.authorization;
+        if (authHeader) {
+            try {
+                const tokenService = req.container.resolve("tokenService");
+                const accessToken = authHeader.split(" ")[1];
+                if (accessToken) {
+                    const decode = tokenService.verifyAccessToken({ token: accessToken });
+                    if (decode) {
+                        req.user = decode;
+                    }
+                }
+            } catch (e) {
+                // ignore invalid token, treat as unauthenticated
+            }
+        }
+
+        const lessonController = req.container.resolve("lessonController");
+        await lessonController.getById(req, res, next);
+    }
+)
+
+export default router;
