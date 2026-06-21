@@ -115,7 +115,7 @@ export const checkPermission = (resource, action) => async (req, res, next) => {
         
         //check neu role co permission nay
         const hasPermission = role.permission.some(permission =>
-            permission.resource === resource && (permission.action === action || permission.action === "manage")
+            permission.resource === resource && (permission.action === action || permission.action === "Staff,Admin")
             
         );
         if (!hasPermission) {
