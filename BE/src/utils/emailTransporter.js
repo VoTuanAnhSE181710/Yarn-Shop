@@ -3,26 +3,19 @@ import sgMail from '@sendgrid/mail'
 import { configDotenv } from 'dotenv'
 configDotenv();
 
-if (!process.env.SENDGRID_API_KEY) {
-    throw new Error("Missing SendGrid API Key!");
+if (process.env.SENDGRID_API_KEY) {
+    sgMail.setApiKey(process.env.SENDGRID_API_KEY)
+} else {
+    console.warn("⚠️  SENDGRID_API_KEY not configured. Email functionality disabled.");
 }
-// if (process.env.SENDGRID_API_KEY) {
-//     sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-// } else {
-//     console.warn("⚠️  SENDGRID_API_KEY not configured. Email functionality disabled.");
-// }
-sgMail.setApiKey(process.env.SENDGRID_API_KEY)
-
-// const transporter = nodemailer.createTransport({
-//     service: 'gmail',
-//     auth: {
-//         user: process.env.EMAIL_USER,
-//         pass: process.env.EMAIL_PASS,
-//     }
-// })
 
 const transporter = {
     sendMail: async ({ mailOptions }) => {
+        if (!process.env.SENDGRID_API_KEY) {
+            console.warn("Email not sent: SENDGRID_API_KEY not configured");
+            return { accepted: [], response: "skipped" };
+        }
+
         const msg = {
             to: mailOptions.to,
             from: mailOptions.from || process.env.EMAIL_USER,
