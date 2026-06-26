@@ -9,5 +9,6 @@ import Product from "./product.js";
 import Course from "./course.js";
 import Lesson from "./lesson.js";
 import DIYPost from "./diyPost.js";
+import Order from "./order.js";
 
-export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost };
+export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order };

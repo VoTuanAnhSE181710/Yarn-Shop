@@ -14,6 +14,7 @@ import KitController from "./src/api/controllers/kit.controller.js";
 import CustomerController from "./src/api/controllers/customer.controller.js";
 import CourseController from "./src/api/controllers/course.controller.js";
 import LessonController from "./src/api/controllers/lesson.controller.js";
+import OrderController from "./src/api/controllers/order.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -28,6 +29,7 @@ import KitService from "./src/services/kit.service.js";
 import CustomerService from "./src/services/customer.service.js";
 import CourseService from "./src/services/course.service.js";
 import LessonService from "./src/services/lesson.service.js";
+import OrderService from "./src/services/order.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -36,6 +38,7 @@ import PermissionRepository from "./src/repositories/permission.repository.js";
 import RoleRepository from "./src/repositories/role.repository.js";
 import LogRepository from "./src/repositories/log.repository.js";
 import KitRepository from "./src/repositories/kit.repository.js";
+import OrderRepository from "./src/repositories/order.repository.js";
 
 //3rd party
 import redisClient from "./src/utils/redisClient.js";
@@ -83,6 +86,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         kitRepository: asClass(KitRepository, {
             lifetime: Lifetime.SCOPED,
         }),
+        orderRepository: asClass(OrderRepository, {
+            lifetime: Lifetime.SCOPED,
+        }),
 
         //Services
         authService: asClass(AuthService, {
@@ -119,6 +125,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
             lifetime: Lifetime.SCOPED,
         }),
         lessonService: asClass(LessonService, {
+            lifetime: Lifetime.SCOPED,
+        }),
+        orderService: asClass(OrderService, {
             lifetime: Lifetime.SCOPED,
         }),
 
@@ -159,6 +168,10 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         }),
 
         lessonController: asClass(LessonController, {
+            lifetime: Lifetime.SCOPED,
+        }),
+
+        orderController: asClass(OrderController, {
             lifetime: Lifetime.SCOPED,
         }),
     });
