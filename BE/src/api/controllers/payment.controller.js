@@ -102,7 +102,11 @@ export const createPayment = async (req, res) => {
 // ─────────────────────────────────────────────
 export const createVNPayPayment = async (req, res) => {
     try {
-        const { amount, orderInfo } = req.body;
+        const { amount, orderInfo, orderId } = req.body;
+
+        if (!orderId) {
+            return res.status(400).json({ message: "Missing orderId (MongoDB Order _id)" });
+        }
 
         const tmnCode = process.env.VNP_TMN_CODE;
         const secretKey = process.env.VNP_HASH_SECRET;
@@ -111,7 +115,6 @@ export const createVNPayPayment = async (req, res) => {
 
         const date = new Date();
         const createDate = moment(date).format("YYYYMMDDHHmmss");
-        const orderId = moment(date).format("DDHHmmss");
 
         let ipAddr =
             req.headers["x-forwarded-for"] ||
