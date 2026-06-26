@@ -43,6 +43,11 @@ export function generateVNPayUrl(orderId, amount, req) {
         req.socket?.remoteAddress ||
         "127.0.0.1";
 
+    // Build the IPN URL from the server's base URL
+    // In production, this is the Render server URL
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || "https://yarn-shop-be.onrender.com";
+    const ipnUrl = `${baseUrl}/api/v1/payment/vnpay-ipn`;
+
     let vnp_Params = {};
     vnp_Params["vnp_Version"] = "2.1.0";
     vnp_Params["vnp_Command"] = "pay";
@@ -50,6 +55,7 @@ export function generateVNPayUrl(orderId, amount, req) {
     vnp_Params["vnp_Locale"] = "vn";
     vnp_Params["vnp_CurrCode"] = "VND";
     vnp_Params["vnp_TxnRef"] = orderId; // Use MongoDB _id as reference
+    vnp_Params["vnp_IpnUrl"] = ipnUrl;
     vnp_Params["vnp_OrderInfo"] = `Yarn Shop payment for order ${orderId}`;
     vnp_Params["vnp_OrderType"] = "other";
     vnp_Params["vnp_Amount"] = amount * 100; // VNPay requires amount * 100
