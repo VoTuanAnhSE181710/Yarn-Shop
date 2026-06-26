@@ -3,7 +3,7 @@ import qs from 'qs';
 import moment from 'moment';
 
 // ─────────────────────────────────────────────
-//  HELPER: Sắp xếp Object theo bảng chữ cái (VNPay bắt buộc)
+//  HELPER: Sort object keys alphabetically (VNPay requirement)
 // ─────────────────────────────────────────────
 function sortObject(obj) {
     let sorted = {};
@@ -22,14 +22,14 @@ function sortObject(obj) {
 }
 
 // ─────────────────────────────────────────────
-//  1. MOMO: TẠO LINK THANH TOÁN
+//  1. MOMO: CREATE PAYMENT LINK
 // ─────────────────────────────────────────────
 export const createPayment = async (req, res) => {
     try {
         const { amount, orderInfo } = req.body;
 
         if (!amount) {
-            return res.status(400).json({ message: "Số tiền không hợp lệ" });
+            return res.status(400).json({ message: "Invalid amount" });
         }
 
         const partnerCode = process.env.MOMO_PARTNER_CODE;
@@ -46,7 +46,7 @@ export const createPayment = async (req, res) => {
         const redirectUrl = "http://localhost:3000/order/success";
         const ipnUrl = "https://webhook.site/test";
 
-        const orderInfoRaw = orderInfo || "Thanh toan don hang Yarn Shop";
+        const orderInfoRaw = orderInfo || "Yarn Shop order payment";
 
         const rawSignature =
             `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfoRaw}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
@@ -80,23 +80,23 @@ export const createPayment = async (req, res) => {
 
         if (result.resultCode === 0) {
             return res.status(200).json({
-                message: "Tạo liên kết thanh toán MoMo thành công",
+                message: "MoMo payment link created successfully",
                 payUrl: result.payUrl,
             });
         } else {
             return res.status(400).json({
-                message: "Lỗi từ phía MoMo: " + (result.message || "Không xác định"),
+                message: "MoMo error: " + (result.message || "Unknown error"),
                 resultCode: result.resultCode,
             });
         }
     } catch (error) {
         console.error("Momo Payment Error:", error);
-        return res.status(500).json({ message: "Lỗi hệ thống", error: error.message });
+        return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
 
 // ─────────────────────────────────────────────
-//  2. VNPAY: TẠO LINK THANH TOÁN
+//  2. VNPAY: CREATE PAYMENT LINK
 // ─────────────────────────────────────────────
 export const createVNPayPayment = async (req, res) => {
     try {
@@ -124,17 +124,17 @@ export const createVNPayPayment = async (req, res) => {
         vnp_Params["vnp_Locale"] = "vn";
         vnp_Params["vnp_CurrCode"] = "VND";
         vnp_Params["vnp_TxnRef"] = orderId;
-        vnp_Params["vnp_OrderInfo"] = orderInfo || "Thanh toan don hang Yarn Shop";
+        vnp_Params["vnp_OrderInfo"] = orderInfo || "Yarn shop order payment";
         vnp_Params["vnp_OrderType"] = "other";
-        vnp_Params["vnp_Amount"] = amount * 100; // VNPay yêu cầu * 100
+        vnp_Params["vnp_Amount"] = amount * 100; // VNPay requires amount * 100
         vnp_Params["vnp_ReturnUrl"] = returnUrl;
         vnp_Params["vnp_IpAddr"] = ipAddr;
         vnp_Params["vnp_CreateDate"] = createDate;
 
-        // Sắp xếp theo alphabet
+        // Sort alphabetically
         vnp_Params = sortObject(vnp_Params);
 
-        // Tạo chữ ký
+        // Generate secure hash
         const signData = qs.stringify(vnp_Params, { encode: false });
         const hmac = crypto.createHmac("sha512", secretKey);
         const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
@@ -143,17 +143,17 @@ export const createVNPayPayment = async (req, res) => {
         vnpUrl += "?" + qs.stringify(vnp_Params, { encode: false });
 
         return res.status(200).json({
-            message: "Tạo link thanh toán VNPay thành công",
+            message: "VNPay payment link created successfully",
             payUrl: vnpUrl,
         });
     } catch (error) {
-        console.error("Lỗi tạo thanh toán VNPay:", error);
-        return res.status(500).json({ message: "Lỗi Server", error: error.message });
+        console.error("Error creating VNPay payment link:", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 };
 
 // ─────────────────────────────────────────────
-//  3. VNPAY: WEBHOOK (IPN) - NHẬN KẾT QUẢ
+//  3. VNPAY: IPN WEBHOOK - RECEIVE PAYMENT RESULT
 // ─────────────────────────────────────────────
 export const handleVNPayIPN = async (req, res) => {
     try {
@@ -175,19 +175,19 @@ export const handleVNPayIPN = async (req, res) => {
             const rspCode = vnp_Params["vnp_ResponseCode"];
 
             if (rspCode === "00") {
-                console.log(`[VNPay] Thanh toán thành công đơn hàng: ${orderId}`);
-                // TODO: Update trạng thái đơn hàng trong DB thành PAID
-                return res.status(200).json({ RspCode: "00", Message: "Thành công" });
+                console.log(`[VNPay] Payment successful for order: ${orderId}`);
+                // TODO: Update order status in DB to PAID
+                return res.status(200).json({ RspCode: "00", Message: "Success" });
             } else {
-                console.log(`[VNPay] Giao dịch thất bại đơn hàng: ${orderId}, code: ${rspCode}`);
-                // TODO: Update trạng thái đơn hàng thành FAILED
-                return res.status(200).json({ RspCode: "00", Message: "Thành công" });
+                console.log(`[VNPay] Payment failed for order: ${orderId}, code: ${rspCode}`);
+                // TODO: Update order status in DB to FAILED
+                return res.status(200).json({ RspCode: "00", Message: "Success" });
             }
         } else {
-            return res.status(200).json({ RspCode: "97", Message: "Chữ ký không hợp lệ" });
+            return res.status(200).json({ RspCode: "97", Message: "Invalid signature" });
         }
     } catch (error) {
-        console.error("Lỗi IPN VNPay:", error);
-        return res.status(200).json({ RspCode: "99", Message: "Lỗi không xác định" });
+        console.error("VNPay IPN error:", error);
+        return res.status(200).json({ RspCode: "99", Message: "Unknown error" });
     }
 };
