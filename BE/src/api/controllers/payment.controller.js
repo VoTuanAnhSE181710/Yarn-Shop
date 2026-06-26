@@ -1,6 +1,8 @@
 import crypto from 'crypto';
 import qs from 'qs';
 import moment from 'moment';
+import { verifyVNPaySignature } from '../utils/vnpayHelper.js';
+import Order from '../models/order.js';
 
 // ─────────────────────────────────────────────
 //  HELPER: Sort object keys alphabetically (VNPay requirement)
@@ -158,29 +160,29 @@ export const createVNPayPayment = async (req, res) => {
 export const handleVNPayIPN = async (req, res) => {
     try {
         let vnp_Params = req.query;
-        const secureHash = vnp_Params["vnp_SecureHash"];
+        const isValid = verifyVNPaySignature(vnp_Params);
 
-        delete vnp_Params["vnp_SecureHash"];
-        delete vnp_Params["vnp_SecureHashType"];
-
-        vnp_Params = sortObject(vnp_Params);
-        const secretKey = process.env.VNP_HASH_SECRET;
-        const signData = qs.stringify(vnp_Params, { encode: false });
-
-        const hmac = crypto.createHmac("sha512", secretKey);
-        const signed = hmac.update(Buffer.from(signData, "utf-8")).digest("hex");
-
-        if (secureHash === signed) {
+        if (isValid) {
             const orderId = vnp_Params["vnp_TxnRef"];
             const rspCode = vnp_Params["vnp_ResponseCode"];
+            const transactionNo = vnp_Params["vnp_TransactionNo"];
 
             if (rspCode === "00") {
                 console.log(`[VNPay] Payment successful for order: ${orderId}`);
-                // TODO: Update order status in DB to PAID
+                // Update order payment status to PAID in DB
+                await Order.findByIdAndUpdate(orderId, {
+                    "payment.status": "PAID",
+                    "payment.transactionNo": transactionNo,
+                    "payment.paidAt": new Date(),
+                });
                 return res.status(200).json({ RspCode: "00", Message: "Success" });
             } else {
                 console.log(`[VNPay] Payment failed for order: ${orderId}, code: ${rspCode}`);
-                // TODO: Update order status in DB to FAILED
+                // Update order payment status to FAILED
+                await Order.findByIdAndUpdate(orderId, {
+                    "payment.status": "FAILED",
+                    "payment.transactionNo": transactionNo,
+                });
                 return res.status(200).json({ RspCode: "00", Message: "Success" });
             }
         } else {
