@@ -30,6 +30,7 @@ import adminKitRouter from "./src/api/routes/admin.kit.router.js"
 import customerRouter from "./src/api/routes/customer.router.js"
 import adminCustomerRouter from "./src/api/routes/adminCustomer.router.js"
 import courseRouter from "./src/api/routes/course.router.js"
+import paymentRouter from "./src/api/routes/payment.router.js"
 
 app.get("/", (req, res) => {
     res.send(`Hello World!`);
@@ -58,6 +59,7 @@ app.use(`/api/customers`, customerRouter)
 app.use(`/api/admin/customers`, adminCustomerRouter)
 app.use(`${url}/courses`, courseRouter)
 app.use(`${url}/admin/courses`, courseRouter)
+app.use(`${url}/payment`, paymentRouter)
 
 app.use(handleError)
 
