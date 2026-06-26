@@ -110,6 +110,8 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
             lifetime: Lifetime.SCOPED,
         }),
         kitService: asClass(KitService, {
+            lifetime: Lifetime.SCOPED,
+        }),
         customerService: asClass(CustomerService, {
             lifetime: Lifetime.SCOPED,
         }),
@@ -146,6 +148,8 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
         }),
 
         kitController: asClass(KitController, {
+            lifetime: Lifetime.SCOPED,
+        }),
         customerController: asClass(CustomerController, {
             lifetime: Lifetime.SCOPED,
         }),

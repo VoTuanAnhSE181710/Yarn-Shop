@@ -8,7 +8,6 @@ import Kit from "./kit.js";
 import Product from "./product.js";
 import Course from "./course.js";
 import Lesson from "./lesson.js";
-import Kit from "./kit.js";
 import DIYPost from "./diyPost.js";
 
 export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost };
