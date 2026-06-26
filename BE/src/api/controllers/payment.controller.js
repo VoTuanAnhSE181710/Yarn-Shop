@@ -119,6 +119,9 @@ export const createVNPayPayment = async (req, res) => {
             req.socket?.remoteAddress ||
             "127.0.0.1";
 
+        const baseUrl = process.env.RENDER_EXTERNAL_URL || "https://yarn-shop-be.onrender.com";
+        const ipnUrl = `${baseUrl}/api/v1/payment/vnpay-ipn`;
+
         let vnp_Params = {};
         vnp_Params["vnp_Version"] = "2.1.0";
         vnp_Params["vnp_Command"] = "pay";
@@ -126,6 +129,7 @@ export const createVNPayPayment = async (req, res) => {
         vnp_Params["vnp_Locale"] = "vn";
         vnp_Params["vnp_CurrCode"] = "VND";
         vnp_Params["vnp_TxnRef"] = orderId;
+        vnp_Params["vnp_IpnUrl"] = ipnUrl;
         vnp_Params["vnp_OrderInfo"] = orderInfo || "Yarn shop order payment";
         vnp_Params["vnp_OrderType"] = "other";
         vnp_Params["vnp_Amount"] = amount * 100; // VNPay requires amount * 100
