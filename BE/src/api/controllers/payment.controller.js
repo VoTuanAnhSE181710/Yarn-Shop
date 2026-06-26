@@ -1,8 +1,8 @@
 import crypto from 'crypto';
 import qs from 'qs';
 import moment from 'moment';
-import { verifyVNPaySignature } from '../utils/vnpayHelper.js';
-import Order from '../models/order.js';
+import { verifyVNPaySignature } from '../../utils/vnpayHelper.js';
+import Order from '../../models/order.js';
 
 // ─────────────────────────────────────────────
 //  HELPER: Sort object keys alphabetically (VNPay requirement)
