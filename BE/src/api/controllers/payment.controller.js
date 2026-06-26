@@ -113,14 +113,16 @@ export const createVNPayPayment = async (req, res) => {
         const createDate = moment(date).format("YYYYMMDDHHmmss");
         const orderId = moment(date).format("DDHHmmss");
 
-        const ipAddr =
+        let ipAddr =
             req.headers["x-forwarded-for"] ||
             req.connection?.remoteAddress ||
             req.socket?.remoteAddress ||
             "127.0.0.1";
 
-        const baseUrl = process.env.RENDER_EXTERNAL_URL || "https://yarn-shop-be.onrender.com";
-        const ipnUrl = `${baseUrl}/api/v1/payment/vnpay-ipn`;
+        // x-forwarded-for may contain multiple IPs; VNPay only accepts a single IP
+        if (ipAddr.includes(",")) {
+            ipAddr = ipAddr.split(",")[0].trim();
+        }
 
         let vnp_Params = {};
         vnp_Params["vnp_Version"] = "2.1.0";
@@ -129,7 +131,6 @@ export const createVNPayPayment = async (req, res) => {
         vnp_Params["vnp_Locale"] = "vn";
         vnp_Params["vnp_CurrCode"] = "VND";
         vnp_Params["vnp_TxnRef"] = orderId;
-        vnp_Params["vnp_IpnUrl"] = ipnUrl;
         vnp_Params["vnp_OrderInfo"] = orderInfo || "Yarn shop order payment";
         vnp_Params["vnp_OrderType"] = "other";
         vnp_Params["vnp_Amount"] = amount * 100; // VNPay requires amount * 100

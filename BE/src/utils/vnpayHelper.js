@@ -22,6 +22,25 @@ function sortObject(obj) {
 }
 
 /**
+ * Get client IP address, handling proxy chains (x-forwarded-for)
+ */
+function getClientIp(req) {
+    let ip =
+        req.headers["x-forwarded-for"] ||
+        req.connection?.remoteAddress ||
+        req.socket?.remoteAddress ||
+        "127.0.0.1";
+
+    // x-forwarded-for may contain multiple IPs (e.g. "client, proxy1, proxy2")
+    // VNPay only accepts a single IP, so take the first one
+    if (ip.includes(",")) {
+        ip = ip.split(",")[0].trim();
+    }
+
+    return ip;
+}
+
+/**
  * Generate VNPay payment URL
  * @param {string} orderId - MongoDB Order _id
  * @param {number} amount - Total amount in VND
@@ -36,29 +55,19 @@ export function generateVNPayUrl(orderId, amount, req) {
 
     const date = new Date();
     const createDate = moment(date).format("YYYYMMDDHHmmss");
+    const ipAddr = getClientIp(req);
 
-    const ipAddr =
-        req.headers["x-forwarded-for"] ||
-        req.connection?.remoteAddress ||
-        req.socket?.remoteAddress ||
-        "127.0.0.1";
-
-    // Build the IPN URL from the server's base URL
-    // In production, this is the Render server URL
-    const baseUrl = process.env.RENDER_EXTERNAL_URL || "https://yarn-shop-be.onrender.com";
-    const ipnUrl = `${baseUrl}/api/v1/payment/vnpay-ipn`;
-
+    // Build params - DO NOT include vnp_IpnUrl (VNPay does not support it in API params)
     let vnp_Params = {};
     vnp_Params["vnp_Version"] = "2.1.0";
     vnp_Params["vnp_Command"] = "pay";
     vnp_Params["vnp_TmnCode"] = tmnCode;
     vnp_Params["vnp_Locale"] = "vn";
     vnp_Params["vnp_CurrCode"] = "VND";
-    vnp_Params["vnp_TxnRef"] = orderId; // Use MongoDB _id as reference
-    vnp_Params["vnp_IpnUrl"] = ipnUrl;
+    vnp_Params["vnp_TxnRef"] = orderId;
     vnp_Params["vnp_OrderInfo"] = `Yarn Shop payment for order ${orderId}`;
     vnp_Params["vnp_OrderType"] = "other";
-    vnp_Params["vnp_Amount"] = amount * 100; // VNPay requires amount * 100
+    vnp_Params["vnp_Amount"] = amount * 100;
     vnp_Params["vnp_ReturnUrl"] = returnUrl;
     vnp_Params["vnp_IpAddr"] = ipAddr;
     vnp_Params["vnp_CreateDate"] = createDate;
