@@ -14,12 +14,12 @@ const router = express.Router();
  *       properties:
  *         amount:
  *           type: number
- *           description: Số tiền thanh toán (VND)
+ *           description: Payment amount (VND)
  *           example: 50000
  *         orderInfo:
  *           type: string
- *           description: Thông tin đơn hàng
- *           example: "Thanh toan don hang Yarn Shop"
+ *           description: Order description
+ *           example: "Yarn Shop order payment"
  *     PaymentResponse:
  *       type: object
  *       properties:
@@ -27,13 +27,13 @@ const router = express.Router();
  *           type: string
  *         payUrl:
  *           type: string
- *           description: URL chuyển hướng đến cổng thanh toán
+ *           description: Redirect URL to the payment gateway
  *     VNPayIPNResponse:
  *       type: object
  *       properties:
  *         RspCode:
  *           type: string
- *           description: Mã phản hồi (00 = thành công)
+ *           description: Response code (00 = success)
  *         Message:
  *           type: string
  */
@@ -42,8 +42,8 @@ const router = express.Router();
  * @swagger
  * /payment/momo-payment:
  *   post:
- *     summary: Tạo link thanh toán MoMo
- *     description: Tạo yêu cầu thanh toán qua MoMo. Trả về URL để chuyển hướng người dùng đến trang thanh toán MoMo.
+ *     summary: Create MoMo Payment Link
+ *     description: Create a payment request via MoMo. Returns a URL to redirect the user to the MoMo payment page.
  *     tags: [Payment]
  *     requestBody:
  *       required: true
@@ -53,15 +53,15 @@ const router = express.Router();
  *             $ref: '#/components/schemas/PaymentRequest'
  *     responses:
  *       200:
- *         description: Tạo liên kết thanh toán thành công
+ *         description: MoMo payment link created successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/PaymentResponse'
  *       400:
- *         description: Số tiền không hợp lệ hoặc lỗi từ MoMo
+ *         description: Invalid amount or MoMo error
  *       500:
- *         description: Lỗi hệ thống
+ *         description: Internal server error
  */
 router.post('/momo-payment', createPayment);
 
@@ -69,8 +69,8 @@ router.post('/momo-payment', createPayment);
  * @swagger
  * /payment/vnpay-payment:
  *   post:
- *     summary: Tạo link thanh toán VNPay
- *     description: Tạo yêu cầu thanh toán qua VNPay. Trả về URL để chuyển hướng người dùng đến cổng thanh toán VNPay.
+ *     summary: Create VNPay Payment Link
+ *     description: Create a payment request via VNPay. Returns a URL to redirect the user to the VNPay payment page.
  *     tags: [Payment]
  *     requestBody:
  *       required: true
@@ -80,15 +80,15 @@ router.post('/momo-payment', createPayment);
  *             $ref: '#/components/schemas/PaymentRequest'
  *     responses:
  *       200:
- *         description: Tạo link thanh toán VNPay thành công
+ *         description: VNPay payment link created successfully
  *         content:
  *           application/json:
  *             schema:
  *               $ref: '#/components/schemas/PaymentResponse'
  *       400:
- *         description: Số tiền không hợp lệ
+ *         description: Invalid amount
  *       500:
- *         description: Lỗi Server
+ *         description: Internal server error
  */
 router.post('/vnpay-payment', createVNPayPayment);
 
@@ -96,71 +96,71 @@ router.post('/vnpay-payment', createVNPayPayment);
  * @swagger
  * /payment/vnpay-ipn:
  *   get:
- *     summary: Webhook nhận kết quả thanh toán từ VNPay
+ *     summary: VNPay IPN Webhook - Receive payment result
  *     description: |
- *       VNPay gọi endpoint này sau khi người dùng hoàn tất thanh toán.
- *       Hệ thống sẽ xác thực chữ ký và cập nhật trạng thái đơn hàng.
- *       Endpoint này được VNPay gọi tự động (server-to-server), không phải do người dùng gọi.
+ *       VNPay calls this endpoint after the user completes payment.
+ *       The system validates the signature and updates the order status.
+ *       This endpoint is called automatically by VNPay (server-to-server), not by the user.
  *     tags: [Payment]
  *     parameters:
  *       - in: query
  *         name: vnp_Amount
  *         schema:
  *           type: string
- *         description: Số tiền thanh toán (* 100)
+ *         description: Payment amount (* 100)
  *       - in: query
  *         name: vnp_BankCode
  *         schema:
  *           type: string
- *         description: Mã ngân hàng
+ *         description: Bank code
  *       - in: query
  *         name: vnp_BankTranNo
  *         schema:
  *           type: string
- *         description: Mã giao dịch tại ngân hàng
+ *         description: Bank transaction number
  *       - in: query
  *         name: vnp_CardType
  *         schema:
  *           type: string
- *         description: Loại thẻ
+ *         description: Card type
  *       - in: query
  *         name: vnp_OrderInfo
  *         schema:
  *           type: string
- *         description: Thông tin đơn hàng
+ *         description: Order information
  *       - in: query
  *         name: vnp_PayDate
  *         schema:
  *           type: string
- *         description: Ngày thanh toán (yyyyMMddHHmmss)
+ *         description: Payment date (yyyyMMddHHmmss)
  *       - in: query
  *         name: vnp_ResponseCode
  *         schema:
  *           type: string
- *         description: Mã phản hồi (00 = thành công)
+ *         description: Response code (00 = success)
  *       - in: query
  *         name: vnp_TmnCode
  *         schema:
  *           type: string
- *         description: Mã terminal
+ *         description: Terminal code
  *       - in: query
  *         name: vnp_TransactionNo
  *         schema:
  *           type: string
- *         description: Mã giao dịch VNPay
+ *         description: VNPay transaction number
  *       - in: query
  *         name: vnp_TxnRef
  *         schema:
  *           type: string
- *         description: Mã tham chiếu đơn hàng
+ *         description: Order reference code
  *       - in: query
  *         name: vnp_SecureHash
  *         schema:
  *           type: string
- *         description: Chữ ký bảo mật (checksum)
+ *         description: Secure hash (checksum)
  *     responses:
  *       200:
- *         description: Phản hồi IPN
+ *         description: IPN response
  *         content:
  *           application/json:
  *             schema:
