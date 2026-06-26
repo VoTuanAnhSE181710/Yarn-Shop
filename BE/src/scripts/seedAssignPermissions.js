@@ -11,6 +11,7 @@ const uri = configDB.uri;
 /**
  * Assign ALL permissions to Admin role
  * Assign read-only permissions to Staff role
+ * Assign Order permissions to Customer role (create + read)
  * 
  * Usage: node src/scripts/seedAssignPermissions.js
  */
@@ -30,20 +31,20 @@ const seedAssignPermissions = async () => {
 
         const allPermissionIds = allPermissions.map(p => p._id);
 
-        // Assign ALL permissions to Admin
+        // 1. Assign ALL permissions to Admin
         const adminRole = await Role.findOneAndUpdate(
             { roleName: "Admin" },
             { permission: allPermissionIds },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (adminRole) {
-            console.log(`✅ Admin role: assigned ${allPermissionIds.length} permissions`);
+            console.log(`✅ Admin role: assigned ${allPermissionIds.length} permissions (full access)`);
         } else {
             console.log('❌ Admin role not found');
         }
 
-        // Assign read permissions to Staff
+        // 2. Assign read permissions to Staff
         const readPermissionIds = allPermissions
             .filter(p => p.action === 'read' || p.action === 'manage')
             .map(p => p._id);
@@ -51,17 +52,31 @@ const seedAssignPermissions = async () => {
         const staffRole = await Role.findOneAndUpdate(
             { roleName: "Staff" },
             { permission: readPermissionIds },
-            { new: true }
+            { returnDocument: 'after' }
         );
 
         if (staffRole) {
-            console.log(`✅ Staff role: assigned ${readPermissionIds.length} permissions`);
+            console.log(`✅ Staff role: assigned ${readPermissionIds.length} permissions (read + manage)`);
         } else {
             console.log('❌ Staff role not found');
         }
 
-        // Customer gets no special permissions
-        console.log('ℹ️  Customer role: no permissions assigned (public access only)');
+        // 3. Assign Create Order + Read Order to Customer (để đặt hàng & xem đơn)
+        const customerOrderPermissionIds = allPermissions
+            .filter(p => p.resource === 'Order' && (p.action === 'create' || p.action === 'read'))
+            .map(p => p._id);
+
+        const customerRole = await Role.findOneAndUpdate(
+            { roleName: "Customer" },
+            { permission: customerOrderPermissionIds },
+            { returnDocument: 'after' }
+        );
+
+        if (customerRole) {
+            console.log(`✅ Customer role: assigned ${customerOrderPermissionIds.length} permissions (Create Order + Read Order)`);
+        } else {
+            console.log('❌ Customer role not found');
+        }
 
         await mongoose.connection.close();
         console.log('\n✨ Permission assignment completed!');

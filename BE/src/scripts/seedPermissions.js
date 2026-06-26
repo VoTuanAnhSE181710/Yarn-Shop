@@ -98,160 +98,30 @@ const seedPermissions = async () => {
                 description: "Permission to delete permissions"
             },
 
-            // ===== EQUIPMENT PERMISSIONS =====
+            // ===== ORDER PERMISSIONS =====
             {
-                name: "Create Equipment",
-                resource: "Equipment",
+                name: "Create Order",
+                resource: "Order",
                 action: "create",
-                description: "Permission to create new equipment"
+                description: "Permission to create new orders"
             },
             {
-                name: "Read Equipment",
-                resource: "Equipment",
+                name: "Read Order",
+                resource: "Order",
                 action: "read",
-                description: "Permission to view equipment information and list"
+                description: "Permission to view order information and list all orders"
             },
             {
-                name: "Update Equipment",
-                resource: "Equipment",
+                name: "Update Order",
+                resource: "Order",
                 action: "update",
-                description: "Permission to update equipment information"
+                description: "Permission to update order information and status"
             },
             {
-                name: "Delete Equipment",
-                resource: "Equipment",
+                name: "Delete Order",
+                resource: "Order",
                 action: "delete",
-                description: "Permission to soft delete equipment"
-            },
-
-            // ===== INSTRUMENT PERMISSIONS =====
-            {
-                name: "Create Instrument",
-                resource: "Instrument",
-                action: "create",
-                description: "Permission to create new instruments"
-            },
-            {
-                name: "Read Instrument",
-                resource: "Instrument",
-                action: "read",
-                description: "Permission to view instrument information and list"
-            },
-            {
-                name: "Update Instrument",
-                resource: "Instrument",
-                action: "update",
-                description: "Permission to update instrument information and assign staff"
-            },
-            {
-                name: "Delete Instrument",
-                resource: "Instrument",
-                action: "delete",
-                description: "Permission to soft delete instruments"
-            },
-
-            // ===== WAREHOUSE PERMISSIONS =====
-            {
-                name: "Create Warehouse",
-                resource: "Warehouse",
-                action: "create",
-                description: "Permission to create new warehouses and receive inventory"
-            },
-            {
-                name: "Read Warehouse",
-                resource: "Warehouse",
-                action: "read",
-                description: "Permission to view warehouse information and inventory"
-            },
-            {
-                name: "Update Warehouse",
-                resource: "Warehouse",
-                action: "update",
-                description: "Permission to update warehouse information"
-            },
-            {
-                name: "Delete Warehouse",
-                resource: "Warehouse",
-                action: "delete",
-                description: "Permission to delete warehouses"
-            },
-
-            // ===== INCIDENT PERMISSIONS =====
-            {
-                name: "Create Incident",
-                resource: "Incident",
-                action: "create",
-                description: "Permission to create incident reports"
-            },
-            {
-                name: "Read Incident",
-                resource: "Incident",
-                action: "read",
-                description: "Permission to view incident reports and list"
-            },
-            {
-                name: "Update Incident",
-                resource: "Incident",
-                action: "update",
-                description: "Permission to update incident reports"
-            },
-            {
-                name: "Delete Incident",
-                resource: "Incident",
-                action: "delete",
-                description: "Permission to delete incident reports"
-            },
-
-            // ===== MAINTENANCE SCHEDULE PERMISSIONS =====
-            {
-                name: "Create Maintenance Schedule",
-                resource: "MaintenanceSchedule",
-                action: "create",
-                description: "Permission to create maintenance schedules"
-            },
-            {
-                name: "Read Maintenance Schedule",
-                resource: "MaintenanceSchedule",
-                action: "read",
-                description: "Permission to view maintenance schedules and statistics"
-            },
-            {
-                name: "Update Maintenance Schedule",
-                resource: "MaintenanceSchedule",
-                action: "update",
-                description: "Permission to update, start, complete, or cancel maintenance schedules"
-            },
-            {
-                name: "Delete Maintenance Schedule",
-                resource: "MaintenanceSchedule",
-                action: "delete",
-                description: "Permission to delete maintenance schedules"
-            },
-
-            // ===== MAINTENANCE HISTORY PERMISSIONS =====
-            {
-                name: "Create Maintenance History",
-                resource: "MaintenanceHistory",
-                action: "create",
-                description: "Permission to create maintenance history records"
-            },
-            {
-                name: "Read Maintenance History",
-                resource: "MaintenanceHistory",
-                action: "read",
-                description: "Permission to view maintenance history and export reports"
-            },
-            {
-                name: "Update Maintenance History",
-                resource: "MaintenanceHistory",
-                action: "update",
-                description: "Permission to update maintenance history records"
-            },
-            {
-                name: "Delete Maintenance History",
-                resource: "MaintenanceHistory",
-                action: "delete",
-                description: "Permission to delete maintenance history records"
+                description: "Permission to delete/cancel orders"
             },
 
             // ===== LOG PERMISSIONS =====
