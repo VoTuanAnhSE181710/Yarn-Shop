@@ -63,7 +63,9 @@ export default class OrderService {
             error.statusCode = 404;
             throw error;
         }
-        if (order.user.toString() !== userId.toString()) {
+        // Handle both populated (object with _id) and non-populated (ObjectId string) user
+        const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
+        if (orderUserId !== userId.toString()) {
             const error = new Error("Not authorized to cancel this order");
             error.statusCode = 403;
             throw error;
