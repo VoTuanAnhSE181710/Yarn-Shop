@@ -160,6 +160,20 @@ const publicRegisterSchema = Joi.object({
                     }).required(),
 })
 
+const changeRoleSchema = Joi.object({
+    roleId: Joi.string()
+        .custom((value, helpers) => {
+            if (!mongoose.Types.ObjectId.isValid(value)) {
+                return helpers.error('any.invalid')
+            }
+            return value;
+        })
+        .messages({
+            'any.invalid': 'roleId must be a valid MongoDB ObjectId'
+        })
+        .required(),
+})
+
 export {
     loginSchema,
     registerSchema,
@@ -169,4 +183,5 @@ export {
     getAllUserSchema,
     changePasswordSchema,
     forgotPasswordSchema,
+    changeRoleSchema,
 };

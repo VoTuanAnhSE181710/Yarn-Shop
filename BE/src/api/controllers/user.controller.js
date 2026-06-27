@@ -156,6 +156,30 @@ class UserController {
         }
     }
 
+    changeRole = async (req, res, next) => {
+        try {
+            const { userId } = req.user
+            const { queryUserId } = req.params
+            const { roleId } = req.body
+
+            const result = await this.#userService.changeUserRole({
+                queryUserId,
+                roleId,
+                userId,
+            })
+
+            res.status(200).json({
+                status: 'success',
+                message: 'User role changed successfully',
+                data: {
+                    result,
+                }
+            })
+        } catch (error) {
+            next(error)
+        }
+    }
+
     getStatistics = async (req, res, next) => {
         try {
             const result = await this.#userService.getStatistics();

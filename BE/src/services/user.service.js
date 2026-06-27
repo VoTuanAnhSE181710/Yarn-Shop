@@ -1,19 +1,22 @@
 import { ACTIONS, OUTCOMES, TARGET_TYPES } from "../constants/constants.js";
-import { BadRequestError } from "../error/error.js";
+import { BadRequestError, ForbiddenError, NotFoundError } from "../error/error.js";
 
 class UserService {
     #userRepository
     #logRepository
     #cloudinary
+    #roleRepository
 
     constructor({
         userRepository,
         logRepository,
         cloudinary,
+        roleRepository,
     }) {
         this.#userRepository = userRepository;
         this.#logRepository = logRepository;
         this.#cloudinary = cloudinary;
+        this.#roleRepository = roleRepository;
     }
 
     updateUserData = async ({
@@ -311,6 +314,86 @@ class UserService {
         })
         
         return deletedUser;
+    }
+
+    changeUserRole = async ({ queryUserId, roleId, userId }) => {
+        const currentUser = await this.#userRepository.findUserById({ userId });
+        if (!currentUser) {
+            throw new BadRequestError("Authenticated user not found");
+        }
+
+        if (currentUser.roleId.roleName !== 'Admin') {
+            await this.#logRepository.saveLog({
+                action: ACTIONS.UPDATE,
+                targetType: TARGET_TYPES.USER,
+                outcome: OUTCOMES.FAILED,
+                actorId: userId,
+                details: { reason: "Non-admin attempted to change user role" }
+            })
+            throw new ForbiddenError("Access denied. Only Admin can change user roles.");
+        }
+
+        const targetUser = await this.#userRepository.findUserById({ userId: queryUserId });
+        if (!targetUser) {
+            await this.#logRepository.saveLog({
+                action: ACTIONS.UPDATE,
+                targetType: TARGET_TYPES.USER,
+                outcome: OUTCOMES.FAILED,
+                actorId: userId,
+                details: { reason: "Target user not found" }
+            })
+            throw new NotFoundError("User does not exist!");
+        }
+
+        if (queryUserId === userId) {
+            await this.#logRepository.saveLog({
+                action: ACTIONS.UPDATE,
+                targetType: TARGET_TYPES.USER,
+                outcome: OUTCOMES.FAILED,
+                actorId: userId,
+                details: { reason: "Admin attempted to change their own role" }
+            })
+            throw new BadRequestError("Cannot change your own role");
+        }
+
+        const role = await this.#roleRepository.findById(roleId);
+        if (!role) {
+            throw new NotFoundError("Role does not exist!");
+        }
+
+        if (targetUser.roleId._id.toString() === roleId) {
+            throw new BadRequestError("User already has this role");
+        }
+
+        const updatedUser = await this.#userRepository.changeUserRole({ userId: queryUserId, roleId });
+
+        if (!updatedUser) {
+            await this.#logRepository.saveLog({
+                action: ACTIONS.UPDATE,
+                targetType: TARGET_TYPES.USER,
+                outcome: OUTCOMES.FAILED,
+                actorId: userId,
+                details: { reason: "Failed to change user role" }
+            })
+            throw new BadRequestError("Failed to change user role");
+        }
+
+        await this.#logRepository.saveLog({
+            action: ACTIONS.UPDATE,
+            targetType: TARGET_TYPES.USER,
+            outcome: OUTCOMES.SUCCESS,
+            actorId: userId,
+            details: {
+                targetUserId: queryUserId,
+                previousRole: targetUser.roleId.roleName,
+                newRole: role.roleName,
+            }
+        })
+
+        return {
+            ...updatedUser,
+            password: undefined,
+        };
     }
 
     getStatistics = async () => {
