@@ -752,7 +752,7 @@ router.patch(
     validateData(changeRoleSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'update'),
+    checkPermission('User', 'manage'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.changeRole(req, res, next);
