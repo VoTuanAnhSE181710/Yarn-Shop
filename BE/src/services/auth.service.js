@@ -183,7 +183,7 @@ class AuthService {
         })
 
         if (existingUser) {
-            throw new BadRequestError("This user already exists!")
+            throw new BadRequestError("Email is Already Registered")
         }
 
         // Auto-find Customer role
