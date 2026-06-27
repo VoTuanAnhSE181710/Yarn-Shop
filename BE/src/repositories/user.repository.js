@@ -333,6 +333,32 @@ class UserRepository {
         }
     }
 
+    changeUserRole = async ({ userId, roleId }) => {
+        try {
+            const updatedUser = await User.findByIdAndUpdate(
+                userId,
+                {
+                    $set: { roleId: roleId }
+                },
+                {
+                    returnDocument: 'after',
+                    context: "query"
+                }
+            ).populate('roleId').lean()
+
+            if (!updatedUser) {
+                return null;
+            }
+
+            return {
+                ...updatedUser,
+                userId: updatedUser._id.toString(),
+            }
+        } catch (error) {
+            console.log(error);
+        }
+    }
+
     getStatistics = async () => {
         const [totalUsers, activeUsers, inactiveUsers, lockedUsers, usersByRole, usersByStatus] = await Promise.all([
             User.countDocuments(),

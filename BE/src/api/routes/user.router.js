@@ -1,6 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission, validateData, verifyDevice } from '../middlewares/middleware.js';
-import { updateUserSchema, updateStatusSchema, getAllUserSchema } from '../../validators/user.validator.js';
+import { updateUserSchema, updateStatusSchema, getAllUserSchema, changeRoleSchema } from '../../validators/user.validator.js';
 import { uploadAvatar } from '../../utils/multerStorage.js';
 
 const router = express.Router();
@@ -692,6 +692,73 @@ router.get(
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
+/**
+ * @swagger
+ * /users/{queryUserId}/role:
+ *   patch:
+ *     summary: Change user role (Admin only)
+ *     description: Change the role of a user. Only Admin can change user roles. Admin cannot change their own role.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: queryUserId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: MongoDB ObjectId of the user whose role will be changed
+ *         example: '65be000000000000000001'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - roleId
+ *             properties:
+ *               roleId:
+ *                 type: string
+ *                 description: MongoDB ObjectId of the new role
+ *                 example: '65be000000000000000002'
+ *     responses:
+ *       200:
+ *         description: User role changed successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: User role changed successfully
+ *                 data:
+ *                   type: object
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Only Admin can change user roles
+ *       404:
+ *         description: User or Role not found
+ */
+router.patch(
+    "/:queryUserId/role",
+    validateData(changeRoleSchema, "body"),
+    authentication,
+    verifyDevice,
+    checkPermission('User', 'update'),
+    async (req, res, next) => {
+        const userController = req.container.resolve("userController");
+        await userController.changeRole(req, res, next);
+    }
+)
+
 router.delete(
     "/:queryUserId",
     authentication,
