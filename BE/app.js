@@ -30,7 +30,6 @@ import adminKitRouter from "./src/api/routes/admin.kit.router.js"
 import customerRouter from "./src/api/routes/customer.router.js"
 import adminCustomerRouter from "./src/api/routes/adminCustomer.router.js"
 import courseRouter from "./src/api/routes/course.router.js"
-import adminCourseRouter from "./src/api/routes/admin.course.router.js"
 import paymentRouter from "./src/api/routes/payment.router.js"
 import orderRouter from "./src/api/routes/order.router.js"
 
@@ -59,8 +58,7 @@ app.use(`${url}/kits`, kitRouter)
 app.use(`${url}/admin/kits`, adminKitRouter)
 app.use(`/api/customers`, customerRouter)
 app.use(`/api/admin/customers`, adminCustomerRouter)
-app.use(`${url}/courses`, courseRouter)
-app.use(`${url}/admin/courses`, adminCourseRouter)
+app.use(`${url}`, courseRouter)
 app.use(`${url}/payment`, paymentRouter)
 app.use(`${url}/orders`, orderRouter)
 
