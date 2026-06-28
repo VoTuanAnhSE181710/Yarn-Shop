@@ -6,6 +6,10 @@ import configDB from '../config/configDB.js';
 import HashService from '../services/hash.service.js';
 import RefreshToken from '../models/RefreshToken.js';
 import Category from '../models/category.js';
+import Product from '../models/product.js';
+import Kit from '../models/kit.js';
+import Course from '../models/course.js';
+import Lesson from '../models/lesson.js';
 
 configDotenv();
 
@@ -14,30 +18,26 @@ const uri = configDB.uri;
 /**
  * Seed script - Reset database and create sample data
  * 
- * This script will:
- * 1. Connect to MongoDB
- * 2. Clear all existing data (Users, Roles, Categories, Videos)
- * 3. Create sample Roles (Admin, Staff, Customer)
- * 4. Create sample Users with hashed passwords
- * 5. Create sample Categories for video classification
- * 
  * Usage: npm run seed
- * Default password for all users: 123456
  */
 const seedData = async () => {
     try {
         // Kết nối MongoDB
-        await mongoose.connect(uri)
+        await mongoose.connect(uri);
 
         console.log('📦 Connected to MongoDB');
 
-        // Xóa dữ liệu cũ - Drop collections để xóa cả indexes cũ
-        await mongoose.connection.db.dropCollection('users').catch(() => {});
-        await mongoose.connection.db.dropCollection('roles').catch(() => {});
-        await mongoose.connection.db.dropCollection('refreshtokens').catch(() => {});
-        await mongoose.connection.db.dropCollection('logs').catch(() => {});
-        await mongoose.connection.db.dropCollection('categories').catch(() => {});
-        await mongoose.connection.db.dropCollection('videos').catch(() => {});
+        // Xóa dữ liệu cũ
+        await mongoose.connection.db.dropCollection('users').catch(() => { });
+        await mongoose.connection.db.dropCollection('roles').catch(() => { });
+        await mongoose.connection.db.dropCollection('refreshtokens').catch(() => { });
+        await mongoose.connection.db.dropCollection('logs').catch(() => { });
+        await mongoose.connection.db.dropCollection('categories').catch(() => { });
+        await mongoose.connection.db.dropCollection('videos').catch(() => { });
+        await mongoose.connection.db.dropCollection('products').catch(() => { });
+        await mongoose.connection.db.dropCollection('kits').catch(() => { });
+        await mongoose.connection.db.dropCollection('courses').catch(() => { });
+        await mongoose.connection.db.dropCollection('lessons').catch(() => { });
         console.log('🗑️  Cleared old data');
 
         // 1. Tạo Roles
@@ -52,12 +52,11 @@ const seedData = async () => {
         const [adminRole, staffRole, customerRole] = roles;
 
         // 2. Hash password
-        const hashService = new HashService()
-
-        const hashedPassword = await hashService.hash({ string: "123456"})
+        const hashService = new HashService();
+        const hashedPassword = await hashService.hash({ string: "123456" });
 
         // 3. Tạo Users
-        const users = await User.insertMany([
+        const seededUsers = await User.insertMany([
             {
                 username: "admin",
                 email: "admin@example.com",
@@ -135,10 +134,24 @@ const seedData = async () => {
                 roleId: customerRole._id,
                 subscription: "Freemium",
                 status: "INACTIVE"
+            },
+            {
+                username: "hoangmu",
+                email: "hoangmu@example.com",
+                password: hashedPassword,
+                phone: "0987654321",
+                fullName: "Hoang MU",
+                gender: "MALE",
+                dateOfBirth: new Date("2000-01-01"),
+                address: "Hanoi, Vietnam",
+                roleId: customerRole._id,
+                subscription: "Premium",
+                status: "ACTIVE"
             }
         ]);
 
-        console.log('✅ Users created:', users.length);
+        console.log('✅ Users created:', seededUsers.length);
+        const staff1 = seededUsers.find(u => u.username === "staff1");
 
         // 4. Tạo Categories
         const categories = await Category.insertMany([
@@ -171,7 +184,148 @@ const seedData = async () => {
 
         console.log('✅ Categories created:', categories.length);
 
-        // 5. Hiển thị thông tin login
+        // 5. Tạo Products (Yarn, Hook, etc.)
+        const products = await Product.insertMany([
+            {
+                name: "Len Milk Cotton 125g",
+                description: "Len sợi mềm mại phù hợp móc thú bông, khăn len, mũ len ấm áp.",
+                category: "yarn",
+                image: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/milk_cotton.jpg",
+                variants: [
+                    { color: "Đỏ", hexCode: "#FF0000", price: 45000, stock: 150 },
+                    { color: "Xanh Dương", hexCode: "#0000FF", price: 45000, stock: 120 }
+                ],
+                isActive: true
+            },
+            {
+                name: "Kim móc len Clover Nhật Bản",
+                description: "Kim móc cán dẻo cao cấp giúp êm tay khi móc lâu.",
+                category: "hook",
+                image: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/clover_hook.jpg",
+                variants: [
+                    { color: "Vàng", hexCode: "#FFD700", price: 75000, stock: 80 }
+                ],
+                isActive: true
+            }
+        ]);
+
+        console.log('✅ Products created:', products.length);
+        const [yarnProduct, hookProduct] = products;
+
+        // 6. Tạo Kits / Combos
+        const kits = await Kit.insertMany([
+            {
+                name: "Combo Móc Khăn Len Ấm Áp",
+                description: "Bộ kit đầy đủ nguyên liệu len, kim móc và kim khâu để hoàn thành một chiếc khăn len xinh xắn.",
+                thumbnail: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/scarf_kit.jpg",
+                level: "beginner",
+                price: 150000,
+                productIds: [yarnProduct._id, hookProduct._id],
+                isActive: true
+            }
+        ]);
+
+        console.log('✅ Kits (Combos) created:', kits.length);
+        const scarfKit = kits[0];
+
+        // 7. Tạo Courses
+        const courses = await Course.insertMany([
+            {
+                title: "Khóa học móc khăn len cho người mới bắt đầu",
+                description: "Hướng dẫn từng bước một để móc hoàn chỉnh chiếc khăn len ấm áp thời trang từ con số 0.",
+                thumbnail: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/course_scarf.jpg",
+                level: "beginner",
+                tags: ["móc len", "khăn len", "cơ bản"],
+                creatorId: staff1._id,
+                totalDuration: 25, // Tự động cập nhật lại qua lessons sau
+                totalLessons: 2,
+                rating: 4.9,
+                enrolledCount: 42,
+                linkedComboIds: [scarfKit._id],
+                isPublished: true
+            }
+        ]);
+
+        console.log('✅ Courses created:', courses.length);
+        const scarfCourse = courses[0];
+
+        // 8. Tạo Lessons kèm theo linkedProducts & linkedCombos
+        const lessons = await Lesson.insertMany([
+            {
+                courseId: scarfCourse._id,
+                title: "Bài 1: Làm quen với dụng cụ & học mũi móc bính",
+                order: 1,
+                videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                duration: 10,
+                isPreview: true, // Xem thử miễn phí
+                linkedProducts: [
+                    {
+                        productId: yarnProduct._id,
+                        timestamp: 45, // Phút/Giây liên kết
+                        name: yarnProduct.name,
+                        price: yarnProduct.variants[0].price,
+                        thumbnail: yarnProduct.image
+                    },
+                    {
+                        productId: hookProduct._id,
+                        timestamp: 90,
+                        name: hookProduct.name,
+                        price: hookProduct.variants[0].price,
+                        thumbnail: hookProduct.image
+                    }
+                ],
+                linkedCombos: [
+                    {
+                        comboId: scarfKit._id,
+                        timestamp: 120,
+                        name: scarfKit.name,
+                        price: scarfKit.price,
+                        thumbnail: scarfKit.thumbnail
+                    }
+                ]
+            },
+            {
+                courseId: scarfCourse._id,
+                title: "Bài 2: Hướng dẫn móc mũi móc đơn và ráp khăn",
+                order: 2,
+                videoUrl: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+                duration: 15,
+                isPreview: false, // Yêu cầu tài khoản đăng nhập (auth required)
+                linkedProducts: [
+                    {
+                        productId: yarnProduct._id,
+                        timestamp: 180,
+                        name: yarnProduct.name,
+                        price: yarnProduct.variants[0].price,
+                        thumbnail: yarnProduct.image
+                    }
+                ],
+                linkedCombos: []
+            }
+        ]);
+
+        console.log('✅ Lessons created:', lessons.length);
+
+        // Kích hoạt lại tổng số bài học và tổng thời lượng của khóa học
+        const stats = await Lesson.aggregate([
+            { $match: { courseId: scarfCourse._id } },
+            {
+                $group: {
+                    _id: "$courseId",
+                    totalDuration: { $sum: "$duration" },
+                    totalLessons: { $sum: 1 },
+                },
+            },
+        ]);
+
+        if (stats.length > 0) {
+            scarfCourse.totalDuration = stats[0].totalDuration;
+            scarfCourse.totalLessons = stats[0].totalLessons;
+            await scarfCourse.save();
+            console.log('📊 Recalculated and updated Course stats successfully');
+        }
+
+        // 9. Hiển thị thông tin login
         console.log('\n🔑 Login Credentials (Password: 123456):');
         console.log('═══════════════════════════════════════════════════════════');
         console.log('👨‍💼 Admin (Premium):');
@@ -183,6 +337,8 @@ const seedData = async () => {
         console.log('   customer1 (Freemium) - Active');
         console.log('   customer2 (Premium)  - Active');
         console.log('   customer3 (Freemium) - Inactive');
+        console.log('\n⭐ Test Account (Premium):');
+        console.log('   Username: hoangmu | Email: hoangmu@example.com');
         console.log('═══════════════════════════════════════════════════════════');
 
         await mongoose.connection.close();

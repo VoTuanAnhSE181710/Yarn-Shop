@@ -11,7 +11,7 @@ class LessonController {
      */
     create = async (req, res, next) => {
         try {
-            const { id: courseId } = req.params;
+            const { courseId } = req.params;
             const lessonData = req.body;
 
             const lesson = await this.#lessonService.createLesson(courseId, lessonData);
@@ -31,7 +31,7 @@ class LessonController {
      */
     getByCourseId = async (req, res, next) => {
         try {
-            const { id: courseId } = req.params;
+            const { courseId } = req.params;
 
             const lessons = await this.#lessonService.getLessonsByCourseId(courseId);
 
@@ -50,7 +50,7 @@ class LessonController {
      */
     getById = async (req, res, next) => {
         try {
-            const { id: courseId, lessonId } = req.params;
+            const { courseId, lessonId } = req.params;
 
             const lesson = await this.#lessonService.getLessonById(courseId, lessonId);
 
@@ -76,7 +76,7 @@ class LessonController {
      */
     update = async (req, res, next) => {
         try {
-            const { id: courseId, lessonId } = req.params;
+            const { courseId, lessonId } = req.params;
             const updateData = req.body;
 
             const lesson = await this.#lessonService.updateLesson(courseId, lessonId, updateData);
@@ -96,7 +96,7 @@ class LessonController {
      */
     delete = async (req, res, next) => {
         try {
-            const { id: courseId, lessonId } = req.params;
+            const { courseId, lessonId } = req.params;
 
             const result = await this.#lessonService.deleteLesson(courseId, lessonId);
 
