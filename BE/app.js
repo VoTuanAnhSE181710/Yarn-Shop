@@ -10,7 +10,35 @@ configDotenv()
 const app = express();
 // Trust reverse proxies (Render/Cloudflare) so req.secure/req.protocol are accurate
 app.set('trust proxy', 1);
-app.use(cors());
+const corsOptions = {
+  origin: [
+    'https://len-em.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000',
+    'http://localhost:4173',
+  ],
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+  exposedHeaders: ['Content-Length', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
+
+// Handle preflight requests explicitly (required for Private Network Access)
+app.options('*', (req, res) => {
+  const origin = req.headers.origin;
+  if (corsOptions.origin.includes(origin) || corsOptions.origin.includes('*')) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Private-Network', 'true');
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
+    res.setHeader('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
+    res.status(204).end();
+  } else {
+    res.status(204).end();
+  }
+});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
 
