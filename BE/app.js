@@ -25,20 +25,6 @@ const corsOptions = {
 
 app.use(cors(corsOptions));
 
-// Handle preflight requests explicitly (required for Private Network Access)
-app.options('*', (req, res) => {
-  const origin = req.headers.origin;
-  if (corsOptions.origin.includes(origin) || corsOptions.origin.includes('*')) {
-    res.setHeader('Access-Control-Allow-Origin', origin);
-    res.setHeader('Access-Control-Allow-Private-Network', 'true');
-    res.setHeader('Access-Control-Allow-Credentials', 'true');
-    res.setHeader('Access-Control-Allow-Methods', corsOptions.methods.join(', '));
-    res.setHeader('Access-Control-Allow-Headers', corsOptions.allowedHeaders.join(', '));
-    res.status(204).end();
-  } else {
-    res.status(204).end();
-  }
-});
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }))
 
