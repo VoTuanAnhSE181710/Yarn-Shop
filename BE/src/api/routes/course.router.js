@@ -196,7 +196,7 @@ router.get("/courses/:id", async (req, res, next) => {
  *   get:
  *     summary: Get all lessons of a course
  *     description: Get all lessons of a course sorted by order.
- *     tags: [Courses & Lessons]
+ *     tags: [Lessons]
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -220,7 +220,7 @@ router.get("/courses/:courseId/lessons", async (req, res, next) => {
  *     description: |
  *       Get detailed information of a specific lesson.
  *       Authentication is required if the lesson is not marked as preview.
- *     tags: [Courses & Lessons]
+ *     tags: [Lessons]
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -398,7 +398,7 @@ router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
  *   post:
  *     summary: Add a new lesson to a course
  *     description: Create a new lesson within a course. Admin/Instructor only.
- *     tags: [Courses & Lessons]
+ *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -479,7 +479,7 @@ router.post("/admin/courses/:courseId/lessons", authentication, validateData(cre
  *   put:
  *     summary: Update a lesson
  *     description: Update lesson details (video, linkedProducts, linkedCombos, order). Admin/Instructor only.
- *     tags: [Courses & Lessons]
+ *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -558,7 +558,7 @@ router.put("/admin/courses/:courseId/lessons/:lessonId", authentication, validat
  *   delete:
  *     summary: Delete a lesson
  *     description: Delete a lesson from a course. Admin/Instructor only.
- *     tags: [Courses & Lessons]
+ *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:

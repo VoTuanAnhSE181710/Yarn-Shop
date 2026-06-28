@@ -53,7 +53,7 @@ const options = {
                 description: 'Course management endpoints (Public & Admin)'
             },
             {
-                name: 'Courses & Lessons',
+                name: 'Lessons',
                 description: 'Lesson management and course-lesson linkages (Public & Admin)'
             }
         ],
