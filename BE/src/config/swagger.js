@@ -47,6 +47,14 @@ const options = {
             {
                 name: 'Logs',
                 description: 'System activity logs endpoints'
+            },
+            {
+                name: 'Courses',
+                description: 'Course management endpoints (Public & Admin)'
+            },
+            {
+                name: 'Lessons',
+                description: 'Lesson management and course-lesson linkages (Public & Admin)'
             }
         ],
         components: {

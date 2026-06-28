@@ -1,6 +1,6 @@
 import express from 'express';
 import { authentication, validateData } from '../middlewares/middleware.js';
-import { createCourseSchema, updateCourseSchema } from '../../validators/course.validator.js';
+import { createCourseSchema, updateCourseSchema, courseQuerySchema } from '../../validators/course.validator.js';
 import { createLessonSchema, updateLessonSchema } from '../../validators/lesson.validator.js';
 
 const router = express.Router();
@@ -88,6 +88,21 @@ const router = express.Router();
  *                 type: number
  *               thumbnail:
  *                 type: string
+ *         linkedCombos:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               comboId:
+ *                 type: string
+ *               timestamp:
+ *                 type: number
+ *               name:
+ *                 type: string
+ *               price:
+ *                 type: number
+ *               thumbnail:
+ *                 type: string
  *         isPreview:
  *           type: boolean
  *         createdAt:
@@ -99,7 +114,7 @@ const router = express.Router();
  */
 
 /* ============================================================
- * PUBLIC ENDPOINTS  —  Courses + Lessons
+ * PUBLIC COURSE & LESSON ENDPOINTS
  * ============================================================ */
 
 /**
@@ -108,7 +123,7 @@ const router = express.Router();
  *   get:
  *     summary: Get courses list
  *     description: Get paginated list of published courses. Public access.
- *     tags: [Courses & Lessons]
+ *     tags: [Courses]
  *     parameters:
  *       - in: query
  *         name: level
@@ -146,10 +161,10 @@ const router = express.Router();
  *       200:
  *         description: Courses retrieved successfully
  */
-router.get("/", async (req, res, next) => {
+router.get("/courses", validateData(courseQuerySchema, "query"), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.getAll(req, res, next);
-})
+});
 
 /**
  * @swagger
@@ -157,7 +172,7 @@ router.get("/", async (req, res, next) => {
  *   get:
  *     summary: Get course by ID
  *     description: Get detailed course information with lessons list.
- *     tags: [Courses & Lessons]
+ *     tags: [Courses]
  *     parameters:
  *       - in: path
  *         name: id
@@ -170,10 +185,10 @@ router.get("/", async (req, res, next) => {
  *       404:
  *         description: Course not found
  */
-router.get("/:id", async (req, res, next) => {
+router.get("/courses/:id", async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.getById(req, res, next);
-})
+});
 
 /**
  * @swagger
@@ -181,7 +196,7 @@ router.get("/:id", async (req, res, next) => {
  *   get:
  *     summary: Get all lessons of a course
  *     description: Get all lessons of a course sorted by order.
- *     tags: [Courses & Lessons]
+ *     tags: [Lessons]
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -192,10 +207,10 @@ router.get("/:id", async (req, res, next) => {
  *       200:
  *         description: Lessons retrieved successfully
  */
-router.get("/:courseId/lessons", async (req, res, next) => {
+router.get("/courses/:courseId/lessons", async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.getByCourseId(req, res, next);
-})
+});
 
 /**
  * @swagger
@@ -205,7 +220,7 @@ router.get("/:courseId/lessons", async (req, res, next) => {
  *     description: |
  *       Get detailed information of a specific lesson.
  *       Authentication is required if the lesson is not marked as preview.
- *     tags: [Courses & Lessons]
+ *     tags: [Lessons]
  *     parameters:
  *       - in: path
  *         name: courseId
@@ -223,7 +238,7 @@ router.get("/:courseId/lessons", async (req, res, next) => {
  *       401:
  *         description: Authentication required for non-preview lessons
  */
-router.get("/:courseId/lessons/:lessonId", async (req, res, next) => {
+router.get("/courses/:courseId/lessons/:lessonId", async (req, res, next) => {
     // Optional authentication — try to parse token if available
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -239,11 +254,10 @@ router.get("/:courseId/lessons/:lessonId", async (req, res, next) => {
 
     const lessonController = req.container.resolve("lessonController");
     await lessonController.getById(req, res, next);
-})
+});
 
 /* ============================================================
- * ADMIN ENDPOINTS  —  require authentication
- *   Prefix with /admin — easy to identify as admin-only
+ * ADMIN COURSE & LESSON ENDPOINTS
  * ============================================================ */
 
 /**
@@ -252,7 +266,7 @@ router.get("/:courseId/lessons/:lessonId", async (req, res, next) => {
  *   post:
  *     summary: Create a new course
  *     description: Create a new course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -292,10 +306,10 @@ router.get("/:courseId/lessons/:lessonId", async (req, res, next) => {
  *       401:
  *         description: Unauthorized
  */
-router.post("/admin", authentication, validateData(createCourseSchema, "body"), async (req, res, next) => {
+router.post("/admin/courses", authentication, validateData(createCourseSchema, "body"), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.create(req, res, next);
-})
+});
 
 /**
  * @swagger
@@ -303,7 +317,7 @@ router.post("/admin", authentication, validateData(createCourseSchema, "body"), 
  *   put:
  *     summary: Update a course / publish
  *     description: Update course information or publish it. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -345,10 +359,10 @@ router.post("/admin", authentication, validateData(createCourseSchema, "body"), 
  *       404:
  *         description: Course not found
  */
-router.put("/admin/:id", authentication, validateData(updateCourseSchema, "body"), async (req, res, next) => {
+router.put("/admin/courses/:id", authentication, validateData(updateCourseSchema, "body"), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.update(req, res, next);
-})
+});
 
 /**
  * @swagger
@@ -356,7 +370,7 @@ router.put("/admin/:id", authentication, validateData(updateCourseSchema, "body"
  *   delete:
  *     summary: Delete / hide a course
  *     description: Soft delete a course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -373,10 +387,10 @@ router.put("/admin/:id", authentication, validateData(updateCourseSchema, "body"
  *       404:
  *         description: Course not found
  */
-router.delete("/admin/:id", authentication, async (req, res, next) => {
+router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.delete(req, res, next);
-})
+});
 
 /**
  * @swagger
@@ -384,7 +398,7 @@ router.delete("/admin/:id", authentication, async (req, res, next) => {
  *   post:
  *     summary: Add a new lesson to a course
  *     description: Create a new lesson within a course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -427,6 +441,21 @@ router.delete("/admin/:id", authentication, async (req, res, next) => {
  *                       type: number
  *                     thumbnail:
  *                       type: string
+ *               linkedCombos:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     comboId:
+ *                       type: string
+ *                     timestamp:
+ *                       type: number
+ *                     name:
+ *                       type: string
+ *                     price:
+ *                       type: number
+ *                     thumbnail:
+ *                       type: string
  *               isPreview:
  *                 type: boolean
  *     responses:
@@ -439,18 +468,18 @@ router.delete("/admin/:id", authentication, async (req, res, next) => {
  *       404:
  *         description: Course not found
  */
-router.post("/admin/:courseId/lessons", authentication, validateData(createLessonSchema, "body"), async (req, res, next) => {
+router.post("/admin/courses/:courseId/lessons", authentication, validateData(createLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.create(req, res, next);
-})
+});
 
 /**
  * @swagger
  * /admin/courses/{courseId}/lessons/{lessonId}:
  *   put:
  *     summary: Update a lesson
- *     description: Update lesson details (video, linkedProducts, order). Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     description: Update lesson details (video, linkedProducts, linkedCombos, order). Admin/Instructor only.
+ *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -493,6 +522,21 @@ router.post("/admin/:courseId/lessons", authentication, validateData(createLesso
  *                       type: number
  *                     thumbnail:
  *                       type: string
+ *               linkedCombos:
+ *                 type: array
+ *                 items:
+ *                   type: object
+ *                   properties:
+ *                     comboId:
+ *                       type: string
+ *                     timestamp:
+ *                       type: number
+ *                     name:
+ *                       type: string
+ *                     price:
+ *                       type: number
+ *                     thumbnail:
+ *                       type: string
  *               isPreview:
  *                 type: boolean
  *     responses:
@@ -503,10 +547,10 @@ router.post("/admin/:courseId/lessons", authentication, validateData(createLesso
  *       404:
  *         description: Lesson not found
  */
-router.put("/admin/:courseId/lessons/:lessonId", authentication, validateData(updateLessonSchema, "body"), async (req, res, next) => {
+router.put("/admin/courses/:courseId/lessons/:lessonId", authentication, validateData(updateLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.update(req, res, next);
-})
+});
 
 /**
  * @swagger
@@ -514,7 +558,7 @@ router.put("/admin/:courseId/lessons/:lessonId", authentication, validateData(up
  *   delete:
  *     summary: Delete a lesson
  *     description: Delete a lesson from a course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -536,9 +580,9 @@ router.put("/admin/:courseId/lessons/:lessonId", authentication, validateData(up
  *       404:
  *         description: Lesson not found
  */
-router.delete("/admin/:courseId/lessons/:lessonId", authentication, async (req, res, next) => {
+router.delete("/admin/courses/:courseId/lessons/:lessonId", authentication, async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.delete(req, res, next);
-})
+});
 
 export default router;

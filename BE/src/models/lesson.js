@@ -25,6 +25,31 @@ const linkedProductSchema = new mongoose.Schema({
     }
 }, { _id: false });
 
+const linkedComboSchema = new mongoose.Schema({
+    comboId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Kit",
+        required: true,
+    },
+    timestamp: {
+        type: Number,
+        required: [true, "Timestamp is required!"],
+    },
+    name: {
+        type: String,
+        required: [true, "Name is required!"],
+        trim: true,
+    },
+    price: {
+        type: Number,
+        required: [true, "Price is required!"],
+    },
+    thumbnail: {
+        type: String,
+        required: [true, "Thumbnail is required!"],
+    }
+}, { _id: false });
+
 const lessonSchema = new mongoose.Schema({
     courseId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -49,6 +74,7 @@ const lessonSchema = new mongoose.Schema({
         required: [true, "Duration is required!"],
     },
     linkedProducts: [linkedProductSchema],
+    linkedCombos: [linkedComboSchema],
     isPreview: {
         type: Boolean,
         default: false,

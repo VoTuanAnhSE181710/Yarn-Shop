@@ -23,7 +23,6 @@ import permissionRouter from "./src/api/routes/permission.router.js"
 import roleRouter from "./src/api/routes/role.router.js"
 import mailRouter from "./src/api/routes/mail.router.js"
 import logRouter from "./src/api/routes/log.router.js"
-import videoRouter from "./src/api/routes/video.router.js"
 import categoryRouter from "./src/api/routes/category.router.js"
 import kitRouter from "./src/api/routes/kit.router.js"
 import adminKitRouter from "./src/api/routes/admin.kit.router.js"
@@ -52,14 +51,12 @@ app.use(`${url}/permissions`, permissionRouter)
 app.use(`${url}/roles`, roleRouter)
 app.use(`${url}/mail`, mailRouter)
 app.use(`${url}/logs`, logRouter)
-app.use(`${url}/videos`, videoRouter)
 app.use(`${url}/categories`, categoryRouter)
 app.use(`${url}/kits`, kitRouter)
 app.use(`${url}/admin/kits`, adminKitRouter)
 app.use(`/api/customers`, customerRouter)
 app.use(`/api/admin/customers`, adminCustomerRouter)
-app.use(`${url}/courses`, courseRouter)
-app.use(`${url}/admin/courses`, courseRouter)
+app.use(`${url}`, courseRouter)
 app.use(`${url}/payment`, paymentRouter)
 app.use(`${url}/orders`, orderRouter)
 

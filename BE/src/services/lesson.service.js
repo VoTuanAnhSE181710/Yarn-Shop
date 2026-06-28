@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { Lesson, Course } from "../models/Model.js";
 
 class LessonService {
@@ -15,7 +16,7 @@ class LessonService {
      */
     #recalculateCourseStats = async (courseId) => {
         const stats = await this.#lessonModel.aggregate([
-            { $match: { courseId: courseId } },
+            { $match: { courseId: new mongoose.Types.ObjectId(courseId) } },
             {
                 $group: {
                     _id: "$courseId",
