@@ -123,7 +123,7 @@ const router = express.Router();
  *   get:
  *     summary: Get courses list
  *     description: Get paginated list of published courses. Public access.
- *     tags: [Courses & Lessons]
+ *     tags: [Courses]
  *     parameters:
  *       - in: query
  *         name: level
@@ -172,7 +172,7 @@ router.get("/courses", validateData(courseQuerySchema, "query"), async (req, res
  *   get:
  *     summary: Get course by ID
  *     description: Get detailed course information with lessons list.
- *     tags: [Courses & Lessons]
+ *     tags: [Courses]
  *     parameters:
  *       - in: path
  *         name: id
@@ -266,7 +266,7 @@ router.get("/courses/:courseId/lessons/:lessonId", async (req, res, next) => {
  *   post:
  *     summary: Create a new course
  *     description: Create a new course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -317,7 +317,7 @@ router.post("/admin/courses", authentication, validateData(createCourseSchema, "
  *   put:
  *     summary: Update a course / publish
  *     description: Update course information or publish it. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -370,7 +370,7 @@ router.put("/admin/courses/:id", authentication, validateData(updateCourseSchema
  *   delete:
  *     summary: Delete / hide a course
  *     description: Soft delete a course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -398,7 +398,7 @@ router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
  *   post:
  *     summary: Add a new lesson to a course
  *     description: Create a new lesson within a course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses & Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -479,7 +479,7 @@ router.post("/admin/courses/:courseId/lessons", authentication, validateData(cre
  *   put:
  *     summary: Update a lesson
  *     description: Update lesson details (video, linkedProducts, linkedCombos, order). Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses & Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -558,7 +558,7 @@ router.put("/admin/courses/:courseId/lessons/:lessonId", authentication, validat
  *   delete:
  *     summary: Delete a lesson
  *     description: Delete a lesson from a course. Admin/Instructor only.
- *     tags: [Courses & Lessons Admin]
+ *     tags: [Courses & Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
