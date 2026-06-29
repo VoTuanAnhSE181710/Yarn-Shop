@@ -12,10 +12,6 @@ const uri = configDB.uri;
  * 
  * Lưu ý: Script này không xóa permissions cũ, chỉ thêm mới các permissions chưa có
  * 
- * Các permissions đã có trong DB (không thêm):
- * - 11 permissions với action "manage" cho các resources
- * - Update User
- * 
  * Usage: node src/scripts/seedPermissions.js
  */
 const seedPermissions = async () => {
@@ -144,6 +140,38 @@ const seedPermissions = async () => {
                 resource: "Mail",
                 action: "read",
                 description: "Permission to verify OTP codes"
+            },
+
+            // ===== VIDEO PERMISSIONS =====
+            {
+                name: "Create Video",
+                resource: "Video",
+                action: "create",
+                description: "Permission to upload/create new videos"
+            },
+            {
+                name: "Read Video",
+                resource: "Video",
+                action: "read",
+                description: "Permission to view video information and list videos"
+            },
+            {
+                name: "Update Video",
+                resource: "Video",
+                action: "update",
+                description: "Permission to update video metadata"
+            },
+            {
+                name: "Delete Video",
+                resource: "Video",
+                action: "delete",
+                description: "Permission to delete videos"
+            },
+            {
+                name: "Manage Video",
+                resource: "Video",
+                action: "manage",
+                description: "Full management access to all videos (Admin/Staff)"
             }
         ];
 
