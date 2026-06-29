@@ -23,7 +23,13 @@ const router = express.Router();
  *         - color
  *         - hexCode
  *         - price
+ *         - image
  *       properties:
+ *         _idVariants:
+ *           type: string
+ *           description: Auto-generated variant id (placed first in response)
+ *         image:
+ *           type: string
  *         color:
  *           type: string
  *         hexCode:
@@ -47,10 +53,6 @@ const router = express.Router();
  *           enum: [yarn, hook, kit, accessory, tool]
  *         image:
  *           type: string
- *         images:
- *           type: array
- *           items:
- *             type: string
  *         tags:
  *           type: array
  *           items:
@@ -158,10 +160,6 @@ router.get(
  *                 enum: [yarn, hook, kit, accessory, tool]
  *               image:
  *                 type: string
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
  *               tags:
  *                 type: array
  *                 items:
@@ -171,7 +169,7 @@ router.get(
  *                 minItems: 1
  *                 items:
  *                   type: object
- *                   required: [color, hexCode, price]
+ *                   required: [color, hexCode, price, image]
  *                   properties:
  *                     color:
  *                       type: string
@@ -181,6 +179,8 @@ router.get(
  *                       type: number
  *                     stock:
  *                       type: number
+ *                     image:
+ *                       type: string
  *               isActive:
  *                 type: boolean
  *     responses:
@@ -266,10 +266,6 @@ router.get(
  *                 enum: [yarn, hook, kit, accessory, tool]
  *               image:
  *                 type: string
- *               images:
- *                 type: array
- *                 items:
- *                   type: string
  *               tags:
  *                 type: array
  *                 items:
