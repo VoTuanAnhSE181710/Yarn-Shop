@@ -1,4 +1,5 @@
 import { Video } from "../models/Model.js";
+import { NotFoundError, ForbiddenError, BadRequestError, ConflictError } from "../error/error.js";
 
 class VideoService {
     #videoModel
@@ -8,75 +9,97 @@ class VideoService {
     }
 
     /**
-     * Create a video
-     * @param {Object} param
-     * @param {string} param.title
-     * @param {string} param.description
-     * @param {"community"|"premium"} param.type
-     * @param {string} param.url
-     * @param {Object} param.thumbnail
-     * @param {number} param.duration
-     * @param {string} param.category - Category ObjectId
-     * @param {string[]} param.tags
-     * @param {string} param.uploader - User ObjectId
+     * Check if user is owner of the video
      */
-    createVideo = async ({ title, description, type, url, thumbnail, duration, category, tags, uploader }) => {
-        const video = await this.#videoModel.create({
-            title,
-            description: description || "",
-            type,
-            url,
-            thumbnail: thumbnail || { url: null, publicId: null },
-            duration: duration || 0,
-            category: category || null,
-            tags: tags || [],
-            uploader,
-        });
-
-        return video;
+    #isOwner = (video, userId) => {
+        return video.uploaderUId.toString() === userId;
     }
 
     /**
-     * Get videos with filtering, pagination, sorting
-     * @param {Object} param
-     * @param {"community"|"premium"} [param.type]
-     * @param {string} [param.category]
-     * @param {string} [param.search]
-     * @param {number} [param.page=1]
-     * @param {number} [param.limit=20]
-     * @param {"newest"|"oldest"|"most_viewed"} [param.sort="newest"]
+     * 1. Lấy Presigned Upload URL
+     * POST /api/videos/upload-url
      */
-    getVideos = async ({ type, category, search, page = 1, limit = 20, sort = "newest" }) => {
-        const query = { isActive: true, status: "APPROVED" };
-
-        if (type) query.type = type;
-        if (category) query.category = category;
-        if (search) {
-            query.$text = { $search: search };
+    getUploadUrl = async ({ filename, mimeType, size, title, description, visibility, uploaderUId }) => {
+        // Validate mimeType
+        if (!mimeType || !mimeType.startsWith("video/")) {
+            throw new BadRequestError("Invalid mimeType. Only video/* types are accepted.");
         }
 
-        let sortOption = {};
-        switch (sort) {
-            case "newest":
-                sortOption = { createdAt: -1 };
-                break;
-            case "oldest":
-                sortOption = { createdAt: 1 };
-                break;
-            case "most_viewed":
-                sortOption = { viewCount: -1 };
-                break;
-            default:
-                sortOption = { createdAt: -1 };
+        // Validate size (max 5GB)
+        const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+        if (size > MAX_SIZE) {
+            throw new BadRequestError("File size exceeds the maximum limit of 5GB.");
         }
+
+        // Create video record with status "uploading"
+        const video = await this.#videoModel.create({
+            uploaderUId,
+            title,
+            description: description || "",
+            mimeType,
+            size,
+            visibility: visibility || "private",
+            status: "uploading",
+            tags: [],
+        });
+
+        // In production, generate a real presigned URL from S3/Cloudinary here
+        const uploadUrl = `https://storage.example.com/upload/${video._id}`;
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString(); // 1 hour
+
+        return {
+            videoId: video._id,
+            uploadUrl,
+            expiresAt,
+        };
+    }
+
+    /**
+     * 2. Xác nhận Upload hoàn tất
+     * POST /api/videos/:videoId/confirm
+     */
+    confirmUpload = async (videoId, { duration }, userId) => {
+        const video = await this.#videoModel.findById(videoId);
+
+        if (!video) {
+            throw new NotFoundError("Video not found");
+        }
+
+        // Only owner can confirm
+        if (!this.#isOwner(video, userId)) {
+            throw new ForbiddenError("You do not have permission to confirm this upload");
+        }
+
+        // Update video status to processing
+        video.status = "processing";
+        video.duration = duration || 0;
+        await video.save();
+
+        return {
+            id: video._id,
+            status: video.status,
+            title: video.title,
+            videoUrl: video.videoUrl,
+            createdAt: video.createdAt,
+        };
+    }
+
+    /**
+     * 3. Lấy danh sách video của current user
+     * GET /api/videos
+     */
+    getMyVideos = async (uploaderUId, { status, visibility, page = 1, limit = 20 }) => {
+        const query = { uploaderUId };
+
+        if (status) query.status = status;
+        if (visibility) query.visibility = visibility;
 
         const skip = (page - 1) * limit;
 
         const [videos, total] = await Promise.all([
             this.#videoModel.find(query)
-                .populate("uploader", "username fullName avatar")
-                .populate("category", "name slug")
-                .sort(sortOption)
+                .select("title thumbnailUrl duration status visibility viewCount createdAt")
+                .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean(),
@@ -84,111 +107,177 @@ class VideoService {
         ]);
 
         return {
-            videos,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-            },
+            data: videos,
+            total,
+            page,
+            limit,
         };
     }
 
     /**
-     * Get single video by ID
-     * @param {string} id
+     * 4. Xem danh sách video (Admin / Staff)
+     * GET /api/admin/videos
      */
-    getVideoById = async (id) => {
-        const video = await this.#videoModel.findById(id)
-            .populate("uploader", "username fullName avatar")
-            .populate("category", "name slug");
+    getAllVideos = async ({ uploaderId, status, visibility, page = 1, limit = 20 }) => {
+        const query = {};
 
-        if (!video) {
-            const error = new Error("Video not found");
-            error.statusCode = 404;
-            throw error;
-        }
+        if (uploaderId) query.uploaderUId = uploaderId;
+        if (status) query.status = status;
+        if (visibility) query.visibility = visibility;
 
-        // Increment view count
-        await this.#videoModel.findByIdAndUpdate(id, { $inc: { viewCount: 1 } });
-
-        return video;
-    }
-
-    /**
-     * Update video
-     * @param {string} id
-     * @param {Object} updateData
-     * @param {string} userId - requesting user id
-     */
-    updateVideo = async (id, updateData, userId) => {
-        const video = await this.#videoModel.findById(id);
-
-        if (!video) {
-            const error = new Error("Video not found");
-            error.statusCode = 404;
-            throw error;
-        }
-
-        // Only uploader or staff can update
-        if (video.uploader.toString() !== userId) {
-            // Check if user is staff via role - will be validated at controller level
-        }
-
-        Object.assign(video, updateData);
-        await video.save();
-
-        return video;
-    }
-
-    /**
-     * Delete video (soft delete)
-     * @param {string} id
-     * @param {string} userId
-     */
-    deleteVideo = async (id, userId) => {
-        const video = await this.#videoModel.findById(id);
-
-        if (!video) {
-            const error = new Error("Video not found");
-            error.statusCode = 404;
-            throw error;
-        }
-
-        video.isActive = false;
-        await video.save();
-
-        return { message: "Video deleted successfully" };
-    }
-
-    /**
-     * Get my uploaded videos
-     * @param {string} uploaderId
-     * @param {number} page
-     * @param {number} limit
-     */
-    getMyVideos = async (uploaderId, page = 1, limit = 20) => {
         const skip = (page - 1) * limit;
 
         const [videos, total] = await Promise.all([
-            this.#videoModel.find({ uploader: uploaderId })
-                .populate("category", "name slug")
+            this.#videoModel.find(query)
+                .populate("uploaderUId", "username fullName email")
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
                 .lean(),
-            this.#videoModel.countDocuments({ uploader: uploaderId }),
+            this.#videoModel.countDocuments(query),
         ]);
 
         return {
-            videos,
-            pagination: {
-                page,
-                limit,
-                total,
-                totalPages: Math.ceil(total / limit),
-            },
+            data: videos,
+            total,
+            page,
+            limit,
         };
+    }
+
+    /**
+     * 5. Chi tiết video
+     * GET /api/videos/:videoId
+     * - Public video: anyone can view
+     * - Private/unlisted: only owner or user with "manage" permission
+     */
+    getVideoById = async (videoId, userId, hasManagePermission) => {
+        const video = await this.#videoModel.findById(videoId)
+            .populate("uploaderUId", "username fullName avatar");
+
+        if (!video) {
+            throw new NotFoundError("Video not found");
+        }
+
+        // Public videos: anyone can view
+        if (video.visibility === "public") {
+            // Increment view count
+            await this.#videoModel.findByIdAndUpdate(videoId, { $inc: { viewCount: 1 } });
+            return video;
+        }
+
+        // Private/unlisted: only owner or user with manage permission
+        if (this.#isOwner(video, userId) || hasManagePermission) {
+            // Increment view count
+            await this.#videoModel.findByIdAndUpdate(videoId, { $inc: { viewCount: 1 } });
+            return video;
+        }
+
+        throw new ForbiddenError("You do not have permission to view this video");
+    }
+
+    /**
+     * 6. Cập nhật video
+     * PUT /api/videos/:videoId
+     * - Owner can update their own video
+     * - User with "manage" permission can update any video
+     */
+    updateVideo = async (videoId, updateData, userId, hasManagePermission) => {
+        const video = await this.#videoModel.findById(videoId);
+
+        if (!video) {
+            throw new NotFoundError("Video not found");
+        }
+
+        // Check permission: owner OR has manage permission
+        if (!this.#isOwner(video, userId) && !hasManagePermission) {
+            throw new ForbiddenError("You do not have permission to modify this video");
+        }
+
+        // Cannot update if video is not in "ready" status (unless has manage permission)
+        if (video.status !== "ready" && !hasManagePermission) {
+            throw new BadRequestError("Video is not ready yet. Cannot update metadata while processing.");
+        }
+
+        // Allowed fields for update
+        const allowedFields = ["title", "description", "visibility", "tags", "linkedLessonId"];
+        for (const field of allowedFields) {
+            if (updateData[field] !== undefined) {
+                video[field] = updateData[field];
+            }
+        }
+
+        await video.save();
+        return video;
+    }
+
+    /**
+     * 7. Thay thế file video (re-upload)
+     * POST /api/videos/:videoId/replace
+     */
+    replaceVideo = async (videoId, { filename, mimeType, size }, userId, hasManagePermission) => {
+        const video = await this.#videoModel.findById(videoId);
+
+        if (!video) {
+            throw new NotFoundError("Video not found");
+        }
+
+        // Check permission: owner OR has manage permission
+        if (!this.#isOwner(video, userId) && !hasManagePermission) {
+            throw new ForbiddenError("You do not have permission to modify this video");
+        }
+
+        // Validate mimeType
+        if (!mimeType || !mimeType.startsWith("video/")) {
+            throw new BadRequestError("Invalid mimeType. Only video/* types are accepted.");
+        }
+
+        // Validate size (max 5GB)
+        const MAX_SIZE = 5 * 1024 * 1024 * 1024; // 5GB
+        if (size > MAX_SIZE) {
+            throw new BadRequestError("File size exceeds the maximum limit of 5GB.");
+        }
+
+        // Reset video status to uploading
+        video.status = "uploading";
+        video.mimeType = mimeType;
+        video.size = size;
+        video.videoUrl = null;
+        await video.save();
+
+        const uploadUrl = `https://storage.example.com/upload/${video._id}`;
+        const expiresAt = new Date(Date.now() + 60 * 60 * 1000).toISOString();
+
+        return {
+            uploadUrl,
+            expiresAt,
+        };
+    }
+
+    /**
+     * 8. Xoá video
+     * DELETE /api/videos/:videoId
+     */
+    deleteVideo = async (videoId, userId, hasManagePermission) => {
+        const video = await this.#videoModel.findById(videoId);
+
+        if (!video) {
+            throw new NotFoundError("Video not found");
+        }
+
+        // Check permission: owner OR has manage permission
+        if (!this.#isOwner(video, userId) && !hasManagePermission) {
+            throw new ForbiddenError("You do not have permission to delete this video");
+        }
+
+        // Check if video is linked to a lesson
+        if (video.linkedLessonId) {
+            throw new ConflictError("Video is currently linked to a lesson. Please unlink it first.");
+        }
+
+        await this.#videoModel.findByIdAndDelete(videoId);
+
+        return { message: "Video đã được xoá thành công." };
     }
 }
 

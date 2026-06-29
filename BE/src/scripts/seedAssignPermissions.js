@@ -10,8 +10,8 @@ const uri = configDB.uri;
 
 /**
  * Assign ALL permissions to Admin role
- * Assign read-only permissions to Staff role
- * Assign Order permissions to Customer role (create + read)
+ * Assign read + manage permissions to Staff role
+ * Assign CRUD permissions to Customer role (but only for their own data - enforced at service layer)
  * 
  * Usage: node src/scripts/seedAssignPermissions.js
  */
@@ -44,36 +44,45 @@ const seedAssignPermissions = async () => {
             console.log('❌ Admin role not found');
         }
 
-        // 2. Assign read permissions to Staff
-        const readPermissionIds = allPermissions
+        // 2. Assign read + manage permissions to Staff
+        const staffPermissionIds = allPermissions
             .filter(p => p.action === 'read' || p.action === 'manage')
             .map(p => p._id);
 
         const staffRole = await Role.findOneAndUpdate(
             { roleName: "Staff" },
-            { permission: readPermissionIds },
+            { permission: staffPermissionIds },
             { returnDocument: 'after' }
         );
 
         if (staffRole) {
-            console.log(`✅ Staff role: assigned ${readPermissionIds.length} permissions (read + manage)`);
+            console.log(`✅ Staff role: assigned ${staffPermissionIds.length} permissions (read + manage)`);
         } else {
             console.log('❌ Staff role not found');
         }
 
-        // 3. Assign Create Order + Read Order to Customer (để đặt hàng & xem đơn)
-        const customerOrderPermissionIds = allPermissions
-            .filter(p => p.resource === 'Order' && (p.action === 'create' || p.action === 'read'))
+        // 3. Assign CRUD permissions to Customer (create, read, update, delete)
+        // Service layer will enforce that Customer can only CRUD their own videos
+        const customerPermissionIds = allPermissions
+            .filter(p => {
+                // Order: create + read
+                if (p.resource === 'Order' && (p.action === 'create' || p.action === 'read')) return true;
+                // Video: create + read + update + delete (but NOT manage)
+                if (p.resource === 'Video' && ['create', 'read', 'update', 'delete'].includes(p.action)) return true;
+                // Mail: create + read
+                if (p.resource === 'Mail' && (p.action === 'create' || p.action === 'read')) return true;
+                return false;
+            })
             .map(p => p._id);
 
         const customerRole = await Role.findOneAndUpdate(
             { roleName: "Customer" },
-            { permission: customerOrderPermissionIds },
+            { permission: customerPermissionIds },
             { returnDocument: 'after' }
         );
 
         if (customerRole) {
-            console.log(`✅ Customer role: assigned ${customerOrderPermissionIds.length} permissions (Create Order + Read Order)`);
+            console.log(`✅ Customer role: assigned ${customerPermissionIds.length} permissions (Order CRUD + Video CRUD + Mail)`);
         } else {
             console.log('❌ Customer role not found');
         }

@@ -125,3 +125,34 @@ export const checkPermission = (resource, action) => async (req, res, next) => {
         next(error);
     }
 }
+
+/**
+ * Middleware to check if user has "manage" permission for a resource
+ * Sets req.manageVideoPermission = true/false without blocking the request
+ * Used for video routes where owner can also perform actions
+ */
+export const checkManagePermission = (resource) => async (req, res, next) => {
+    try {
+        if (!req.user || !req.user.roleId) {
+            req.manageVideoPermission = false;
+            return next();
+        }
+
+        const role = await Role.findById(req.user.roleId).populate('permission');
+
+        if (!role) {
+            req.manageVideoPermission = false;
+            return next();
+        }
+
+        const hasManage = role.permission.some(p =>
+            p.resource === resource && p.action === "manage"
+        );
+
+        req.manageVideoPermission = hasManage;
+        next();
+    } catch (error) {
+        req.manageVideoPermission = false;
+        next();
+    }
+}

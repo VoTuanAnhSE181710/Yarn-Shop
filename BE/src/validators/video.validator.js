@@ -1,34 +1,39 @@
 import Joi from "joi";
 
-export const createVideoSchema = Joi.object({
+export const getUploadUrlSchema = Joi.object({
+    filename: Joi.string().required().trim().messages({
+        "string.empty": "Filename is required",
+        "any.required": "Filename is required",
+    }),
+    mimeType: Joi.string().required().pattern(/^video\//).messages({
+        "string.empty": "MIME type is required",
+        "string.pattern.base": "MIME type must be a video type (e.g., video/mp4)",
+        "any.required": "MIME type is required",
+    }),
+    size: Joi.number().required().min(1).max(5 * 1024 * 1024 * 1024).messages({
+        "number.base": "Size must be a number",
+        "number.min": "Size must be greater than 0",
+        "number.max": "Size must not exceed 5GB",
+        "any.required": "Size is required",
+    }),
     title: Joi.string().required().trim().min(1).max(200).messages({
         "string.empty": "Video title is required",
         "string.min": "Video title must be at least 1 character",
         "string.max": "Video title must not exceed 200 characters",
+        "any.required": "Video title is required",
     }),
     description: Joi.string().allow("").max(2000).messages({
         "string.max": "Description must not exceed 2000 characters",
     }),
-    type: Joi.string().valid("community", "premium").required().messages({
-        "any.only": "Video type must be 'community' or 'premium'",
-        "any.required": "Video type is required",
+    visibility: Joi.string().valid("public", "private", "unlisted").default("private").messages({
+        "any.only": "Visibility must be 'public', 'private', or 'unlisted'",
     }),
-    url: Joi.string().required().uri().messages({
-        "string.empty": "Video URL is required",
-        "string.uri": "Video URL must be a valid URI",
-    }),
-    thumbnail: Joi.object({
-        url: Joi.string().uri().allow(null).default(null),
-        publicId: Joi.string().allow(null).default(null),
-    }).optional(),
+});
+
+export const confirmUploadSchema = Joi.object({
     duration: Joi.number().min(0).default(0).messages({
         "number.min": "Duration must be a positive number",
     }),
-    category: Joi.string().hex().length(24).allow(null).messages({
-        "string.hex": "Category must be a valid ObjectId",
-        "string.length": "Category must be a valid ObjectId",
-    }),
-    tags: Joi.array().items(Joi.string().trim()).optional(),
 });
 
 export const updateVideoSchema = Joi.object({
@@ -37,22 +42,45 @@ export const updateVideoSchema = Joi.object({
         "string.max": "Video title must not exceed 200 characters",
     }),
     description: Joi.string().allow("").max(2000),
-    thumbnail: Joi.object({
-        url: Joi.string().uri().allow(null),
-        publicId: Joi.string().allow(null),
-    }).optional(),
-    duration: Joi.number().min(0),
-    category: Joi.string().hex().length(24).allow(null),
+    visibility: Joi.string().valid("public", "private", "unlisted").messages({
+        "any.only": "Visibility must be 'public', 'private', or 'unlisted'",
+    }),
     tags: Joi.array().items(Joi.string().trim()).optional(),
-    isActive: Joi.boolean(),
-    status: Joi.string().valid("PENDING", "APPROVED", "REJECTED"),
+    linkedLessonId: Joi.string().hex().length(24).allow(null).messages({
+        "string.hex": "linkedLessonId must be a valid ObjectId",
+        "string.length": "linkedLessonId must be a valid ObjectId",
+    }),
+});
+
+export const replaceVideoSchema = Joi.object({
+    filename: Joi.string().required().trim().messages({
+        "string.empty": "Filename is required",
+        "any.required": "Filename is required",
+    }),
+    mimeType: Joi.string().required().pattern(/^video\//).messages({
+        "string.empty": "MIME type is required",
+        "string.pattern.base": "MIME type must be a video type (e.g., video/mp4)",
+        "any.required": "MIME type is required",
+    }),
+    size: Joi.number().required().min(1).max(5 * 1024 * 1024 * 1024).messages({
+        "number.base": "Size must be a number",
+        "number.min": "Size must be greater than 0",
+        "number.max": "Size must not exceed 5GB",
+        "any.required": "Size is required",
+    }),
 });
 
 export const videoQuerySchema = Joi.object({
-    type: Joi.string().valid("community", "premium"),
-    category: Joi.string().hex().length(24),
-    search: Joi.string().trim(),
+    status: Joi.string().valid("uploading", "processing", "ready", "failed"),
+    visibility: Joi.string().valid("public", "private", "unlisted"),
     page: Joi.number().min(1).default(1),
     limit: Joi.number().min(1).max(100).default(20),
-    sort: Joi.string().valid("newest", "oldest", "most_viewed").default("newest"),
+});
+
+export const adminVideoQuerySchema = Joi.object({
+    uploaderId: Joi.string().hex().length(24),
+    status: Joi.string().valid("uploading", "processing", "ready", "failed"),
+    visibility: Joi.string().valid("public", "private", "unlisted"),
+    page: Joi.number().min(1).default(1),
+    limit: Joi.number().min(1).max(100).default(20),
 });

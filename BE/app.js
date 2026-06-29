@@ -46,6 +46,8 @@ import courseRouter from "./src/api/routes/course.router.js";
 import paymentRouter from "./src/api/routes/payment.router.js";
 import orderRouter from "./src/api/routes/order.router.js";
 import productRouter from "./src/api/routes/product.router.js";
+import videoRouter from "./src/api/routes/video.router.js";
+import adminVideoRouter from "./src/api/routes/admin.video.router.js";
 
 app.get("/", (req, res) => {
   res.send(`Hello World!`);
@@ -80,6 +82,8 @@ app.use(`${url}/admin/courses`, courseRouter);
 app.use(`${url}/payment`, paymentRouter);
 app.use(`${url}/orders`, orderRouter);
 app.use(`${url}/products`, productRouter);
+app.use(`${url}/videos`, videoRouter);
+app.use(`${url}/admin/videos`, adminVideoRouter);
 
 app.use(handleError);
 
