@@ -24,6 +24,11 @@ const corsOptions = {
   exposedHeaders: ["Content-Length", "X-Requested-With"],
 };
 
+// CORS MUST be the very first middleware so OPTIONS preflight requests
+// are short-circuited (with proper CORS headers) BEFORE they hit the
+// authentication middleware. Otherwise the browser's preflight fails
+// silently and the actual request is sent without the Authorization
+// header, causing "Header is not containing information".
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -73,8 +78,8 @@ app.use(`${url}/logs`, logRouter);
 app.use(`${url}/categories`, categoryRouter);
 app.use(`${url}/kits`, kitRouter);
 app.use(`${url}/admin/kits`, adminKitRouter);
-app.use(`/api/customers`, customerRouter);
-app.use(`/api/admin/customers`, adminCustomerRouter);
+app.use(`${url}/customers`, customerRouter);
+app.use(`${url}/admin/customers`, adminCustomerRouter);
 app.use(`${url}/courses`, courseRouter);
 app.use(`${url}/admin/courses`, courseRouter);
 app.use(`${url}/payment`, paymentRouter);

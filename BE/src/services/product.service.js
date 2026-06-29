@@ -7,8 +7,38 @@ export default class ProductService {
     this.#productRepository = productRepository;
   }
 
+  /**
+   * Normalize incoming product data:
+   *  - Strip the legacy top-level `images` field when an `image` is also
+   *    provided (i.e. when both exist, the `images` array is considered
+   *    redundant and is removed to avoid duplicates).
+   *  - Always strip the `images` field on the way to the database; the
+   *    canonical picture for a product is its `image` (and each variant's
+   *    own `image` field).
+   */
+  #normalizeProductData(data) {
+    if (!data || typeof data !== "object") return data;
+
+    // If a single `image` is provided we drop the `images` array entirely
+    if (Object.prototype.hasOwnProperty.call(data, "images")) {
+      if (data.image) {
+        delete data.images;
+      } else if (Array.isArray(data.images) && data.images.length === 1) {
+        // If there's no `image` but exactly one entry in `images`, promote it
+        data.image = data.images[0];
+        delete data.images;
+      } else {
+        // Otherwise keep nothing; the variant-level images are enough
+        delete data.images;
+      }
+    }
+
+    return data;
+  }
+
   async createProduct(data) {
-    return this.#productRepository.create(data);
+    const normalized = this.#normalizeProductData({ ...data });
+    return this.#productRepository.create(normalized);
   }
 
   async getProducts({
@@ -56,12 +86,18 @@ export default class ProductService {
         break;
     }
 
-    return this.#productRepository.findAll({
+    const result = await this.#productRepository.findAll({
       filter,
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 20,
       sort: sortOption,
     });
+
+    // `.lean()` in the repository returns plain objects; shape them so the
+    // client gets the same `_idVariants` / `_id` / `id` shape as a fresh doc.
+    result.products = (result.products || []).map(shapeProductForResponse);
+
+    return result;
   }
 
   async getProductById(id) {
@@ -69,7 +105,7 @@ export default class ProductService {
     if (!product) {
       throw new NotFoundError("Product not found");
     }
-    return product;
+    return shapeProductForResponse(product);
   }
 
   async updateProduct(id, updateData) {
@@ -77,11 +113,12 @@ export default class ProductService {
       throw new BadRequestError("Update data must not be empty");
     }
 
-    const product = await this.#productRepository.update(id, updateData);
+    const normalized = this.#normalizeProductData({ ...updateData });
+    const product = await this.#productRepository.update(id, normalized);
     if (!product) {
       throw new NotFoundError("Product not found");
     }
-    return product;
+    return shapeProductForResponse(product);
   }
 
   async deleteProduct(id) {
@@ -89,7 +126,7 @@ export default class ProductService {
     if (!product) {
       throw new NotFoundError("Product not found");
     }
-    return product;
+    return shapeProductForResponse(product);
   }
 
   async restoreProduct(id) {
@@ -97,6 +134,6 @@ export default class ProductService {
     if (!product) {
       throw new NotFoundError("Product not found");
     }
-    return product;
+    return shapeProductForResponse(product);
   }
 }
