@@ -7,6 +7,47 @@ class LessonService {
         this.#lessonModel = Lesson;
     }
 
+    #formatLessonResponse = (lesson) => {
+        if (!lesson) return null;
+
+        let linkedProduct = [];
+        if (lesson.linkedProduct && Array.isArray(lesson.linkedProduct)) {
+            linkedProduct = lesson.linkedProduct.map(item => ({
+                productId: (item.productId || item).toString()
+            }));
+        } else if (lesson.linkedProducts && Array.isArray(lesson.linkedProducts)) {
+            linkedProduct = lesson.linkedProducts.map(item => ({
+                productId: (item.productId || item).toString()
+            }));
+        }
+
+        let linkedCombo = [];
+        if (lesson.linkedCombo && Array.isArray(lesson.linkedCombo)) {
+            linkedCombo = lesson.linkedCombo.map(item => ({
+                comboId: (item.comboId || item).toString()
+            }));
+        } else if (lesson.linkedCombos && Array.isArray(lesson.linkedCombos)) {
+            linkedCombo = lesson.linkedCombos.map(item => ({
+                comboId: (item.comboId || item).toString()
+            }));
+        }
+
+        const formatted = {
+            _id: lesson._id.toString(),
+            title: lesson.title,
+            order: lesson.order || 0,
+            videoUrl: lesson.videoUrl,
+            duration: lesson.duration || 0,
+            linkedProduct,
+            linkedCombo,
+            isPreview: !!lesson.isPreview,
+            createdAt: lesson.createdAt,
+            updatedAt: lesson.updatedAt
+        };
+
+        return formatted;
+    }
+
     /**
      * Create a standalone lesson
      * @param {Object} data
@@ -20,7 +61,7 @@ class LessonService {
      */
     createLesson = async (data) => {
         const lesson = await this.#lessonModel.create(data);
-        return lesson;
+        return this.#formatLessonResponse(lesson);
     }
 
     /**
@@ -30,8 +71,9 @@ class LessonService {
     getLessons = async (filter = {}) => {
         const lessons = await this.#lessonModel.find(filter)
             .sort({ order: 1 })
+            .select("-__v")
             .lean();
-        return lessons;
+        return lessons.map(lesson => this.#formatLessonResponse(lesson));
     }
 
     /**
@@ -39,7 +81,7 @@ class LessonService {
      * @param {string} lessonId
      */
     getLessonById = async (lessonId) => {
-        const lesson = await this.#lessonModel.findById(lessonId).lean();
+        const lesson = await this.#lessonModel.findById(lessonId).select("-__v").lean();
 
         if (!lesson) {
             const error = new Error("Lesson not found");
@@ -47,7 +89,7 @@ class LessonService {
             throw error;
         }
 
-        return lesson;
+        return this.#formatLessonResponse(lesson);
     }
 
     /**
@@ -67,7 +109,7 @@ class LessonService {
         Object.assign(lesson, updateData);
         await lesson.save();
 
-        return lesson;
+        return this.#formatLessonResponse(lesson);
     }
 
     /**

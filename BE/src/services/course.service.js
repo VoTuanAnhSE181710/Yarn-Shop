@@ -7,6 +7,43 @@ class CourseService {
         this.#courseModel = Course;
     }
 
+    #formatCourseResponse = (course) => {
+        if (!course) return null;
+        
+        let linkedCombo = [];
+        if (course.linkedCombo && Array.isArray(course.linkedCombo)) {
+            linkedCombo = course.linkedCombo.map(item => {
+                if (item && item.comboId) {
+                    return { comboId: item.comboId.toString() };
+                }
+                return { comboId: item.toString() };
+            });
+        } else if (course.linkedComboIds && Array.isArray(course.linkedComboIds)) {
+            linkedCombo = course.linkedComboIds.map(id => ({ comboId: id.toString() }));
+        }
+
+        const formatted = {
+            _id: course._id.toString(),
+            title: course.title,
+            description: course.description,
+            thumbnail: course.thumbnail,
+            level: course.level,
+            linkedLessons: course.linkedLessons || [],
+            tags: course.tags || [],
+            linkedCombo,
+            creatorId: course.creatorId ? course.creatorId.toString() : null,
+            totalDuration: course.totalDuration || 0,
+            totalLessons: course.totalLessons || 0,
+            rating: course.rating || 0,
+            enrolledCount: course.enrolledCount || 0,
+            isPublished: !!course.isPublished,
+            createdAt: course.createdAt,
+            updatedAt: course.updatedAt
+        };
+
+        return formatted;
+    }
+
     /**
      * Create a new course
      * @param {Object} data - Course data
@@ -22,7 +59,7 @@ class CourseService {
      */
     createCourse = async (data) => {
         const course = await this.#courseModel.create(data);
-        return course;
+        return this.#formatCourseResponse(course);
     }
 
     /**
@@ -64,16 +101,16 @@ class CourseService {
 
         const [courses, total] = await Promise.all([
             this.#courseModel.find(query)
-                .populate("creatorId", "username fullName avatar")
                 .sort(sortOption)
                 .skip(skip)
                 .limit(limit)
+                .select("-__v -deletedAt")
                 .lean(),
             this.#courseModel.countDocuments(query),
         ]);
 
         return {
-            courses,
+            courses: courses.map(c => this.#formatCourseResponse(c)),
             pagination: {
                 page,
                 limit,
@@ -89,8 +126,8 @@ class CourseService {
      */
     getCourseById = async (id) => {
         const course = await this.#courseModel.findOne({ _id: id, deletedAt: null })
-            .populate("creatorId", "username fullName avatar")
             .populate("linkedLessons")
+            .select("-__v -deletedAt")
             .lean();
 
         if (!course) {
@@ -99,7 +136,17 @@ class CourseService {
             throw error;
         }
 
-        return course;
+        const formatted = this.#formatCourseResponse(course);
+        if (course.linkedLessons && Array.isArray(course.linkedLessons)) {
+            formatted.linkedLessons = course.linkedLessons.map(lesson => {
+                if (lesson && typeof lesson === "object" && lesson._id) {
+                    // It's populated lesson object, keep it populated but make sure it is converted safely
+                    return lesson;
+                }
+                return lesson;
+            });
+        }
+        return formatted;
     }
 
     /**
@@ -119,7 +166,7 @@ class CourseService {
         Object.assign(course, updateData);
         await course.save();
 
-        return course;
+        return this.#formatCourseResponse(course);
     }
 
     /**
@@ -179,7 +226,7 @@ class CourseService {
 
         await this.#recalculateCourseStats(courseId);
 
-        return course;
+        return this.#formatCourseResponse(course);
     }
 
     /**
@@ -203,7 +250,7 @@ class CourseService {
 
         await this.#recalculateCourseStats(courseId);
 
-        return course;
+        return this.#formatCourseResponse(course);
     }
 }
 
