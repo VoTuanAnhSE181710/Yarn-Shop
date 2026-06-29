@@ -1,12 +1,10 @@
-import { Course, Lesson } from "../models/Model.js";
+import { Course } from "../models/Model.js";
 
 class CourseService {
     #courseModel
-    #lessonModel
 
     constructor() {
         this.#courseModel = Course;
-        this.#lessonModel = Lesson;
     }
 
     /**
@@ -15,10 +13,11 @@ class CourseService {
      * @param {string} data.title
      * @param {string} data.description
      * @param {string} data.thumbnail
-     * @param {"beginner"|"intermediate"|"advanced"} data.level
+     * @param {"beginner"|"mid"|"pro"} data.level
+     * @param {string[]} data.linkedLessons - Array of Lesson ObjectIds
      * @param {string[]} data.tags
      * @param {string} data.creatorId - User ObjectId
-     * @param {string[]} data.linkedComboIds
+     * @param {string[]} data.linkedCombo - Array of Kit ObjectIds
      * @param {boolean} data.isPublished
      */
     createCourse = async (data) => {
@@ -29,7 +28,7 @@ class CourseService {
     /**
      * Get courses list with filtering, pagination, sorting
      * @param {Object} param
-     * @param {"beginner"|"intermediate"|"advanced"} [param.level]
+     * @param {"beginner"|"mid"|"pro"} [param.level]
      * @param {string} [param.tag]
      * @param {string} [param.creatorId]
      * @param {number} [param.page=1]
@@ -85,12 +84,13 @@ class CourseService {
     }
 
     /**
-     * Get course by ID with lessons
+     * Get course by ID, populating linked lessons
      * @param {string} id
      */
     getCourseById = async (id) => {
         const course = await this.#courseModel.findOne({ _id: id, deletedAt: null })
             .populate("creatorId", "username fullName avatar")
+            .populate("linkedLessons")
             .lean();
 
         if (!course) {
@@ -99,11 +99,7 @@ class CourseService {
             throw error;
         }
 
-        const lessons = await this.#lessonModel.find({ courseId: id })
-            .sort({ order: 1 })
-            .lean();
-
-        return { ...course, lessons };
+        return course;
     }
 
     /**
@@ -144,6 +140,70 @@ class CourseService {
         await course.save();
 
         return { message: "Course deleted successfully" };
+    }
+
+    /**
+     * Recalculate totalLessons and totalDuration from populated linkedLessons
+     * @param {string} courseId
+     */
+    #recalculateCourseStats = async (courseId) => {
+        const course = await this.#courseModel.findById(courseId).populate("linkedLessons");
+        if (!course) return;
+
+        const totalLessons = course.linkedLessons.length;
+        const totalDuration = course.linkedLessons.reduce((sum, l) => sum + (l.duration || 0), 0);
+
+        course.totalLessons = totalLessons;
+        course.totalDuration = totalDuration;
+        await course.save();
+    }
+
+    /**
+     * Add a lesson ID to a course's linkedLessons
+     * @param {string} courseId
+     * @param {string} lessonId
+     */
+    addLessonToCourse = async (courseId, lessonId) => {
+        const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+
+        if (!course) {
+            const error = new Error("Course not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        if (!course.linkedLessons.includes(lessonId)) {
+            course.linkedLessons.push(lessonId);
+            await course.save();
+        }
+
+        await this.#recalculateCourseStats(courseId);
+
+        return course;
+    }
+
+    /**
+     * Remove a lesson ID from a course's linkedLessons
+     * @param {string} courseId
+     * @param {string} lessonId
+     */
+    removeLessonFromCourse = async (courseId, lessonId) => {
+        const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+
+        if (!course) {
+            const error = new Error("Course not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        course.linkedLessons = course.linkedLessons.filter(
+            (id) => id.toString() !== lessonId
+        );
+        await course.save();
+
+        await this.#recalculateCourseStats(courseId);
+
+        return course;
     }
 }
 
