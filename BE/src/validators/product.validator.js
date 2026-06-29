@@ -39,6 +39,11 @@ const variantSchema = Joi.object({
     "number.integer": "Variant stock must be an integer",
     "number.min": "Variant stock cannot be negative",
   }),
+  // Each variant now requires its own `image` field.
+  image: Joi.string().trim().required().messages({
+    "any.required": "Variant image is required",
+    "string.empty": "Variant image cannot be empty",
+  }),
 });
 
 const createProductSchema = Joi.object({
@@ -61,7 +66,9 @@ const createProductSchema = Joi.object({
     "any.required": "Product image is required",
     "string.empty": "Product image cannot be empty",
   }),
-  images: Joi.array().items(Joi.string().trim()).default([]),
+  // `images` field removed: each variant now has its own `image` field.
+  // We keep the field optional for backward compatibility but it is ignored.
+  images: Joi.array().items(Joi.string().trim()).optional(),
   tags: Joi.array().items(Joi.string().trim()).default([]),
   variants: Joi.array().items(variantSchema).min(1).required().messages({
     "any.required": "At least one variant is required",
@@ -86,6 +93,7 @@ const updateProductSchema = Joi.object({
   image: Joi.string().trim().optional().messages({
     "string.empty": "Product image cannot be empty",
   }),
+  // `images` field removed. Kept optional for backward compatibility only.
   images: Joi.array().items(Joi.string().trim()).optional(),
   tags: Joi.array().items(Joi.string().trim()).optional(),
   variants: Joi.array().items(variantSchema).min(1).optional().messages({
