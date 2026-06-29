@@ -55,6 +55,10 @@ const options = {
             {
                 name: 'Lessons',
                 description: 'Lesson management and course-lesson linkages (Public & Admin)'
+            },
+            {
+                name: 'Videos',
+                description: 'Video management endpoints'
             }
         ],
         components: {

@@ -6,192 +6,163 @@ class VideoController {
     }
 
     /**
-     * POST /api/v1/videos - Create a video
-     * Access: Freemium & Premium (community), Staff (premium)
+     * POST /api/v1/videos/upload-url - Get presigned upload URL
+     * Access: User
      */
-    create = async (req, res, next) => {
+    getUploadUrl = async (req, res, next) => {
         try {
             const { userId } = req.user;
-            const videoData = req.body;
+            const { filename, mimeType, size, title, description, visibility } = req.body;
 
-            // If file was uploaded via multipart, set video URL from Cloudinary
-            if (req.file) {
-                videoData.url = req.file.path;
-                videoData.duration = videoData.duration || 0;
-            }
-
-            const video = await this.#videoService.createVideo({
-                ...videoData,
-                uploader: userId,
+            const result = await this.#videoService.generateUploadUrl({
+                filename,
+                mimeType,
+                size,
+                title,
+                description,
+                visibility,
+                uploaderUId: userId,
             });
 
-            res.status(201).json({
-                status: 'success',
-                data: { video },
-            });
+            res.status(201).json(result);
         } catch (error) {
             next(error);
         }
     }
 
     /**
-     * POST /api/v1/videos/upload - Upload video file (multipart)
-     * Access: All authenticated users (with type restrictions)
+     * POST /api/v1/videos/:videoId/confirm - Confirm upload complete
+     * Access: Owner
      */
-    uploadFile = async (req, res, next) => {
+    confirmUpload = async (req, res, next) => {
         try {
-            if (!req.file) {
-                const error = new Error("No video file uploaded");
-                error.statusCode = 400;
-                throw error;
-            }
+            const { videoId } = req.params;
+            const { userId } = req.user;
+            const { duration } = req.body;
 
-            res.status(200).json({
-                status: 'success',
-                data: {
-                    url: req.file.path,
-                    publicId: req.file.filename,
-                    originalName: req.file.originalname,
-                    size: req.file.size,
-                    mimetype: req.file.mimetype,
-                },
-            });
+            const result = await this.#videoService.confirmUpload(videoId, duration, userId);
+
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }
     }
 
     /**
-     * GET /api/v1/videos - Get videos list with filtering
-     * Access: All authenticated users
-     */
-    getAll = async (req, res, next) => {
-        try {
-            const { type, category, search, page, limit, sort } = req.query;
-
-            const result = await this.#videoService.getVideos({
-                type,
-                category,
-                search,
-                page: parseInt(page) || 1,
-                limit: parseInt(limit) || 20,
-                sort,
-            });
-
-            res.status(200).json({
-                status: 'success',
-                data: result,
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    /**
-     * GET /api/v1/videos/premium - Get premium videos
-     * Access: Premium users only
-     */
-    getPremiumVideos = async (req, res, next) => {
-        try {
-            const { category, search, page, limit, sort } = req.query;
-
-            const result = await this.#videoService.getVideos({
-                type: 'premium',
-                category,
-                search,
-                page: parseInt(page) || 1,
-                limit: parseInt(limit) || 20,
-                sort,
-            });
-
-            res.status(200).json({
-                status: 'success',
-                data: result,
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    /**
-     * GET /api/v1/videos/my - Get my uploaded videos
-     * Access: Uploader (Freemium/Premium)
+     * GET /api/v1/videos/my - Get current user's videos
+     * Access: User
      */
     getMyVideos = async (req, res, next) => {
         try {
             const { userId } = req.user;
-            const { page, limit } = req.query;
+            const { status, visibility, page, limit } = req.query;
 
-            const result = await this.#videoService.getMyVideos(
-                userId,
-                parseInt(page) || 1,
-                parseInt(limit) || 20
-            );
-
-            res.status(200).json({
-                status: 'success',
-                data: result,
+            const result = await this.#videoService.getMyVideos({
+                uploaderUId: userId,
+                status,
+                visibility,
+                page: parseInt(page) || 1,
+                limit: parseInt(limit) || 20,
             });
+
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }
     }
 
     /**
-     * GET /api/v1/videos/:id - Get video by ID
-     * Access: All authenticated users
+     * GET /api/v1/admin/videos - Get all videos (Admin/Staff)
+     * Access: Admin, Staff
+     */
+    getAllVideos = async (req, res, next) => {
+        try {
+            const { uploaderUId, status, visibility, page, limit } = req.query;
+
+            const result = await this.#videoService.getAllVideos({
+                uploaderUId,
+                status,
+                visibility,
+                page: parseInt(page) || 1,
+                limit: parseInt(limit) || 20,
+            });
+
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/v1/videos/:id - Get video detail
+     * Access: Public (if visibility=public) / Auth (if private/unlisted)
      */
     getById = async (req, res, next) => {
         try {
             const { id } = req.params;
+            const user = req.user || null;
 
-            const video = await this.#videoService.getVideoById(id);
+            const video = await this.#videoService.getVideoById(id, user);
 
-            res.status(200).json({
-                status: 'success',
-                data: { video },
-            });
+            res.status(200).json(video);
         } catch (error) {
             next(error);
         }
     }
 
     /**
-     * PATCH /api/v1/videos/:id - Update video
-     * Access: Uploader or Staff
+     * PUT /api/v1/videos/:id - Update video metadata
+     * Access: Owner, Admin, Staff
      */
     update = async (req, res, next) => {
         try {
             const { id } = req.params;
-            const { userId } = req.user;
+            const { userId, roleName } = req.user;
             const updateData = req.body;
 
-            const video = await this.#videoService.updateVideo(id, updateData, userId);
+            const video = await this.#videoService.updateVideo(id, updateData, userId, roleName);
 
-            res.status(200).json({
-                status: 'success',
-                data: { video },
-            });
+            res.status(200).json(video);
         } catch (error) {
             next(error);
         }
     }
 
     /**
-     * DELETE /api/v1/videos/:id - Delete video (soft delete)
-     * Access: Uploader or Staff
+     * POST /api/v1/videos/:videoId/replace - Re-upload video file
+     * Access: Owner, Admin, Staff
+     */
+    replaceVideo = async (req, res, next) => {
+        try {
+            const { videoId } = req.params;
+            const { userId, roleName } = req.user;
+            const { filename, mimeType, size } = req.body;
+
+            const result = await this.#videoService.replaceVideo(
+                videoId,
+                { filename, mimeType, size },
+                userId,
+                roleName
+            );
+
+            res.status(200).json(result);
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * DELETE /api/v1/videos/:id - Delete video
+     * Access: Owner, Admin, Staff
      */
     delete = async (req, res, next) => {
         try {
             const { id } = req.params;
-            const { userId } = req.user;
+            const { userId, roleName } = req.user;
 
-            const result = await this.#videoService.deleteVideo(id, userId);
+            const result = await this.#videoService.deleteVideo(id, userId, roleName);
 
-            res.status(200).json({
-                status: 'success',
-                data: result,
-            });
+            res.status(200).json(result);
         } catch (error) {
             next(error);
         }

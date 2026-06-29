@@ -1,44 +1,53 @@
 import mongoose from "mongoose";
+import { v4 as uuidv4 } from "uuid";
 
 const videoSchema = new mongoose.Schema({
     title: {
         type: String,
         required: [true, "Video title is required!"],
         trim: true,
+        maxlength: 200,
     },
     description: {
         type: String,
-        default: ""
+        default: "",
+        maxlength: 2000,
     },
-    type: {
-        type: String,
-        enum: ["community", "premium"],
-        required: [true, "Video type is required!"],
-    },
-    url: {
-        type: String,
-        required: [true, "Video URL is required!"],
-    },
-    thumbnail: {
-        type: {
-            url: { type: String, default: null },
-            publicId: { type: String, default: null },
-        },
-        required: false,
-    },
-    duration: {
-        type: Number, // in seconds
-        default: 0,
-    },
-    uploader: {
+    uploaderUId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
         required: true,
+        index: true,
     },
-    category: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Category",
-        required: false,
+    videoUrl: {
+        type: String,
+        default: null,
+    },
+    thumbnailUrl: {
+        type: String,
+        default: null,
+    },
+    duration: {
+        type: Number, // seconds
+        default: 0,
+    },
+    size: {
+        type: Number, // bytes
+        default: 0,
+    },
+    mimeType: {
+        type: String,
+        default: "video/mp4",
+    },
+    status: {
+        type: String,
+        enum: ["uploading", "processing", "ready", "failed"],
+        default: "uploading",
+    },
+    visibility: {
+        type: String,
+        enum: ["public", "private", "unlisted"],
+        default: "private",
     },
     tags: [{
         type: String,
@@ -48,21 +57,23 @@ const videoSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    isActive: {
-        type: Boolean,
-        default: true
+    linkedLessonId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lesson",
+        default: null,
     },
-    status: {
+    s3Key: {
         type: String,
-        enum: ["PENDING", "APPROVED", "REJECTED"],
-        default: "APPROVED"
-    }
+        default: null,
+    },
 }, {
-    timestamps: true
+    timestamps: true,
 });
 
 // Index for searching
 videoSchema.index({ title: "text", description: "text", tags: "text" });
+videoSchema.index({ uploaderUId: 1, status: 1 });
+videoSchema.index({ status: 1, visibility: 1 });
 
 const Video = mongoose.model("Video", videoSchema, "videos");
 export default Video;
