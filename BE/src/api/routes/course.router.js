@@ -22,8 +22,16 @@ const router = express.Router();
  *           type: string
  *         level:
  *           type: string
- *           enum: [beginner, intermediate, advanced]
+ *           enum: [beginner, mid, pro]
+ *         linkedLessons:
+ *           type: array
+ *           items:
+ *             $ref: '#/components/schemas/Lesson'
  *         tags:
+ *           type: array
+ *           items:
+ *             type: string
+ *         linkedCombo:
  *           type: array
  *           items:
  *             type: string
@@ -46,10 +54,6 @@ const router = express.Router();
  *           type: number
  *         enrolledCount:
  *           type: number
- *         linkedComboIds:
- *           type: array
- *           items:
- *             type: string
  *         isPublished:
  *           type: boolean
  *         createdAt:
@@ -63,8 +67,6 @@ const router = express.Router();
  *       properties:
  *         _id:
  *           type: string
- *         courseId:
- *           type: string
  *         title:
  *           type: string
  *         order:
@@ -73,35 +75,19 @@ const router = express.Router();
  *           type: string
  *         duration:
  *           type: number
- *         linkedProducts:
+ *         linkedProduct:
  *           type: array
  *           items:
  *             type: object
  *             properties:
  *               productId:
  *                 type: string
- *               timestamp:
- *                 type: number
- *               name:
- *                 type: string
- *               price:
- *                 type: number
- *               thumbnail:
- *                 type: string
- *         linkedCombos:
+ *         linkedCombo:
  *           type: array
  *           items:
  *             type: object
  *             properties:
  *               comboId:
- *                 type: string
- *               timestamp:
- *                 type: number
- *               name:
- *                 type: string
- *               price:
- *                 type: number
- *               thumbnail:
  *                 type: string
  *         isPreview:
  *           type: boolean
@@ -114,7 +100,7 @@ const router = express.Router();
  */
 
 /* ============================================================
- * PUBLIC COURSE & LESSON ENDPOINTS
+ * PUBLIC COURSE ENDPOINTS
  * ============================================================ */
 
 /**
@@ -129,7 +115,7 @@ const router = express.Router();
  *         name: level
  *         schema:
  *           type: string
- *           enum: [beginner, intermediate, advanced]
+ *           enum: [beginner, mid, pro]
  *         description: Filter by course level
  *       - in: query
  *         name: tag
@@ -171,7 +157,7 @@ router.get("/courses", validateData(courseQuerySchema, "query"), async (req, res
  * /courses/{id}:
  *   get:
  *     summary: Get course by ID
- *     description: Get detailed course information with lessons list.
+ *     description: Get detailed course information with linked lessons populated.
  *     tags: [Courses]
  *     parameters:
  *       - in: path
@@ -190,31 +176,13 @@ router.get("/courses/:id", async (req, res, next) => {
     await courseController.getById(req, res, next);
 });
 
-/**
- * @swagger
- * /courses/{courseId}/lessons:
- *   get:
- *     summary: Get all lessons of a course
- *     description: Get all lessons of a course sorted by order.
- *     tags: [Lessons]
- *     parameters:
- *       - in: path
- *         name: courseId
- *         schema:
- *           type: string
- *         required: true
- *     responses:
- *       200:
- *         description: Lessons retrieved successfully
- */
-router.get("/courses/:courseId/lessons", async (req, res, next) => {
-    const lessonController = req.container.resolve("lessonController");
-    await lessonController.getByCourseId(req, res, next);
-});
+/* ============================================================
+ * PUBLIC LESSON ENDPOINTS
+ * ============================================================ */
 
 /**
  * @swagger
- * /courses/{courseId}/lessons/{lessonId}:
+ * /lessons/{lessonId}:
  *   get:
  *     summary: Get lesson detail
  *     description: |
@@ -222,11 +190,6 @@ router.get("/courses/:courseId/lessons", async (req, res, next) => {
  *       Authentication is required if the lesson is not marked as preview.
  *     tags: [Lessons]
  *     parameters:
- *       - in: path
- *         name: courseId
- *         schema:
- *           type: string
- *         required: true
  *       - in: path
  *         name: lessonId
  *         schema:
@@ -238,7 +201,7 @@ router.get("/courses/:courseId/lessons", async (req, res, next) => {
  *       401:
  *         description: Authentication required for non-preview lessons
  */
-router.get("/courses/:courseId/lessons/:lessonId", async (req, res, next) => {
+router.get("/lessons/:lessonId", async (req, res, next) => {
     // Optional authentication — try to parse token if available
     const authHeader = req.headers.authorization;
     if (authHeader) {
@@ -257,7 +220,7 @@ router.get("/courses/:courseId/lessons/:lessonId", async (req, res, next) => {
 });
 
 /* ============================================================
- * ADMIN COURSE & LESSON ENDPOINTS
+ * ADMIN COURSE ENDPOINTS
  * ============================================================ */
 
 /**
@@ -287,12 +250,16 @@ router.get("/courses/:courseId/lessons/:lessonId", async (req, res, next) => {
  *                 type: string
  *               level:
  *                 type: string
- *                 enum: [beginner, intermediate, advanced]
+ *                 enum: [beginner, mid, pro]
+ *               linkedLessons:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               tags:
  *                 type: array
  *                 items:
  *                   type: string
- *               linkedComboIds:
+ *               linkedCombo:
  *                 type: array
  *                 items:
  *                   type: string
@@ -340,12 +307,16 @@ router.post("/admin/courses", authentication, validateData(createCourseSchema, "
  *                 type: string
  *               level:
  *                 type: string
- *                 enum: [beginner, intermediate, advanced]
+ *                 enum: [beginner, mid, pro]
+ *               linkedLessons:
+ *                 type: array
+ *                 items:
+ *                   type: string
  *               tags:
  *                 type: array
  *                 items:
  *                   type: string
- *               linkedComboIds:
+ *               linkedCombo:
  *                 type: array
  *                 items:
  *                   type: string
@@ -394,19 +365,107 @@ router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
 
 /**
  * @swagger
- * /admin/courses/{courseId}/lessons:
+ * /admin/courses/{id}/lessons/{lessonId}:
  *   post:
- *     summary: Add a new lesson to a course
- *     description: Create a new lesson within a course. Admin/Instructor only.
- *     tags: [Lessons]
+ *     summary: Link a lesson to a course
+ *     description: Add an existing lesson ID to a course's linkedLessons array. Admin/Instructor only.
+ *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
  *     parameters:
  *       - in: path
- *         name: courseId
+ *         name: id
  *         schema:
  *           type: string
  *         required: true
+ *         description: Course ID
+ *       - in: path
+ *         name: lessonId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lesson ID to link
+ *     responses:
+ *       200:
+ *         description: Lesson linked to course successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ */
+router.post("/admin/courses/:id/lessons/:lessonId", authentication, async (req, res, next) => {
+    const courseController = req.container.resolve("courseController");
+    await courseController.addLesson(req, res, next);
+});
+
+/**
+ * @swagger
+ * /admin/courses/{id}/lessons/{lessonId}:
+ *   delete:
+ *     summary: Unlink a lesson from a course
+ *     description: Remove a lesson ID from a course's linkedLessons array. Admin/Instructor only.
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *       - in: path
+ *         name: lessonId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Lesson ID to unlink
+ *     responses:
+ *       200:
+ *         description: Lesson unlinked from course successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ */
+router.delete("/admin/courses/:id/lessons/:lessonId", authentication, async (req, res, next) => {
+    const courseController = req.container.resolve("courseController");
+    await courseController.removeLesson(req, res, next);
+});
+
+/* ============================================================
+ * ADMIN LESSON ENDPOINTS
+ * ============================================================ */
+
+/**
+ * @swagger
+ * /admin/lessons:
+ *   get:
+ *     summary: Get all lessons
+ *     description: Get all lessons (standalone, not nested under course). Admin/Instructor only.
+ *     tags: [Lessons]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Lessons retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/admin/lessons", authentication, async (req, res, next) => {
+    const lessonController = req.container.resolve("lessonController");
+    await lessonController.getAll(req, res, next);
+});
+
+/**
+ * @swagger
+ * /admin/lessons:
+ *   post:
+ *     summary: Create a new standalone lesson
+ *     description: Create a new lesson. Attach it to a course separately via the link endpoint. Admin/Instructor only.
+ *     tags: [Lessons]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -426,35 +485,19 @@ router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
  *                 type: string
  *               duration:
  *                 type: number
- *               linkedProducts:
+ *               linkedProduct:
  *                 type: array
  *                 items:
  *                   type: object
  *                   properties:
  *                     productId:
  *                       type: string
- *                     timestamp:
- *                       type: number
- *                     name:
- *                       type: string
- *                     price:
- *                       type: number
- *                     thumbnail:
- *                       type: string
- *               linkedCombos:
+ *               linkedCombo:
  *                 type: array
  *                 items:
  *                   type: object
  *                   properties:
  *                     comboId:
- *                       type: string
- *                     timestamp:
- *                       type: number
- *                     name:
- *                       type: string
- *                     price:
- *                       type: number
- *                     thumbnail:
  *                       type: string
  *               isPreview:
  *                 type: boolean
@@ -465,29 +508,22 @@ router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
  *         description: Bad request
  *       401:
  *         description: Unauthorized
- *       404:
- *         description: Course not found
  */
-router.post("/admin/courses/:courseId/lessons", authentication, validateData(createLessonSchema, "body"), async (req, res, next) => {
+router.post("/admin/lessons", authentication, validateData(createLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.create(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/courses/{courseId}/lessons/{lessonId}:
+ * /admin/lessons/{lessonId}:
  *   put:
  *     summary: Update a lesson
- *     description: Update lesson details (video, linkedProducts, linkedCombos, order). Admin/Instructor only.
+ *     description: Update lesson details. Admin/Instructor only.
  *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: courseId
- *         schema:
- *           type: string
- *         required: true
  *       - in: path
  *         name: lessonId
  *         schema:
@@ -507,35 +543,19 @@ router.post("/admin/courses/:courseId/lessons", authentication, validateData(cre
  *                 type: string
  *               duration:
  *                 type: number
- *               linkedProducts:
+ *               linkedProduct:
  *                 type: array
  *                 items:
  *                   type: object
  *                   properties:
  *                     productId:
  *                       type: string
- *                     timestamp:
- *                       type: number
- *                     name:
- *                       type: string
- *                     price:
- *                       type: number
- *                     thumbnail:
- *                       type: string
- *               linkedCombos:
+ *               linkedCombo:
  *                 type: array
  *                 items:
  *                   type: object
  *                   properties:
  *                     comboId:
- *                       type: string
- *                     timestamp:
- *                       type: number
- *                     name:
- *                       type: string
- *                     price:
- *                       type: number
- *                     thumbnail:
  *                       type: string
  *               isPreview:
  *                 type: boolean
@@ -547,26 +567,21 @@ router.post("/admin/courses/:courseId/lessons", authentication, validateData(cre
  *       404:
  *         description: Lesson not found
  */
-router.put("/admin/courses/:courseId/lessons/:lessonId", authentication, validateData(updateLessonSchema, "body"), async (req, res, next) => {
+router.put("/admin/lessons/:lessonId", authentication, validateData(updateLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.update(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/courses/{courseId}/lessons/{lessonId}:
+ * /admin/lessons/{lessonId}:
  *   delete:
  *     summary: Delete a lesson
- *     description: Delete a lesson from a course. Admin/Instructor only.
+ *     description: Delete a standalone lesson. Admin/Instructor only.
  *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
  *     parameters:
- *       - in: path
- *         name: courseId
- *         schema:
- *           type: string
- *         required: true
  *       - in: path
  *         name: lessonId
  *         schema:
@@ -580,7 +595,7 @@ router.put("/admin/courses/:courseId/lessons/:lessonId", authentication, validat
  *       404:
  *         description: Lesson not found
  */
-router.delete("/admin/courses/:courseId/lessons/:lessonId", authentication, async (req, res, next) => {
+router.delete("/admin/lessons/:lessonId", authentication, async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.delete(req, res, next);
 });

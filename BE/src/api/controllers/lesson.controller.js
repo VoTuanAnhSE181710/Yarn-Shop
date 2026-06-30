@@ -6,15 +6,14 @@ class LessonController {
     }
 
     /**
-     * POST /api/v1/admin/courses/:id/lessons - Create a lesson
+     * POST /api/v1/admin/lessons - Create a standalone lesson
      * Access: Admin/Instructor
      */
     create = async (req, res, next) => {
         try {
-            const { courseId } = req.params;
             const lessonData = req.body;
 
-            const lesson = await this.#lessonService.createLesson(courseId, lessonData);
+            const lesson = await this.#lessonService.createLesson(lessonData);
 
             res.status(201).json({
                 status: 'success',
@@ -26,14 +25,12 @@ class LessonController {
     }
 
     /**
-     * GET /api/v1/courses/:id/lessons - Get lessons by course ID
-     * Access: Public
+     * GET /api/v1/lessons - Get all lessons
+     * Access: Admin
      */
-    getByCourseId = async (req, res, next) => {
+    getAll = async (req, res, next) => {
         try {
-            const { courseId } = req.params;
-
-            const lessons = await this.#lessonService.getLessonsByCourseId(courseId);
+            const lessons = await this.#lessonService.getLessons();
 
             res.status(200).json({
                 status: 'success',
@@ -45,14 +42,14 @@ class LessonController {
     }
 
     /**
-     * GET /api/v1/courses/:id/lessons/:lessonId - Get lesson by ID
+     * GET /api/v1/lessons/:lessonId - Get lesson by ID
      * Access: Public (if isPreview) / Authenticated (if not preview)
      */
     getById = async (req, res, next) => {
         try {
-            const { courseId, lessonId } = req.params;
+            const { lessonId } = req.params;
 
-            const lesson = await this.#lessonService.getLessonById(courseId, lessonId);
+            const lesson = await this.#lessonService.getLessonById(lessonId);
 
             // If lesson is not preview, require authentication
             if (!lesson.isPreview && !req.user) {
@@ -71,15 +68,15 @@ class LessonController {
     }
 
     /**
-     * PUT /api/v1/admin/courses/:id/lessons/:lessonId - Update lesson
+     * PUT /api/v1/admin/lessons/:lessonId - Update lesson
      * Access: Admin/Instructor
      */
     update = async (req, res, next) => {
         try {
-            const { courseId, lessonId } = req.params;
+            const { lessonId } = req.params;
             const updateData = req.body;
 
-            const lesson = await this.#lessonService.updateLesson(courseId, lessonId, updateData);
+            const lesson = await this.#lessonService.updateLesson(lessonId, updateData);
 
             res.status(200).json({
                 status: 'success',
@@ -91,14 +88,14 @@ class LessonController {
     }
 
     /**
-     * DELETE /api/v1/admin/courses/:id/lessons/:lessonId - Delete lesson
+     * DELETE /api/v1/admin/lessons/:lessonId - Delete lesson
      * Access: Admin/Instructor
      */
     delete = async (req, res, next) => {
         try {
-            const { courseId, lessonId } = req.params;
+            const { lessonId } = req.params;
 
-            const result = await this.#lessonService.deleteLesson(courseId, lessonId);
+            const result = await this.#lessonService.deleteLesson(lessonId);
 
             res.status(200).json({
                 status: 'success',

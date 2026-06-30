@@ -1,77 +1,87 @@
-import mongoose from 'mongoose';
-import { Lesson, Course } from "../models/Model.js";
+import { Lesson } from "../models/Model.js";
 
 class LessonService {
     #lessonModel
-    #courseModel
 
     constructor() {
         this.#lessonModel = Lesson;
-        this.#courseModel = Course;
     }
 
-    /**
-     * Recalculate course totalDuration and totalLessons from its lessons
-     * @param {string} courseId
-     */
-    #recalculateCourseStats = async (courseId) => {
-        const stats = await this.#lessonModel.aggregate([
-            { $match: { courseId: new mongoose.Types.ObjectId(courseId) } },
-            {
-                $group: {
-                    _id: "$courseId",
-                    totalDuration: { $sum: "$duration" },
-                    totalLessons: { $sum: 1 },
-                },
-            },
-        ]);
+    #formatLessonResponse = (lesson) => {
+        if (!lesson) return null;
 
-        const update = stats.length > 0
-            ? { totalDuration: stats[0].totalDuration, totalLessons: stats[0].totalLessons }
-            : { totalDuration: 0, totalLessons: 0 };
-
-        await this.#courseModel.findByIdAndUpdate(courseId, update);
-    }
-
-    /**
-     * Create a lesson in a course
-     * @param {string} courseId
-     * @param {Object} data
-     */
-    createLesson = async (courseId, data) => {
-        const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
-        if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+        let linkedProduct = [];
+        if (lesson.linkedProduct && Array.isArray(lesson.linkedProduct)) {
+            linkedProduct = lesson.linkedProduct.map(item => ({
+                productId: (item.productId || item).toString()
+            }));
+        } else if (lesson.linkedProducts && Array.isArray(lesson.linkedProducts)) {
+            linkedProduct = lesson.linkedProducts.map(item => ({
+                productId: (item.productId || item).toString()
+            }));
         }
 
-        const lesson = await this.#lessonModel.create({ ...data, courseId });
+        let linkedCombo = [];
+        if (lesson.linkedCombo && Array.isArray(lesson.linkedCombo)) {
+            linkedCombo = lesson.linkedCombo.map(item => ({
+                comboId: (item.comboId || item).toString()
+            }));
+        } else if (lesson.linkedCombos && Array.isArray(lesson.linkedCombos)) {
+            linkedCombo = lesson.linkedCombos.map(item => ({
+                comboId: (item.comboId || item).toString()
+            }));
+        }
 
-        await this.#recalculateCourseStats(courseId);
+        const formatted = {
+            _id: lesson._id.toString(),
+            title: lesson.title,
+            order: lesson.order || 0,
+            videoUrl: lesson.videoUrl,
+            duration: lesson.duration || 0,
+            linkedProduct,
+            linkedCombo,
+            isPreview: !!lesson.isPreview,
+            createdAt: lesson.createdAt,
+            updatedAt: lesson.updatedAt
+        };
 
-        return lesson;
+        return formatted;
     }
 
     /**
-     * Get all lessons of a course sorted by order
-     * @param {string} courseId
+     * Create a standalone lesson
+     * @param {Object} data
+     * @param {string} data.title
+     * @param {number} data.order
+     * @param {string} data.videoUrl
+     * @param {number} data.duration
+     * @param {Array} data.linkedProduct - [{productId}]
+     * @param {Array} data.linkedCombo - [{comboId}]
+     * @param {boolean} data.isPreview
      */
-    getLessonsByCourseId = async (courseId) => {
-        const lessons = await this.#lessonModel.find({ courseId })
-            .sort({ order: 1 })
-            .lean();
-
-        return lessons;
+    createLesson = async (data) => {
+        const lesson = await this.#lessonModel.create(data);
+        return this.#formatLessonResponse(lesson);
     }
 
     /**
-     * Get a single lesson by ID (within a course)
-     * @param {string} courseId
+     * Get all lessons (with optional filters)
+     * @param {Object} filter
+     */
+    getLessons = async (filter = {}) => {
+        const lessons = await this.#lessonModel.find(filter)
+            .sort({ order: 1 })
+            .select("-__v")
+            .lean();
+        return lessons.map(lesson => this.#formatLessonResponse(lesson));
+    }
+
+    /**
+     * Get a single lesson by ID
      * @param {string} lessonId
      */
-    getLessonById = async (courseId, lessonId) => {
-        const lesson = await this.#lessonModel.findOne({ _id: lessonId, courseId });
+    getLessonById = async (lessonId) => {
+        const lesson = await this.#lessonModel.findById(lessonId).select("-__v").lean();
 
         if (!lesson) {
             const error = new Error("Lesson not found");
@@ -79,17 +89,16 @@ class LessonService {
             throw error;
         }
 
-        return lesson;
+        return this.#formatLessonResponse(lesson);
     }
 
     /**
      * Update a lesson
-     * @param {string} courseId
      * @param {string} lessonId
      * @param {Object} updateData
      */
-    updateLesson = async (courseId, lessonId, updateData) => {
-        const lesson = await this.#lessonModel.findOne({ _id: lessonId, courseId });
+    updateLesson = async (lessonId, updateData) => {
+        const lesson = await this.#lessonModel.findById(lessonId);
 
         if (!lesson) {
             const error = new Error("Lesson not found");
@@ -100,21 +109,15 @@ class LessonService {
         Object.assign(lesson, updateData);
         await lesson.save();
 
-        // If duration or order changed, recalculate course stats
-        if (updateData.duration !== undefined) {
-            await this.#recalculateCourseStats(courseId);
-        }
-
-        return lesson;
+        return this.#formatLessonResponse(lesson);
     }
 
     /**
      * Delete a lesson
-     * @param {string} courseId
      * @param {string} lessonId
      */
-    deleteLesson = async (courseId, lessonId) => {
-        const lesson = await this.#lessonModel.findOne({ _id: lessonId, courseId });
+    deleteLesson = async (lessonId) => {
+        const lesson = await this.#lessonModel.findById(lessonId);
 
         if (!lesson) {
             const error = new Error("Lesson not found");
@@ -123,8 +126,6 @@ class LessonService {
         }
 
         await this.#lessonModel.findByIdAndDelete(lessonId);
-
-        await this.#recalculateCourseStats(courseId);
 
         return { message: "Lesson deleted successfully" };
     }

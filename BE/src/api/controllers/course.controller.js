@@ -55,7 +55,7 @@ class CourseController {
     }
 
     /**
-     * GET /api/v1/courses/:id - Get course by ID with lessons
+     * GET /api/v1/courses/:id - Get course by ID (with populated lessons)
      * Access: Public
      */
     getById = async (req, res, next) => {
@@ -106,6 +106,44 @@ class CourseController {
             res.status(200).json({
                 status: 'success',
                 data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/v1/admin/courses/:id/lessons/:lessonId - Link a lesson to a course
+     * Access: Admin/Instructor
+     */
+    addLesson = async (req, res, next) => {
+        try {
+            const { id, lessonId } = req.params;
+
+            const course = await this.#courseService.addLessonToCourse(id, lessonId);
+
+            res.status(200).json({
+                status: 'success',
+                data: { course },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * DELETE /api/v1/admin/courses/:id/lessons/:lessonId - Unlink a lesson from a course
+     * Access: Admin/Instructor
+     */
+    removeLesson = async (req, res, next) => {
+        try {
+            const { id, lessonId } = req.params;
+
+            const course = await this.#courseService.removeLessonFromCourse(id, lessonId);
+
+            res.status(200).json({
+                status: 'success',
+                data: { course },
             });
         } catch (error) {
             next(error);

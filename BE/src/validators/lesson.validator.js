@@ -19,41 +19,17 @@ export const createLessonSchema = Joi.object({
     duration: Joi.number().min(0).default(0).messages({
         "number.min": "Duration must be a positive number",
     }),
-    linkedProducts: Joi.array().items(Joi.object({
+    linkedProduct: Joi.array().items(Joi.object({
         productId: Joi.string().hex().length(24).required().messages({
             "string.hex": "Product ID must be a valid ObjectId",
             "any.required": "Product ID is required",
         }),
-        timestamp: Joi.number().min(0).required().messages({
-            "number.min": "Timestamp must be a positive number",
-            "any.required": "Timestamp is required",
-        }),
-        name: Joi.string().required().trim().messages({
-            "string.empty": "Product name is required",
-        }),
-        price: Joi.number().min(0).required().messages({
-            "number.min": "Price must be a positive number",
-            "any.required": "Price is required",
-        }),
-        thumbnail: Joi.string().uri().allow(null).default(null),
     })).optional(),
-    linkedCombos: Joi.array().items(Joi.object({
+    linkedCombo: Joi.array().items(Joi.object({
         comboId: Joi.string().hex().length(24).required().messages({
             "string.hex": "Combo ID must be a valid ObjectId",
             "any.required": "Combo ID is required",
         }),
-        timestamp: Joi.number().min(0).required().messages({
-            "number.min": "Timestamp must be a positive number",
-            "any.required": "Timestamp is required",
-        }),
-        name: Joi.string().required().trim().messages({
-            "string.empty": "Combo name is required",
-        }),
-        price: Joi.number().min(0).required().messages({
-            "number.min": "Price must be a positive number",
-            "any.required": "Price is required",
-        }),
-        thumbnail: Joi.string().uri().allow(null).default(null),
     })).optional(),
     isPreview: Joi.boolean().default(false),
 });
@@ -66,19 +42,11 @@ export const updateLessonSchema = Joi.object({
     order: Joi.number().integer().min(1),
     videoUrl: Joi.string().uri(),
     duration: Joi.number().min(0),
-    linkedProducts: Joi.array().items(Joi.object({
+    linkedProduct: Joi.array().items(Joi.object({
         productId: Joi.string().hex().length(24).required(),
-        timestamp: Joi.number().min(0).required(),
-        name: Joi.string().required().trim(),
-        price: Joi.number().min(0).required(),
-        thumbnail: Joi.string().uri().allow(null).default(null),
     })).optional(),
-    linkedCombos: Joi.array().items(Joi.object({
+    linkedCombo: Joi.array().items(Joi.object({
         comboId: Joi.string().hex().length(24).required(),
-        timestamp: Joi.number().min(0).required(),
-        name: Joi.string().required().trim(),
-        price: Joi.number().min(0).required(),
-        thumbnail: Joi.string().uri().allow(null).default(null),
     })).optional(),
     isPreview: Joi.boolean(),
 });

@@ -16,11 +16,19 @@ const courseSchema = new mongoose.Schema({
     },
     level: {
         type: String,
-        enum: ["beginner", "intermediate", "advanced"],
+        enum: ["beginner", "mid", "pro"],
         required: [true, "Level is required!"],
     },
+    linkedLessons: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Lesson",
+    }],
     tags: [{
         type: String,
+    }],
+    linkedCombo: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Kit",
     }],
     creatorId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -43,10 +51,6 @@ const courseSchema = new mongoose.Schema({
         type: Number,
         default: 0,
     },
-    linkedComboIds: [{
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Kit",
-    }],
     isPublished: {
         type: Boolean,
         default: false,
