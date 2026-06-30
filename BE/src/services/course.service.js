@@ -58,6 +58,10 @@ class CourseService {
      * @param {boolean} data.isPublished
      */
     createCourse = async (data) => {
+        if (data) {
+            delete data.totalLessons;
+            delete data.totalDuration;
+        }
         const course = await this.#courseModel.create(data);
         if (course.linkedLessons && course.linkedLessons.length > 0) {
             await this.#recalculateCourseStats(course._id);
@@ -168,16 +172,20 @@ class CourseService {
             throw error;
         }
 
+        if (updateData) {
+            delete updateData.totalLessons;
+            delete updateData.totalDuration;
+        }
+
         Object.assign(course, updateData);
         await course.save();
 
-        if (updateData.linkedLessons !== undefined) {
+        if (updateData && updateData.linkedLessons !== undefined) {
             await this.#recalculateCourseStats(id);
-            const updatedCourse = await this.#courseModel.findOne({ _id: id, deletedAt: null });
-            return this.#formatCourseResponse(updatedCourse);
         }
 
-        return this.#formatCourseResponse(course);
+        const updatedCourse = await this.#courseModel.findOne({ _id: id, deletedAt: null });
+        return this.#formatCourseResponse(updatedCourse);
     }
 
     /**
@@ -238,7 +246,8 @@ class CourseService {
 
         await this.#recalculateCourseStats(courseId);
 
-        return this.#formatCourseResponse(course);
+        const updatedCourse = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+        return this.#formatCourseResponse(updatedCourse);
     }
 
     /**
@@ -262,7 +271,8 @@ class CourseService {
 
         await this.#recalculateCourseStats(courseId);
 
-        return this.#formatCourseResponse(course);
+        const updatedCourse = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+        return this.#formatCourseResponse(updatedCourse);
     }
 
     /**
