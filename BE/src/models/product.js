@@ -10,6 +10,10 @@ const variantSchema = new mongoose.Schema(
       required: [true, "Color is required!"],
       trim: true,
     },
+    size: {
+      type: String,
+      trim: true,
+    },
     hexCode: {
       type: String,
       required: [true, "Hex code is required!"],
@@ -46,7 +50,7 @@ const productSchema = new mongoose.Schema(
     },
     category: {
       type: String,
-      enum: ["yarn", "hook", "kit", "accessory", "tool"],
+      enum: ["yarn", "hook", "needle", "accessory", "kit"],
       required: [true, "Category is required!"],
     },
     image: {
@@ -100,7 +104,7 @@ function transformProduct(_doc, ret) {
     const { _id, id, ...rest } = ret;
     const ordered = {};
     if (_id !== undefined) ordered._id = String(_id);
-    if (id !== undefined) ordered.id = typeof id === "string" ? id : String(id);
+
     for (const key of Object.keys(rest)) {
       if (key === "_id" || key === "id") continue;
       ordered[key] = rest[key];

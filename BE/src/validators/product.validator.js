@@ -19,6 +19,11 @@ const variantSchema = Joi.object({
     "any.required": "Variant color is required",
     "string.empty": "Variant color cannot be empty",
   }),
+  // `size` is optional. Some products (e.g. yarn) are sold in skein sizes
+  // like "100g", others (e.g. hooks/needles) by diameter like "3mm".
+  size: Joi.string().trim().optional().allow("", null).messages({
+    "string.base": "Variant size must be a string",
+  }),
   hexCode: Joi.string()
     .trim()
     .pattern(/^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/)
@@ -56,11 +61,11 @@ const createProductSchema = Joi.object({
     "string.empty": "Product description cannot be empty",
   }),
   category: Joi.string()
-    .valid("yarn", "hook", "kit", "accessory", "tool")
+    .valid("yarn", "hook", "needle", "kit", "accessory")
     .required()
     .messages({
       "any.required": "Product category is required",
-      "any.only": "Category must be one of: yarn, hook, kit, accessory, tool",
+      "any.only": "Category must be one of: yarn, hook, needle, kit, accessory",
     }),
   image: Joi.string().trim().required().messages({
     "any.required": "Product image is required",
@@ -85,10 +90,10 @@ const updateProductSchema = Joi.object({
     "string.empty": "Product description cannot be empty",
   }),
   category: Joi.string()
-    .valid("yarn", "hook", "kit", "accessory", "tool")
+    .valid("yarn", "hook", "needle", "kit", "accessory")
     .optional()
     .messages({
-      "any.only": "Category must be one of: yarn, hook, kit, accessory, tool",
+      "any.only": "Category must be one of: yarn, hook, needle, kit, accessory",
     }),
   image: Joi.string().trim().optional().messages({
     "string.empty": "Product image cannot be empty",
@@ -108,10 +113,10 @@ const updateProductSchema = Joi.object({
 
 const productQuerySchema = Joi.object({
   category: Joi.string()
-    .valid("yarn", "hook", "kit", "accessory", "tool")
+    .valid("yarn", "hook", "needle", "kit", "accessory")
     .optional()
     .messages({
-      "any.only": "Category must be one of: yarn, hook, kit, accessory, tool",
+      "any.only": "Category must be one of: yarn, hook, needle, kit, accessory",
     }),
   tag: Joi.string().trim().optional(),
   search: Joi.string().trim().optional().allow(""),

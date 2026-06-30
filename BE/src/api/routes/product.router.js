@@ -35,6 +35,9 @@ const router = express.Router();
  *         hexCode:
  *           type: string
  *           description: Hex color code (e.g. #FF0000)
+ *         size:
+ *           type: string
+ *           description: 'Optional size label (e.g. "100g" for yarn, "3mm" for hooks/needles)'
  *         price:
  *           type: number
  *         stock:
@@ -50,7 +53,7 @@ const router = express.Router();
  *           type: string
  *         category:
  *           type: string
- *           enum: [yarn, hook, kit, accessory, tool]
+ *           enum: [yarn, hook, needle, kit, accessory]
  *         image:
  *           type: string
  *         tags:
@@ -70,7 +73,6 @@ const router = express.Router();
  *           type: string
  *           format: date-time
  */
-
 /**
  * @swagger
  * /products:
@@ -86,7 +88,7 @@ const router = express.Router();
  *         name: category
  *         schema:
  *           type: string
- *           enum: [yarn, hook, kit, accessory, tool]
+ *           enum: [yarn, hook, needle, kit, accessory]
  *       - in: query
  *         name: tag
  *         schema:
@@ -157,7 +159,7 @@ router.get(
  *                 type: string
  *               category:
  *                 type: string
- *                 enum: [yarn, hook, kit, accessory, tool]
+ *                 enum: [yarn, hook, needle, kit, accessory]
  *               image:
  *                 type: string
  *               tags:
@@ -263,7 +265,7 @@ router.get(
  *                 type: string
  *               category:
  *                 type: string
- *                 enum: [yarn, hook, kit, accessory, tool]
+ *                 enum: [yarn, hook, needle, kit, accessory]
  *               image:
  *                 type: string
  *               tags:
@@ -326,7 +328,7 @@ router.put(
  *         description: Forbidden
  */
 router.patch(
-  "/:id/restore",
+  "/:id",
   authentication,
   authorizationByRole(["Admin"]),
   validateData(productIdParamSchema, "params"),
