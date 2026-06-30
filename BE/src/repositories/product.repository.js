@@ -43,7 +43,7 @@ export default class ProductRepository {
       return null;
     }
     return Product.findByIdAndUpdate(productId, updateData, {
-      new: true,
+      returnDocument: "after",
       runValidators: true,
     });
   }
@@ -55,7 +55,7 @@ export default class ProductRepository {
     return Product.findByIdAndUpdate(
       productId,
       { isActive: false },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 
@@ -66,7 +66,7 @@ export default class ProductRepository {
     return Product.findByIdAndUpdate(
       productId,
       { isActive: true },
-      { new: true },
+      { returnDocument: "after" },
     );
   }
 
