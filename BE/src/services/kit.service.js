@@ -4,11 +4,10 @@ export default class KitService {
     }
 
     async getKits(query) {
-        const { level, courseId, page = 1, limit = 10, isActive } = query;
+        const { level, page = 1, limit = 10, isActive } = query;
         let filter = {};
 
         if (level) filter.level = level;
-        if (courseId) filter.linkedCourseIds = courseId;
         if (isActive !== undefined) filter.isActive = isActive === 'true';
 
         return this.kitRepository.findAll({

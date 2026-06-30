@@ -10,8 +10,8 @@ const uri = configDB.uri;
 
 /**
  * Assign ALL permissions to Admin role
- * Assign read-only permissions to Staff role
- * Assign Order permissions to Customer role (create + read)
+ * Assign create + read + update permissions to Staff role
+ * Assign read-only permissions (product-related) + create/read Order to Customer role
  * 
  * Usage: node src/scripts/seedAssignPermissions.js
  */
@@ -31,7 +31,7 @@ const seedAssignPermissions = async () => {
 
         const allPermissionIds = allPermissions.map(p => p._id);
 
-        // 1. Assign ALL permissions to Admin
+        // 1. Assign ALL permissions to Admin (full access)
         const adminRole = await Role.findOneAndUpdate(
             { roleName: "Admin" },
             { permission: allPermissionIds },
@@ -44,36 +44,60 @@ const seedAssignPermissions = async () => {
             console.log('❌ Admin role not found');
         }
 
-        // 2. Assign read permissions to Staff
-        const readPermissionIds = allPermissions
-            .filter(p => p.action === 'read' || p.action === 'manage')
+        // 2. Assign to Staff: all CRUD permissions (including manage & delete) on operational resources, plus read-only on admin resources
+        const staffPermissionIds = allPermissions
+            .filter(p => {
+                // Staff has manage & delete on operational resources (Kit, Course, Lesson, Product, Video, Category, DIYPost, Order)
+                if (['Kit', 'Course', 'Lesson', 'Product', 'Video', 'Category', 'DIYPost', 'Order'].includes(p.resource)) {
+                    return ['create', 'read', 'update', 'delete', 'manage'].includes(p.action);
+                }
+                // Staff can read User, Role, Permission, Log
+                if (['User', 'Role', 'Permission', 'Log'].includes(p.resource)) {
+                    return p.action === 'read';
+                }
+                // Staff can send emails
+                if (p.resource === 'Mail') {
+                    return p.action === 'create';
+                }
+                return false;
+            })
             .map(p => p._id);
 
         const staffRole = await Role.findOneAndUpdate(
             { roleName: "Staff" },
-            { permission: readPermissionIds },
+            { permission: staffPermissionIds },
             { returnDocument: 'after' }
         );
 
         if (staffRole) {
-            console.log(`✅ Staff role: assigned ${readPermissionIds.length} permissions (read + manage)`);
+            console.log(`✅ Staff role: assigned ${staffPermissionIds.length} permissions (manage + full CRUD on operational resources)`);
         } else {
             console.log('❌ Staff role not found');
         }
 
-        // 3. Assign Create Order + Read Order to Customer (để đặt hàng & xem đơn)
-        const customerOrderPermissionIds = allPermissions
-            .filter(p => p.resource === 'Order' && (p.action === 'create' || p.action === 'read'))
+        // 3. Assign to Customer: read-only on browsing resources + create/read Order
+        const customerPermissionIds = allPermissions
+            .filter(p => {
+                // Customer can read products, kits, courses, lessons, categories, DIY posts
+                if (['Product', 'Kit', 'Course', 'Lesson', 'Category', 'DIYPost', 'Video'].includes(p.resource)) {
+                    return p.action === 'read';
+                }
+                // Customer can create and read orders
+                if (p.resource === 'Order') {
+                    return ['create', 'read'].includes(p.action);
+                }
+                return false;
+            })
             .map(p => p._id);
 
         const customerRole = await Role.findOneAndUpdate(
             { roleName: "Customer" },
-            { permission: customerOrderPermissionIds },
+            { permission: customerPermissionIds },
             { returnDocument: 'after' }
         );
 
         if (customerRole) {
-            console.log(`✅ Customer role: assigned ${customerOrderPermissionIds.length} permissions (Create Order + Read Order)`);
+            console.log(`✅ Customer role: assigned ${customerPermissionIds.length} permissions (read browsing + create/read order)`);
         } else {
             console.log('❌ Customer role not found');
         }

@@ -1,7 +1,7 @@
 import express from "express";
 import {
   authentication,
-  authorizationByRole,
+  checkPermission,
   validateData,
 } from "../middlewares/middleware.js";
 import {
@@ -196,7 +196,7 @@ router.get(
 router.post(
   "/",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'create'),
   validateData(createProductSchema, "body"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
@@ -291,7 +291,7 @@ router.get(
 router.put(
   "/:id",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'update'),
   validateData(productIdParamSchema, "params"),
   validateData(updateProductSchema, "body"),
   async (req, res, next) => {
@@ -328,7 +328,7 @@ router.put(
 router.patch(
   "/:id/restore",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'update'),
   validateData(productIdParamSchema, "params"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
@@ -364,7 +364,7 @@ router.patch(
 router.delete(
   "/:id",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'delete'),
   validateData(productIdParamSchema, "params"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");

@@ -1,5 +1,5 @@
 import express from 'express';
-// import { authentication } from '../middlewares/middleware.js'; // Uncomment if authentication is required for viewing
+import { authentication, checkPermission } from '../middlewares/middleware.js';
 
 const router = express.Router();
 
@@ -27,10 +27,6 @@ const router = express.Router();
  *           type: array
  *           items:
  *             type: string
- *         linkedCourseIds:
- *           type: array
- *           items:
- *             type: string
  *         isActive:
  *           type: boolean
  *         createdAt:
@@ -46,7 +42,7 @@ const router = express.Router();
  * /kits:
  *   get:
  *     summary: Get all kits
- *     description: Retrieve a list of all active kits.
+ *     description: Retrieve a list of all active kits. Public access.
  *     tags: [Kits]
  *     parameters:
  *       - in: query
@@ -54,11 +50,6 @@ const router = express.Router();
  *         schema:
  *           type: string
  *         description: Filter by kit level (beginner, intermediate, advanced)
- *       - in: query
- *         name: courseId
- *         schema:
- *           type: string
- *         description: Filter by linked course ID
  *       - in: query
  *         name: page
  *         schema:
@@ -97,10 +88,64 @@ router.get(
 
 /**
  * @swagger
+ * /kits:
+ *   post:
+ *     summary: Create a kit (Staff/Admin)
+ *     description: Create a new kit. Requires authentication and Kit manage permission.
+ *     tags: [Kits]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - name
+ *               - price
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               thumbnail:
+ *                 type: string
+ *               level:
+ *                 type: string
+ *                 enum: [beginner, intermediate, advanced]
+ *               price:
+ *                 type: number
+ *               productIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       201:
+ *         description: Kit created successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ */
+router.post(
+    "/",
+    authentication,
+    checkPermission('Kit', 'create'),
+    async (req, res, next) => {
+        const kitController = req.container.resolve("kitController");
+        await kitController.createKit(req, res, next);
+    }
+);
+
+/**
+ * @swagger
  * /kits/{id}:
  *   get:
  *     summary: Get a kit by ID
- *     description: Retrieve detailed information about a specific kit.
+ *     description: Retrieve detailed information about a specific kit. Public access.
  *     tags: [Kits]
  *     parameters:
  *       - in: path
@@ -132,6 +177,99 @@ router.get(
     async (req, res, next) => {
         const kitController = req.container.resolve("kitController");
         await kitController.getKitById(req, res, next);
+    }
+);
+
+/**
+ * @swagger
+ * /kits/{id}:
+ *   put:
+ *     summary: Update a kit (Staff/Admin)
+ *     description: Update an existing kit by ID. Requires authentication and Kit manage permission.
+ *     tags: [Kits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               name:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               thumbnail:
+ *                 type: string
+ *               level:
+ *                 type: string
+ *                 enum: [beginner, intermediate, advanced]
+ *               price:
+ *                 type: number
+ *               productIds:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *               isActive:
+ *                 type: boolean
+ *     responses:
+ *       200:
+ *         description: Kit updated successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Kit not found
+ */
+router.put(
+    "/:id",
+    authentication,
+    checkPermission('Kit', 'update'),
+    async (req, res, next) => {
+        const kitController = req.container.resolve("kitController");
+        await kitController.updateKit(req, res, next);
+    }
+);
+
+/**
+ * @swagger
+ * /kits/{id}:
+ *   delete:
+ *     summary: Soft delete a kit (Staff/Admin)
+ *     description: Set a kit's isActive to false. Requires authentication and Kit manage permission.
+ *     tags: [Kits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Kit deleted successfully
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Kit not found
+ */
+router.delete(
+    "/:id",
+    authentication,
+    checkPermission('Kit', 'delete'),
+    async (req, res, next) => {
+        const kitController = req.container.resolve("kitController");
+        await kitController.deleteKit(req, res, next);
     }
 );
 

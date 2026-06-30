@@ -139,10 +139,11 @@ export const checkPermission = (resource, action) => async (req, res, next) => {
     }
 
     //check neu role co permission nay
+    // "manage" action grants access to all CRUD operations
     const hasPermission = role.permission.some(
       (permission) =>
         permission.resource === resource &&
-        (permission.action === action || permission.action === "Staff,Admin"),
+        (permission.action === action || permission.action === "manage"),
     );
     if (!hasPermission) {
       throw new ForbiddenError(

@@ -253,7 +253,7 @@ router.patch(
     validateData(adminUpdateUserSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'manage'),
+    checkPermission('User', 'update'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.adminUpdate(req, res, next);
@@ -320,7 +320,7 @@ router.patch(
     validateData(updateStatusSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'manage'),
+    checkPermission('User', 'update'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
 
@@ -451,7 +451,7 @@ router.get(
     validateData(getAllUserSchema, "query"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'manage'),
+    checkPermission('User', 'read'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController")
 
@@ -831,7 +831,7 @@ router.patch(
     validateData(changeRoleSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'manage'),
+    checkPermission('User', 'update'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.changeRole(req, res, next);
