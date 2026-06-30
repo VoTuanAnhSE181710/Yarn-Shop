@@ -160,6 +160,35 @@ const publicRegisterSchema = Joi.object({
                     }).required(),
 })
 
+const adminUpdateUserSchema = Joi.object({
+    userData: Joi.object({
+        username: Joi.string()
+                    .pattern(/^[a-zA-Z0-9_.-]+$/)
+                    .min(3).max(30)
+                    .messages({
+                        'string.pattern.base': 'username contains invalid characters (allowed: -_.)',
+                        'string.min': 'username must be at least {#limit} characters long',
+                        'string.max': 'username cannot exceed {#limit} characters',
+                    }).optional(),
+        email: Joi.string().email().optional(),
+        fullName: Joi.string().min(3).optional(),
+        address: Joi.string().optional(),
+        phone: Joi.string().pattern(/^0[0-9]{9}$/).optional(),
+        gender: Joi.string().valid('MALE', 'FEMALE').messages({
+            'any.only': 'Gender must be either MALE or FEMALE.'
+        }).optional(),
+        dateOfBirth: Joi.date()
+                        .format('MM/DD/YYYY')
+                        .less('now')
+                        .messages({
+                            'date.format': 'format: MM/DD/YYYY'
+                        }).optional(),
+        subscription: Joi.string().valid('Freemium', 'Premium').messages({
+            'any.only': 'Subscription must be either Freemium or Premium.'
+        }).optional(),
+    }).required()
+})
+
 const changeRoleSchema = Joi.object({
     roleId: Joi.string()
         .custom((value, helpers) => {
@@ -184,4 +213,5 @@ export {
     changePasswordSchema,
     forgotPasswordSchema,
     changeRoleSchema,
+    adminUpdateUserSchema,
 };
