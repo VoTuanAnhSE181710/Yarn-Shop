@@ -148,29 +148,45 @@ router.get(
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - description
- *               - category
+ *               - data
  *               - image
- *               - variants
  *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               category:
- *                 type: string
- *                 enum: [yarn, hook, needle, kit, accessory]
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing product details'
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   category:
+ *                     type: string
+ *                     enum: [yarn, hook, needle, kit, accessory]
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   variants:
+ *                     type: array
+ *                     minItems: 1
+ *                     items:
+ *                       type: object
+ *                       required: [color, hexCode, price]
+ *                       properties:
+ *                         color:
+ *                           type: string
+ *                         hexCode:
+ *                           type: string
+ *                         price:
+ *                           type: number
+ *                         stock:
+ *                           type: number
+ *                   isActive:
+ *                     type: boolean
  *               image:
  *                 type: string
  *                 format: binary
  *                 description: Main product image
- *               tags:
- *                 type: string
- *                 description: JSON stringified array of strings
- *               variants:
- *                 type: string
- *                 description: 'JSON stringified array of variant objects. Example: [{"color":"Red","hexCode":"#FF0000","price":100,"stock":10}]'
  *               variantImage_0:
  *                 type: string
  *                 format: binary
@@ -179,8 +195,18 @@ router.get(
  *                 type: string
  *                 format: binary
  *                 description: 'Image file for variant at index 1 (Optional)'
- *               isActive:
- *                 type: boolean
+ *               variantImage_2:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 2 (Optional)'
+ *               variantImage_3:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 3 (Optional)'
+ *               variantImage_4:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 4 (Optional)'
  *     responses:
  *       201:
  *         description: Product created successfully
@@ -198,32 +224,33 @@ router.post(
   uploadProduct.any(),
   (req, res, next) => {
     try {
-      if (req.files) {
-        const mainImageFile = req.files.find(f => f.fieldname === 'image');
-        if (mainImageFile) req.body.image = mainImageFile.path;
-      }
-      
-      if (typeof req.body.tags === 'string') {
-        req.body.tags = JSON.parse(req.body.tags);
-      }
-      if (typeof req.body.variants === 'string') {
-        req.body.variants = JSON.parse(req.body.variants);
-      }
-      if (typeof req.body.isActive === 'string') {
-        req.body.isActive = req.body.isActive === 'true';
+      if (!req.body.data) {
+        throw new Error("Missing 'data' field containing product JSON.");
       }
 
-      if (Array.isArray(req.body.variants) && req.files) {
-        req.body.variants.forEach((variant, index) => {
+      // Parse the JSON string from the 'data' field
+      let productData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+
+      if (req.files) {
+        const mainImageFile = req.files.find(f => f.fieldname === 'image');
+        if (mainImageFile) productData.image = mainImageFile.path;
+      }
+
+      if (Array.isArray(productData.variants) && req.files) {
+        productData.variants.forEach((variant, index) => {
           const variantImageFile = req.files.find(f => f.fieldname === `variantImage_${index}`);
           if (variantImageFile) {
             variant.image = variantImageFile.path;
           }
         });
       }
+      
+      // Replace req.body with the fully parsed productData so Joi validation works
+      req.body = productData;
+      
       next();
     } catch (error) {
-      return res.status(400).json({ status: "error", message: "Invalid form data format. JSON parsing failed.", error: error.message });
+      return res.status(400).json({ status: "error", message: "Invalid form data format. Make sure 'data' is valid JSON.", error: error.message });
     }
   },
   validateData(createProductSchema, "body"),
