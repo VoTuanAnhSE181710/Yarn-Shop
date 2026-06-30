@@ -20,6 +20,8 @@ export const createCourseSchema = Joi.object({
     tags: Joi.array().items(Joi.string().trim()).optional(),
     linkedCombo: Joi.array().items(Joi.string().hex().length(24)).optional(),
     isPublished: Joi.boolean().default(false),
+    rating: Joi.number().min(0).max(5).optional(),
+    enrolledCount: Joi.number().min(0).optional(),
 });
 
 export const updateCourseSchema = Joi.object({
@@ -34,6 +36,8 @@ export const updateCourseSchema = Joi.object({
     tags: Joi.array().items(Joi.string().trim()).optional(),
     linkedCombo: Joi.array().items(Joi.string().hex().length(24)).optional(),
     isPublished: Joi.boolean(),
+    rating: Joi.number().min(0).max(5).optional(),
+    enrolledCount: Joi.number().min(0).optional(),
 });
 
 export const courseQuerySchema = Joi.object({
@@ -43,4 +47,12 @@ export const courseQuerySchema = Joi.object({
     page: Joi.number().min(1).default(1),
     limit: Joi.number().min(1).max(100).default(20),
     sort: Joi.string().valid("newest", "oldest", "rating", "enrolled").default("newest"),
+});
+
+export const rateCourseSchema = Joi.object({
+    rating: Joi.number().min(1).max(5).required().messages({
+        "number.min": "Rating must be at least 1",
+        "number.max": "Rating must not exceed 5",
+        "any.required": "Rating is required",
+    }),
 });
