@@ -128,7 +128,7 @@ class ProductController {
   };
 
   /**
-   * PATCH /api/products/:id/restore - Restore a soft-deleted product
+   * PATCH /api/products/:id - Restore a soft-deleted product
    * Access: Admin
    */
   restore = async (req, res, next) => {
