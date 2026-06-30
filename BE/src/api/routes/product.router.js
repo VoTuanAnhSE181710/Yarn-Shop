@@ -10,6 +10,7 @@ import {
   productQuerySchema,
   productIdParamSchema,
 } from "../../validators/product.validator.js";
+import { uploadProduct } from "../../utils/multerStorage.js";
 
 const router = express.Router();
 
@@ -143,7 +144,7 @@ router.get(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
@@ -162,27 +163,22 @@ router.get(
  *                 enum: [yarn, hook, needle, kit, accessory]
  *               image:
  *                 type: string
+ *                 format: binary
+ *                 description: Main product image
  *               tags:
- *                 type: array
- *                 items:
- *                   type: string
+ *                 type: string
+ *                 description: JSON stringified array of strings
  *               variants:
- *                 type: array
- *                 minItems: 1
- *                 items:
- *                   type: object
- *                   required: [color, hexCode, price, image]
- *                   properties:
- *                     color:
- *                       type: string
- *                     hexCode:
- *                       type: string
- *                     price:
- *                       type: number
- *                     stock:
- *                       type: number
- *                     image:
- *                       type: string
+ *                 type: string
+ *                 description: 'JSON stringified array of variant objects. Example: [{"color":"Red","hexCode":"#FF0000","price":100,"stock":10}]'
+ *               variantImage_0:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 0 (Optional)'
+ *               variantImage_1:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 1 (Optional)'
  *               isActive:
  *                 type: boolean
  *     responses:
@@ -199,6 +195,37 @@ router.post(
   "/",
   authentication,
   checkPermission('Product', 'create'),
+  uploadProduct.any(),
+  (req, res, next) => {
+    try {
+      if (req.files) {
+        const mainImageFile = req.files.find(f => f.fieldname === 'image');
+        if (mainImageFile) req.body.image = mainImageFile.path;
+      }
+      
+      if (typeof req.body.tags === 'string') {
+        req.body.tags = JSON.parse(req.body.tags);
+      }
+      if (typeof req.body.variants === 'string') {
+        req.body.variants = JSON.parse(req.body.variants);
+      }
+      if (typeof req.body.isActive === 'string') {
+        req.body.isActive = req.body.isActive === 'true';
+      }
+
+      if (Array.isArray(req.body.variants) && req.files) {
+        req.body.variants.forEach((variant, index) => {
+          const variantImageFile = req.files.find(f => f.fieldname === `variantImage_${index}`);
+          if (variantImageFile) {
+            variant.image = variantImageFile.path;
+          }
+        });
+      }
+      next();
+    } catch (error) {
+      return res.status(400).json({ status: "error", message: "Invalid form data format. JSON parsing failed.", error: error.message });
+    }
+  },
   validateData(createProductSchema, "body"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
