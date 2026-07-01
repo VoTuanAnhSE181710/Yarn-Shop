@@ -1,11 +1,6 @@
 import express from 'express';
-<<<<<<< HEAD
 import { authentication, validateData } from '../middlewares/middleware.js';
 import { createCourseSchema, updateCourseSchema, courseQuerySchema, rateCourseSchema } from '../../validators/course.validator.js';
-=======
-import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
-import { createCourseSchema, updateCourseSchema, courseQuerySchema } from '../../validators/course.validator.js';
->>>>>>> faac8f06b0adaeba90935faa4cf75c9eb03d3067
 import { createLessonSchema, updateLessonSchema } from '../../validators/lesson.validator.js';
 
 const router = express.Router();
@@ -181,7 +176,6 @@ router.get("/courses/:id", async (req, res, next) => {
     await courseController.getById(req, res, next);
 });
 
-<<<<<<< HEAD
 /**
  * @swagger
  * /courses/{id}/enroll:
@@ -260,8 +254,6 @@ router.post("/courses/:id/rate", authentication, validateData(rateCourseSchema, 
  * PUBLIC LESSON ENDPOINTS
  * ============================================================ */
 
-=======
->>>>>>> faac8f06b0adaeba90935faa4cf75c9eb03d3067
 /**
  * @swagger
  * /courses:
