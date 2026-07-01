@@ -1,6 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
-import { createCourseSchema, updateCourseSchema, courseQuerySchema } from '../../validators/course.validator.js';
+import { createCourseSchema, updateCourseSchema, courseQuerySchema, rateCourseSchema } from '../../validators/course.validator.js';
 import { createLessonSchema, updateLessonSchema } from '../../validators/lesson.validator.js';
 
 const router = express.Router();
@@ -175,6 +175,84 @@ router.get("/courses/:id", async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.getById(req, res, next);
 });
+
+/**
+ * @swagger
+ * /courses/{id}/enroll:
+ *   post:
+ *     summary: Enroll in a course
+ *     description: Increment the enrollment count of a course. Authenticated access.
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     responses:
+ *       200:
+ *         description: Enrolled successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ */
+router.post("/courses/:id/enroll", authentication, async (req, res, next) => {
+    const courseController = req.container.resolve("courseController");
+    await courseController.enroll(req, res, next);
+});
+
+/**
+ * @swagger
+ * /courses/{id}/rate:
+ *   post:
+ *     summary: Rate a course
+ *     description: Submit/update a course rating. Authenticated access.
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Course ID
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - rating
+ *             properties:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *                 description: Rating value between 1 and 5
+ *     responses:
+ *       200:
+ *         description: Rated successfully
+ *       400:
+ *         description: Bad request
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course not found
+ */
+router.post("/courses/:id/rate", authentication, validateData(rateCourseSchema, "body"), async (req, res, next) => {
+    const courseController = req.container.resolve("courseController");
+    await courseController.rate(req, res, next);
+});
+
+/* ============================================================
+ * PUBLIC LESSON ENDPOINTS
+ * ============================================================ */
 
 /**
  * @swagger

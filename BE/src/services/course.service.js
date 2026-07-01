@@ -58,7 +58,16 @@ class CourseService {
      * @param {boolean} data.isPublished
      */
     createCourse = async (data) => {
+        if (data) {
+            delete data.totalLessons;
+            delete data.totalDuration;
+        }
         const course = await this.#courseModel.create(data);
+        if (course.linkedLessons && course.linkedLessons.length > 0) {
+            await this.#recalculateCourseStats(course._id);
+            const updatedCourse = await this.#courseModel.findById(course._id);
+            return this.#formatCourseResponse(updatedCourse);
+        }
         return this.#formatCourseResponse(course);
     }
 
@@ -163,10 +172,20 @@ class CourseService {
             throw error;
         }
 
+        if (updateData) {
+            delete updateData.totalLessons;
+            delete updateData.totalDuration;
+        }
+
         Object.assign(course, updateData);
         await course.save();
 
-        return this.#formatCourseResponse(course);
+        if (updateData && updateData.linkedLessons !== undefined) {
+            await this.#recalculateCourseStats(id);
+        }
+
+        const updatedCourse = await this.#courseModel.findOne({ _id: id, deletedAt: null });
+        return this.#formatCourseResponse(updatedCourse);
     }
 
     /**
@@ -197,8 +216,9 @@ class CourseService {
         const course = await this.#courseModel.findById(courseId).populate("linkedLessons");
         if (!course) return;
 
-        const totalLessons = course.linkedLessons.length;
-        const totalDuration = course.linkedLessons.reduce((sum, l) => sum + (l.duration || 0), 0);
+        const validLessons = (course.linkedLessons || []).filter(l => l != null);
+        const totalLessons = validLessons.length;
+        const totalDuration = validLessons.reduce((sum, l) => sum + (l.duration || 0), 0);
 
         course.totalLessons = totalLessons;
         course.totalDuration = totalDuration;
@@ -226,7 +246,8 @@ class CourseService {
 
         await this.#recalculateCourseStats(courseId);
 
-        return this.#formatCourseResponse(course);
+        const updatedCourse = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+        return this.#formatCourseResponse(updatedCourse);
     }
 
     /**
@@ -249,6 +270,46 @@ class CourseService {
         await course.save();
 
         await this.#recalculateCourseStats(courseId);
+
+        const updatedCourse = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+        return this.#formatCourseResponse(updatedCourse);
+    }
+
+    /**
+     * Enroll in a course (increment enrolledCount)
+     * @param {string} courseId
+     */
+    enrollCourse = async (courseId) => {
+        const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+
+        if (!course) {
+            const error = new Error("Course not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        course.enrolledCount = (course.enrolledCount || 0) + 1;
+        await course.save();
+
+        return this.#formatCourseResponse(course);
+    }
+
+    /**
+     * Rate a course (update rating)
+     * @param {string} courseId
+     * @param {number} ratingValue
+     */
+    rateCourse = async (courseId, ratingValue) => {
+        const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+
+        if (!course) {
+            const error = new Error("Course not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        course.rating = ratingValue;
+        await course.save();
 
         return this.#formatCourseResponse(course);
     }

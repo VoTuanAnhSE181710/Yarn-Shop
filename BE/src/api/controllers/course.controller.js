@@ -149,6 +149,45 @@ class CourseController {
             next(error);
         }
     }
+
+    /**
+     * POST /api/v1/courses/:id/enroll - Enroll in a course
+     * Access: Authenticated
+     */
+    enroll = async (req, res, next) => {
+        try {
+            const { id } = req.params;
+
+            const course = await this.#courseService.enrollCourse(id);
+
+            res.status(200).json({
+                status: 'success',
+                data: { course },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/v1/courses/:id/rate - Rate a course
+     * Access: Authenticated
+     */
+    rate = async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const { rating } = req.body;
+
+            const course = await this.#courseService.rateCourse(id, rating);
+
+            res.status(200).json({
+                status: 'success',
+                data: { course },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default CourseController;

@@ -1,4 +1,4 @@
-import { Lesson } from "../models/Model.js";
+import { Lesson, Course } from "../models/Model.js";
 
 class LessonService {
     #lessonModel
@@ -106,8 +106,23 @@ class LessonService {
             throw error;
         }
 
+        const durationChanged = updateData.duration !== undefined && updateData.duration !== lesson.duration;
+
         Object.assign(lesson, updateData);
         await lesson.save();
+
+        if (durationChanged) {
+            const courses = await Course.find({ linkedLessons: lessonId });
+            for (const course of courses) {
+                const populatedCourse = await Course.findById(course._id).populate("linkedLessons");
+                if (populatedCourse) {
+                    const validLessons = (populatedCourse.linkedLessons || []).filter(l => l != null);
+                    populatedCourse.totalLessons = validLessons.length;
+                    populatedCourse.totalDuration = validLessons.reduce((sum, l) => sum + (l.duration || 0), 0);
+                    await populatedCourse.save();
+                }
+            }
+        }
 
         return this.#formatLessonResponse(lesson);
     }
@@ -126,6 +141,22 @@ class LessonService {
         }
 
         await this.#lessonModel.findByIdAndDelete(lessonId);
+
+        const courses = await Course.find({ linkedLessons: lessonId });
+        for (const course of courses) {
+            course.linkedLessons = (course.linkedLessons || []).filter(
+                (id) => id.toString() !== lessonId.toString()
+            );
+            await course.save();
+
+            const populatedCourse = await Course.findById(course._id).populate("linkedLessons");
+            if (populatedCourse) {
+                const validLessons = (populatedCourse.linkedLessons || []).filter(l => l != null);
+                populatedCourse.totalLessons = validLessons.length;
+                populatedCourse.totalDuration = validLessons.reduce((sum, l) => sum + (l.duration || 0), 0);
+                await populatedCourse.save();
+            }
+        }
 
         return { message: "Lesson deleted successfully" };
     }
