@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, validateData } from '../middlewares/middleware.js';
+import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
 import { createCourseSchema, updateCourseSchema, courseQuerySchema, rateCourseSchema } from '../../validators/course.validator.js';
 import { createLessonSchema, updateLessonSchema } from '../../validators/lesson.validator.js';
 
