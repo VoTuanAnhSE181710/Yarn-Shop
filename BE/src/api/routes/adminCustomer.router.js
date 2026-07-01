@@ -1,11 +1,11 @@
 import express from "express";
-import { authentication, authorizationByRole } from "../middlewares/middleware.js";
+import { authentication, checkPermission } from "../middlewares/middleware.js";
 
 const adminCustomerRouter = express.Router();
 
-// All routes require auth + Admin role
+// All routes require auth + User read permission (admin customer management)
 adminCustomerRouter.use(authentication);
-adminCustomerRouter.use(authorizationByRole(["Admin"]));
+adminCustomerRouter.use(checkPermission('User', 'read'));
 
 // GET /api/admin/customers
 adminCustomerRouter.get("/", (req, res, next) => {

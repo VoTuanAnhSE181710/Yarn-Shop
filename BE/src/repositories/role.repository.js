@@ -4,11 +4,11 @@ import Permission from '../models/permission.js';
 
 export default class RoleRepository {
     async findById(roleId){
-        return Role.findById(roleId).populate('permission');
+        return Role.findById(roleId);
     }
 
     async findByRoleName({ roleName }){
-        return Role.findOne({ roleName }).populate('permission');
+        return Role.findOne({ roleName });
     }
 
     async create(data){
@@ -26,7 +26,6 @@ export default class RoleRepository {
         const skip = (page - 1) * limit;
 
         const roles = await Role.find(filter)
-            .populate('permission')
             .sort({ roleName: 1})
             .skip(skip)
             .limit(limit)
@@ -56,7 +55,7 @@ export default class RoleRepository {
             }
         }
 
-        return Role.findByIdAndUpdate(roleId, updateData, { returnDocument: 'after' }).populate('permission');
+        return Role.findByIdAndUpdate(roleId, updateData, { returnDocument: 'after' });
     }
 
     async softDelete(roleId){

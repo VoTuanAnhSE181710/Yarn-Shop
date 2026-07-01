@@ -14,10 +14,19 @@ class PermissionService {
             "User",
             "Role",
             "Permission",
-            "Log"
+            "Kit",
+            "Course",
+            "Lesson",
+            "Product",
+            "Video",
+            "Category",
+            "DIYPost",
+            "Order",
+            "Log",
+            "Mail"
         ];
 
-        const actions = ["create", "read", "update", "delete", "manage", "assign", "receive", "dispatch", "unassign"];
+        const actions = ["create", "read", "update", "delete", "manage"];
 
         return {
             resources,

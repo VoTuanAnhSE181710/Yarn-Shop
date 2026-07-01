@@ -12,10 +12,6 @@ const uri = configDB.uri;
  * 
  * Lưu ý: Script này không xóa permissions cũ, chỉ thêm mới các permissions chưa có
  * 
- * Các permissions đã có trong DB (không thêm):
- * - 11 permissions với action "manage" cho các resources
- * - Update User
- * 
  * Usage: node src/scripts/seedPermissions.js
  */
 const seedPermissions = async () => {
@@ -24,7 +20,7 @@ const seedPermissions = async () => {
         await mongoose.connect(uri);
         console.log('📦 Connected to MongoDB');
 
-        // Danh sách permissions cần thêm (loại trừ manage và Update User)
+        // Danh sách permissions cần thêm
         const permissions = [
             // ===== USER PERMISSIONS =====
             {
@@ -38,6 +34,12 @@ const seedPermissions = async () => {
                 resource: "User",
                 action: "read",
                 description: "Permission to view user information and list all users"
+            },
+            {
+                name: "Update User",
+                resource: "User",
+                action: "update",
+                description: "Permission to update user information"
             },
             {
                 name: "Delete User",
@@ -96,6 +98,188 @@ const seedPermissions = async () => {
                 resource: "Permission",
                 action: "delete",
                 description: "Permission to delete permissions"
+            },
+
+            // ===== KIT PERMISSIONS =====
+            {
+                name: "Create Kit",
+                resource: "Kit",
+                action: "create",
+                description: "Permission to create new kits"
+            },
+            {
+                name: "Read Kit",
+                resource: "Kit",
+                action: "read",
+                description: "Permission to view kit information and list all kits"
+            },
+            {
+                name: "Update Kit",
+                resource: "Kit",
+                action: "update",
+                description: "Permission to update kit information"
+            },
+            {
+                name: "Delete Kit",
+                resource: "Kit",
+                action: "delete",
+                description: "Permission to delete kits"
+            },
+
+            // ===== COURSE PERMISSIONS =====
+            {
+                name: "Create Course",
+                resource: "Course",
+                action: "create",
+                description: "Permission to create new courses"
+            },
+            {
+                name: "Read Course",
+                resource: "Course",
+                action: "read",
+                description: "Permission to view course information and list all courses"
+            },
+            {
+                name: "Update Course",
+                resource: "Course",
+                action: "update",
+                description: "Permission to update course information"
+            },
+            {
+                name: "Delete Course",
+                resource: "Course",
+                action: "delete",
+                description: "Permission to delete courses"
+            },
+
+            // ===== LESSON PERMISSIONS =====
+            {
+                name: "Create Lesson",
+                resource: "Lesson",
+                action: "create",
+                description: "Permission to create new lessons"
+            },
+            {
+                name: "Read Lesson",
+                resource: "Lesson",
+                action: "read",
+                description: "Permission to view lesson information and list all lessons"
+            },
+            {
+                name: "Update Lesson",
+                resource: "Lesson",
+                action: "update",
+                description: "Permission to update lesson information"
+            },
+            {
+                name: "Delete Lesson",
+                resource: "Lesson",
+                action: "delete",
+                description: "Permission to delete lessons"
+            },
+
+            // ===== PRODUCT PERMISSIONS =====
+            {
+                name: "Create Product",
+                resource: "Product",
+                action: "create",
+                description: "Permission to create new products"
+            },
+            {
+                name: "Read Product",
+                resource: "Product",
+                action: "read",
+                description: "Permission to view product information and list all products"
+            },
+            {
+                name: "Update Product",
+                resource: "Product",
+                action: "update",
+                description: "Permission to update product information"
+            },
+            {
+                name: "Delete Product",
+                resource: "Product",
+                action: "delete",
+                description: "Permission to delete products"
+            },
+
+            // ===== VIDEO PERMISSIONS =====
+            {
+                name: "Create Video",
+                resource: "Video",
+                action: "create",
+                description: "Permission to create new videos"
+            },
+            {
+                name: "Read Video",
+                resource: "Video",
+                action: "read",
+                description: "Permission to view video information and list all videos"
+            },
+            {
+                name: "Update Video",
+                resource: "Video",
+                action: "update",
+                description: "Permission to update video information"
+            },
+            {
+                name: "Delete Video",
+                resource: "Video",
+                action: "delete",
+                description: "Permission to delete videos"
+            },
+
+            // ===== CATEGORY PERMISSIONS =====
+            {
+                name: "Create Category",
+                resource: "Category",
+                action: "create",
+                description: "Permission to create new categories"
+            },
+            {
+                name: "Read Category",
+                resource: "Category",
+                action: "read",
+                description: "Permission to view category information and list all categories"
+            },
+            {
+                name: "Update Category",
+                resource: "Category",
+                action: "update",
+                description: "Permission to update category information"
+            },
+            {
+                name: "Delete Category",
+                resource: "Category",
+                action: "delete",
+                description: "Permission to delete categories"
+            },
+
+            // ===== DIY POST PERMISSIONS =====
+            {
+                name: "Create DIYPost",
+                resource: "DIYPost",
+                action: "create",
+                description: "Permission to create new DIY posts"
+            },
+            {
+                name: "Read DIYPost",
+                resource: "DIYPost",
+                action: "read",
+                description: "Permission to view DIY post information and list all posts"
+            },
+            {
+                name: "Update DIYPost",
+                resource: "DIYPost",
+                action: "update",
+                description: "Permission to update DIY post information"
+            },
+            {
+                name: "Delete DIYPost",
+                resource: "DIYPost",
+                action: "delete",
+                description: "Permission to delete DIY posts"
             },
 
             // ===== ORDER PERMISSIONS =====

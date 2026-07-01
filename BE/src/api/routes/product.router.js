@@ -1,7 +1,7 @@
 import express from "express";
 import {
   authentication,
-  authorizationByRole,
+  checkPermission,
   validateData,
 } from "../middlewares/middleware.js";
 import {
@@ -10,6 +10,7 @@ import {
   productQuerySchema,
   productIdParamSchema,
 } from "../../validators/product.validator.js";
+import { uploadProduct } from "../../utils/multerStorage.js";
 
 const router = express.Router();
 
@@ -35,6 +36,9 @@ const router = express.Router();
  *         hexCode:
  *           type: string
  *           description: Hex color code (e.g. #FF0000)
+ *         size:
+ *           type: string
+ *           description: 'Optional size label (e.g. "100g" for yarn, "3mm" for hooks/needles)'
  *         price:
  *           type: number
  *         stock:
@@ -50,7 +54,7 @@ const router = express.Router();
  *           type: string
  *         category:
  *           type: string
- *           enum: [yarn, hook, kit, accessory, tool]
+ *           enum: [yarn, hook, needle, kit, accessory]
  *         image:
  *           type: string
  *         tags:
@@ -70,7 +74,6 @@ const router = express.Router();
  *           type: string
  *           format: date-time
  */
-
 /**
  * @swagger
  * /products:
@@ -86,7 +89,7 @@ const router = express.Router();
  *         name: category
  *         schema:
  *           type: string
- *           enum: [yarn, hook, kit, accessory, tool]
+ *           enum: [yarn, hook, needle, kit, accessory]
  *       - in: query
  *         name: tag
  *         schema:
@@ -141,48 +144,69 @@ router.get(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - description
- *               - category
+ *               - data
  *               - image
- *               - variants
  *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               category:
- *                 type: string
- *                 enum: [yarn, hook, kit, accessory, tool]
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing product details'
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   category:
+ *                     type: string
+ *                     enum: [yarn, hook, needle, kit, accessory]
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   variants:
+ *                     type: array
+ *                     minItems: 1
+ *                     items:
+ *                       type: object
+ *                       required: [color, hexCode, price]
+ *                       properties:
+ *                         color:
+ *                           type: string
+ *                         hexCode:
+ *                           type: string
+ *                         price:
+ *                           type: number
+ *                         stock:
+ *                           type: number
+ *                   isActive:
+ *                     type: boolean
  *               image:
  *                 type: string
- *               tags:
- *                 type: array
- *                 items:
- *                   type: string
- *               variants:
- *                 type: array
- *                 minItems: 1
- *                 items:
- *                   type: object
- *                   required: [color, hexCode, price, image]
- *                   properties:
- *                     color:
- *                       type: string
- *                     hexCode:
- *                       type: string
- *                     price:
- *                       type: number
- *                     stock:
- *                       type: number
- *                     image:
- *                       type: string
- *               isActive:
- *                 type: boolean
+ *                 format: binary
+ *                 description: Main product image
+ *               variantImage_0:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 0 (Optional)'
+ *               variantImage_1:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 1 (Optional)'
+ *               variantImage_2:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 2 (Optional)'
+ *               variantImage_3:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 3 (Optional)'
+ *               variantImage_4:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 4 (Optional)'
  *     responses:
  *       201:
  *         description: Product created successfully
@@ -196,7 +220,39 @@ router.get(
 router.post(
   "/",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'create'),
+  uploadProduct.any(),
+  (req, res, next) => {
+    try {
+      if (!req.body.data) {
+        throw new Error("Missing 'data' field containing product JSON.");
+      }
+
+      // Parse the JSON string from the 'data' field
+      let productData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+
+      if (req.files) {
+        const mainImageFile = req.files.find(f => f.fieldname === 'image');
+        if (mainImageFile) productData.image = mainImageFile.path;
+      }
+
+      if (Array.isArray(productData.variants) && req.files) {
+        productData.variants.forEach((variant, index) => {
+          const variantImageFile = req.files.find(f => f.fieldname === `variantImage_${index}`);
+          if (variantImageFile) {
+            variant.image = variantImageFile.path;
+          }
+        });
+      }
+      
+      // Replace req.body with the fully parsed productData so Joi validation works
+      req.body = productData;
+      
+      next();
+    } catch (error) {
+      return res.status(400).json({ status: "error", message: "Invalid form data format. Make sure 'data' is valid JSON.", error: error.message });
+    }
+  },
   validateData(createProductSchema, "body"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
@@ -263,7 +319,7 @@ router.get(
  *                 type: string
  *               category:
  *                 type: string
- *                 enum: [yarn, hook, kit, accessory, tool]
+ *                 enum: [yarn, hook, needle, kit, accessory]
  *               image:
  *                 type: string
  *               tags:
@@ -291,7 +347,7 @@ router.get(
 router.put(
   "/:id",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'update'),
   validateData(productIdParamSchema, "params"),
   validateData(updateProductSchema, "body"),
   async (req, res, next) => {
@@ -326,9 +382,9 @@ router.put(
  *         description: Forbidden
  */
 router.patch(
-  "/:id/restore",
+  "/:id",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'update'),
   validateData(productIdParamSchema, "params"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
@@ -364,7 +420,7 @@ router.patch(
 router.delete(
   "/:id",
   authentication,
-  authorizationByRole(["Admin"]),
+  checkPermission('Product', 'delete'),
   validateData(productIdParamSchema, "params"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");

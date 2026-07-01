@@ -241,10 +241,9 @@ class UserService {
             throw new BadRequestError(`This user does not exist`)
         }
 
-        return {
-            ...existingUser,
-            password: undefined,
-        };
+        const { password, loginAttempts, lockUntil, deletedAt, deletedBy, __v, ...cleanUser } = existingUser;
+
+        return cleanUser;
     }
 
     getMyProfile = async ({ userId }) => {
@@ -253,7 +252,112 @@ class UserService {
         if (!userProfile) {
             throw new BadRequestError(`this user does not exists!`)
         }
-        return userProfile;
+
+        const { password, loginAttempts, lockUntil, deletedAt, deletedBy, __v, ...cleanProfile } = userProfile;
+
+        return cleanProfile;
+    }
+
+    adminUpdateUser = async ({ queryUserId, userData, userId }) => {
+        const currentUser = await this.#userRepository.findUserById({ userId });
+        if (!currentUser) {
+            throw new BadRequestError("Authenticated user not found");
+        }
+
+        const roleName = currentUser.roleId.roleName;
+        if (roleName !== 'Admin' && roleName !== 'Staff') {
+            await this.#logRepository.saveLog({
+                action: ACTIONS.UPDATE,
+                targetType: TARGET_TYPES.USER,
+                outcome: OUTCOMES.FAILED,
+                actorId: userId,
+                details: { reason: "Non-admin/staff attempted to update user" }
+            })
+            throw new ForbiddenError("Access denied. Only Admin or Staff can update users.");
+        }
+
+        const targetUser = await this.#userRepository.findUserById({ userId: queryUserId });
+        if (!targetUser) {
+            await this.#logRepository.saveLog({
+                action: ACTIONS.UPDATE,
+                targetType: TARGET_TYPES.USER,
+                outcome: OUTCOMES.FAILED,
+                actorId: userId,
+                details: { reason: "Target user not found" }
+            })
+            throw new NotFoundError("User does not exist!");
+        }
+
+        if (userData.email) {
+            const emailExists = await this.#userRepository.findUserByEmail({ email: userData.email });
+            if (emailExists && emailExists.userId !== queryUserId) {
+                await this.#logRepository.saveLog({
+                    action: ACTIONS.UPDATE,
+                    targetType: TARGET_TYPES.USER,
+                    outcome: OUTCOMES.FAILED,
+                    actorId: userId,
+                    details: { reason: "Duplicate email", email: userData.email }
+                })
+                throw new BadRequestError("This email is already in use");
+            }
+        }
+
+        if (userData.phone) {
+            const phoneExists = await this.#userRepository.findUserByPhone({ phone: userData.phone });
+            if (phoneExists && phoneExists.userId !== queryUserId) {
+                await this.#logRepository.saveLog({
+                    action: ACTIONS.UPDATE,
+                    targetType: TARGET_TYPES.USER,
+                    outcome: OUTCOMES.FAILED,
+                    actorId: userId,
+                    details: { reason: "Duplicate phone", phone: userData.phone }
+                })
+                throw new BadRequestError("This phone number is already in use");
+            }
+        }
+
+        if (userData.username) {
+            const usernameExists = await this.#userRepository.findByUsername({ username: userData.username });
+            if (usernameExists && usernameExists.userId !== queryUserId) {
+                await this.#logRepository.saveLog({
+                    action: ACTIONS.UPDATE,
+                    targetType: TARGET_TYPES.USER,
+                    outcome: OUTCOMES.FAILED,
+                    actorId: userId,
+                    details: { reason: "Duplicate username", username: userData.username }
+                })
+                throw new BadRequestError("This username is already in use");
+            }
+        }
+
+        const updatedUser = await this.#userRepository.updateUserData({
+            userId: queryUserId,
+            userData: userData,
+        });
+
+        if (!updatedUser) {
+            await this.#logRepository.saveLog({
+                action: ACTIONS.UPDATE,
+                targetType: TARGET_TYPES.USER,
+                outcome: OUTCOMES.FAILED,
+                actorId: userId,
+                details: { reason: "Failed to update user info" }
+            })
+            throw new BadRequestError("Failed to update user info");
+        }
+
+        await this.#logRepository.saveLog({
+            action: ACTIONS.UPDATE,
+            targetType: TARGET_TYPES.USER,
+            outcome: OUTCOMES.SUCCESS,
+            actorId: userId,
+            details: {
+                targetUserId: queryUserId,
+                fieldChanged: userData,
+            }
+        })
+
+        return updatedUser;
     }
 
     softDeleteUser = async ({ queryUserId, userId }) => {

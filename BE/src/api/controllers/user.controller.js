@@ -180,6 +180,25 @@ class UserController {
         }
     }
 
+    adminUpdate = async (req, res, next) => {
+        try {
+            const { userId } = req.user
+            const { queryUserId } = req.params
+            const userData = req.body.userData
+
+            const updatedResult = await this.#userService.adminUpdateUser({ queryUserId, userData, userId });
+
+            res.status(200).json({
+                status: 'success',
+                data: {
+                    updatedResult,
+                }
+            })
+        } catch (error) {
+            next(error)
+        }
+    }
+
     getStatistics = async (req, res, next) => {
         try {
             const result = await this.#userService.getStatistics();

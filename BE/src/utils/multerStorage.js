@@ -50,3 +50,14 @@ export const uploadVideo = multer({
     storage: videoStorage,
     limits: { fileSize: 500 * 1024 * 1024 } // 500MB
 });
+
+const productStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'products',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [{ quality: "auto", fetch_format: "auto" }]
+    }
+});
+
+export const uploadProduct = multer({ storage: productStorage });

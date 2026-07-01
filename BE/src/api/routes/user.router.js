@@ -1,6 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission, validateData, verifyDevice } from '../middlewares/middleware.js';
-import { updateUserSchema, updateStatusSchema, getAllUserSchema, changeRoleSchema } from '../../validators/user.validator.js';
+import { updateUserSchema, updateStatusSchema, getAllUserSchema, changeRoleSchema, adminUpdateUserSchema } from '../../validators/user.validator.js';
 import { uploadAvatar } from '../../utils/multerStorage.js';
 
 const router = express.Router();
@@ -183,6 +183,85 @@ router.patch(
 
 /**
  * @swagger
+ * /users/admin-update/{queryUserId}:
+ *   patch:
+ *     summary: Admin/Staff update user data
+ *     description: |
+ *       Admin or Staff can update any user's data except role and status (those have dedicated endpoints).
+ *       Updatable fields: username, email, fullName, phone, address, gender, dateOfBirth, subscription.
+ *     tags: [Users]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: queryUserId
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: MongoDB ObjectId of the user to update
+ *         example: '65be000000000000000001'
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - userData
+ *             properties:
+ *               userData:
+ *                 type: object
+ *                 properties:
+ *                   username:
+ *                     type: string
+ *                     example: 'john_doe'
+ *                   email:
+ *                     type: string
+ *                     example: 'john@example.com'
+ *                   fullName:
+ *                     type: string
+ *                     example: 'John Doe'
+ *                   phone:
+ *                     type: string
+ *                     example: '0123456789'
+ *                   address:
+ *                     type: string
+ *                     example: '123 Main St'
+ *                   gender:
+ *                     type: string
+ *                     enum: [MALE, FEMALE]
+ *                   dateOfBirth:
+ *                     type: string
+ *                     example: '01/15/1990'
+ *                   subscription:
+ *                     type: string
+ *                     enum: [Freemium, Premium]
+ *     responses:
+ *       200:
+ *         description: User data updated successfully
+ *       400:
+ *         description: Bad request - Invalid data or duplicate email/phone/username
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden - Only Admin or Staff can update users
+ *       404:
+ *         description: User not found
+ */
+router.patch(
+    "/admin-update/:queryUserId",
+    validateData(adminUpdateUserSchema, "body"),
+    authentication,
+    verifyDevice,
+    checkPermission('User', 'update'),
+    async (req, res, next) => {
+        const userController = req.container.resolve("userController");
+        await userController.adminUpdate(req, res, next);
+    }
+)
+
+/**
+ * @swagger
  * /users/update-status/{queryUserId}:
  *   patch:
  *     summary: Update user status (Admin only)
@@ -241,7 +320,7 @@ router.patch(
     validateData(updateStatusSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'manage'),
+    checkPermission('User', 'update'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
 
@@ -372,7 +451,7 @@ router.get(
     validateData(getAllUserSchema, "query"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'manage'),
+    checkPermission('User', 'read'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController")
 
@@ -752,7 +831,7 @@ router.patch(
     validateData(changeRoleSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'manage'),
+    checkPermission('User', 'update'),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.changeRole(req, res, next);

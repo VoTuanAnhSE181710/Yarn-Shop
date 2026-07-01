@@ -98,6 +98,7 @@ router.get("/", authentication, verifyDevice, checkPermission('Log', 'read'), (r
 router.get("/statistics",
     authentication,
     verifyDevice,
+    checkPermission('Log', 'read'),
     async (req, res, next) => {
         const logController = req.container.resolve("logController");
         await logController.getStatistics(req, res, next);

@@ -31,21 +31,12 @@ const router = express.Router();
  *         - fullName
  *         - phone
  *         - address
- *         - ward
- *         - district
- *         - city
  *       properties:
  *         fullName:
  *           type: string
  *         phone:
  *           type: string
  *         address:
- *           type: string
- *         ward:
- *           type: string
- *         district:
- *           type: string
- *         city:
  *           type: string
  *     CreateOrderRequest:
  *       type: object

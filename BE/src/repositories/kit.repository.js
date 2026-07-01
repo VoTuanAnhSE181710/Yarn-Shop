@@ -2,7 +2,7 @@ import Kit from '../models/kit.js';
 
 export default class KitRepository {
     async findById(kitId) {
-        return Kit.findById(kitId).populate('productIds').populate('linkedCourseIds');
+        return Kit.findById(kitId).populate('productIds');
     }
 
     async create(data) {
@@ -14,7 +14,6 @@ export default class KitRepository {
 
         const kits = await Kit.find(filter)
             .populate('productIds')
-            .populate('linkedCourseIds')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
@@ -33,8 +32,7 @@ export default class KitRepository {
 
     async update(kitId, updateData) {
         return Kit.findByIdAndUpdate(kitId, updateData, { new: true, runValidators: true })
-            .populate('productIds')
-            .populate('linkedCourseIds');
+            .populate('productIds');
     }
 
     async delete(kitId) {

@@ -1,6 +1,11 @@
 import express from 'express';
+<<<<<<< HEAD
 import { authentication, validateData } from '../middlewares/middleware.js';
 import { createCourseSchema, updateCourseSchema, courseQuerySchema, rateCourseSchema } from '../../validators/course.validator.js';
+=======
+import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
+import { createCourseSchema, updateCourseSchema, courseQuerySchema } from '../../validators/course.validator.js';
+>>>>>>> faac8f06b0adaeba90935faa4cf75c9eb03d3067
 import { createLessonSchema, updateLessonSchema } from '../../validators/lesson.validator.js';
 
 const router = express.Router();
@@ -176,6 +181,7 @@ router.get("/courses/:id", async (req, res, next) => {
     await courseController.getById(req, res, next);
 });
 
+<<<<<<< HEAD
 /**
  * @swagger
  * /courses/{id}/enroll:
@@ -254,55 +260,14 @@ router.post("/courses/:id/rate", authentication, validateData(rateCourseSchema, 
  * PUBLIC LESSON ENDPOINTS
  * ============================================================ */
 
+=======
+>>>>>>> faac8f06b0adaeba90935faa4cf75c9eb03d3067
 /**
  * @swagger
- * /lessons/{lessonId}:
- *   get:
- *     summary: Get lesson detail
- *     description: |
- *       Get detailed information of a specific lesson.
- *       Authentication is required if the lesson is not marked as preview.
- *     tags: [Lessons]
- *     parameters:
- *       - in: path
- *         name: lessonId
- *         schema:
- *           type: string
- *         required: true
- *     responses:
- *       200:
- *         description: Lesson retrieved successfully
- *       401:
- *         description: Authentication required for non-preview lessons
- */
-router.get("/lessons/:lessonId", async (req, res, next) => {
-    // Optional authentication — try to parse token if available
-    const authHeader = req.headers.authorization;
-    if (authHeader) {
-        try {
-            const tokenService = req.container.resolve("tokenService");
-            const accessToken = authHeader.split(" ")[1];
-            if (accessToken) {
-                const decode = tokenService.verifyAccessToken({ token: accessToken });
-                if (decode) req.user = decode;
-            }
-        } catch (e) { /* ignore */ }
-    }
-
-    const lessonController = req.container.resolve("lessonController");
-    await lessonController.getById(req, res, next);
-});
-
-/* ============================================================
- * ADMIN COURSE ENDPOINTS
- * ============================================================ */
-
-/**
- * @swagger
- * /admin/courses:
+ * /courses:
  *   post:
  *     summary: Create a new course
- *     description: Create a new course. Admin/Instructor only.
+ *     description: Create a new course. Requires authentication and Course manage permission.
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
@@ -347,17 +312,17 @@ router.get("/lessons/:lessonId", async (req, res, next) => {
  *       401:
  *         description: Unauthorized
  */
-router.post("/admin/courses", authentication, validateData(createCourseSchema, "body"), async (req, res, next) => {
+router.post("/courses", authentication, checkPermission('Course', 'create'), validateData(createCourseSchema, "body"), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.create(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/courses/{id}:
+ * /courses/{id}:
  *   put:
  *     summary: Update a course / publish
- *     description: Update course information or publish it. Admin/Instructor only.
+ *     description: Update course information or publish it. Requires authentication and Course manage permission.
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
@@ -404,17 +369,17 @@ router.post("/admin/courses", authentication, validateData(createCourseSchema, "
  *       404:
  *         description: Course not found
  */
-router.put("/admin/courses/:id", authentication, validateData(updateCourseSchema, "body"), async (req, res, next) => {
+router.put("/courses/:id", authentication, checkPermission('Course', 'update'), validateData(updateCourseSchema, "body"), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.update(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/courses/{id}:
+ * /courses/{id}:
  *   delete:
  *     summary: Delete / hide a course
- *     description: Soft delete a course. Admin/Instructor only.
+ *     description: Soft delete a course. Requires authentication and Course manage permission.
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
@@ -432,17 +397,17 @@ router.put("/admin/courses/:id", authentication, validateData(updateCourseSchema
  *       404:
  *         description: Course not found
  */
-router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
+router.delete("/courses/:id", authentication, checkPermission('Course', 'delete'), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.delete(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/courses/{id}/lessons/{lessonId}:
+ * /courses/{id}/lessons/{lessonId}:
  *   post:
  *     summary: Link a lesson to a course
- *     description: Add an existing lesson ID to a course's linkedLessons array. Admin/Instructor only.
+ *     description: Add an existing lesson ID to a course's linkedLessons array. Requires authentication and Course manage permission.
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
@@ -467,17 +432,17 @@ router.delete("/admin/courses/:id", authentication, async (req, res, next) => {
  *       404:
  *         description: Course not found
  */
-router.post("/admin/courses/:id/lessons/:lessonId", authentication, async (req, res, next) => {
+router.post("/courses/:id/lessons/:lessonId", authentication, checkPermission('Course', 'update'), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.addLesson(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/courses/{id}/lessons/{lessonId}:
+ * /courses/{id}/lessons/{lessonId}:
  *   delete:
  *     summary: Unlink a lesson from a course
- *     description: Remove a lesson ID from a course's linkedLessons array. Admin/Instructor only.
+ *     description: Remove a lesson ID from a course's linkedLessons array. Requires authentication and Course manage permission.
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
@@ -502,21 +467,60 @@ router.post("/admin/courses/:id/lessons/:lessonId", authentication, async (req, 
  *       404:
  *         description: Course not found
  */
-router.delete("/admin/courses/:id/lessons/:lessonId", authentication, async (req, res, next) => {
+router.delete("/courses/:id/lessons/:lessonId", authentication, checkPermission('Course', 'update'), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.removeLesson(req, res, next);
 });
 
 /* ============================================================
- * ADMIN LESSON ENDPOINTS
+ * PUBLIC LESSON ENDPOINTS
  * ============================================================ */
 
 /**
  * @swagger
- * /admin/lessons:
+ * /lessons/{lessonId}:
+ *   get:
+ *     summary: Get lesson detail
+ *     description: |
+ *       Get detailed information of a specific lesson.
+ *       Authentication is required if the lesson is not marked as preview.
+ *     tags: [Lessons]
+ *     parameters:
+ *       - in: path
+ *         name: lessonId
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Lesson retrieved successfully
+ *       401:
+ *         description: Authentication required for non-preview lessons
+ */
+router.get("/lessons/:lessonId", async (req, res, next) => {
+    // Optional authentication — try to parse token if available
+    const authHeader = req.headers.authorization;
+    if (authHeader) {
+        try {
+            const tokenService = req.container.resolve("tokenService");
+            const accessToken = authHeader.split(" ")[1];
+            if (accessToken) {
+                const decode = tokenService.verifyAccessToken({ token: accessToken });
+                if (decode) req.user = decode;
+            }
+        } catch (e) { /* ignore */ }
+    }
+
+    const lessonController = req.container.resolve("lessonController");
+    await lessonController.getById(req, res, next);
+});
+
+/**
+ * @swagger
+ * /lessons:
  *   get:
  *     summary: Get all lessons
- *     description: Get all lessons (standalone, not nested under course). Admin/Instructor only.
+ *     description: Get all lessons (standalone, not nested under course). Requires authentication and Lesson manage permission.
  *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
@@ -526,17 +530,17 @@ router.delete("/admin/courses/:id/lessons/:lessonId", authentication, async (req
  *       401:
  *         description: Unauthorized
  */
-router.get("/admin/lessons", authentication, async (req, res, next) => {
+router.get("/lessons", authentication, checkPermission('Lesson', 'read'), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.getAll(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/lessons:
+ * /lessons:
  *   post:
  *     summary: Create a new standalone lesson
- *     description: Create a new lesson. Attach it to a course separately via the link endpoint. Admin/Instructor only.
+ *     description: Create a new lesson. Attach it to a course separately via the link endpoint. Requires authentication and Lesson manage permission.
  *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
@@ -583,17 +587,17 @@ router.get("/admin/lessons", authentication, async (req, res, next) => {
  *       401:
  *         description: Unauthorized
  */
-router.post("/admin/lessons", authentication, validateData(createLessonSchema, "body"), async (req, res, next) => {
+router.post("/lessons", authentication, checkPermission('Lesson', 'create'), validateData(createLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.create(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/lessons/{lessonId}:
+ * /lessons/{lessonId}:
  *   put:
  *     summary: Update a lesson
- *     description: Update lesson details. Admin/Instructor only.
+ *     description: Update lesson details. Requires authentication and Lesson manage permission.
  *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
@@ -641,17 +645,17 @@ router.post("/admin/lessons", authentication, validateData(createLessonSchema, "
  *       404:
  *         description: Lesson not found
  */
-router.put("/admin/lessons/:lessonId", authentication, validateData(updateLessonSchema, "body"), async (req, res, next) => {
+router.put("/lessons/:lessonId", authentication, checkPermission('Lesson', 'update'), validateData(updateLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.update(req, res, next);
 });
 
 /**
  * @swagger
- * /admin/lessons/{lessonId}:
+ * /lessons/{lessonId}:
  *   delete:
  *     summary: Delete a lesson
- *     description: Delete a standalone lesson. Admin/Instructor only.
+ *     description: Delete a standalone lesson. Requires authentication and Lesson manage permission.
  *     tags: [Lessons]
  *     security:
  *       - bearerAuth: []
@@ -669,7 +673,7 @@ router.put("/admin/lessons/:lessonId", authentication, validateData(updateLesson
  *       404:
  *         description: Lesson not found
  */
-router.delete("/admin/lessons/:lessonId", authentication, async (req, res, next) => {
+router.delete("/lessons/:lessonId", authentication, checkPermission('Lesson', 'delete'), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.delete(req, res, next);
 });
