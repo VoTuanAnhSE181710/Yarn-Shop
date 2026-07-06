@@ -1,5 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { uploadDIYPost } from '../../utils/multerStorage.js';
 
 const router = express.Router();
 
@@ -26,13 +27,25 @@ const router = express.Router();
  *           type: array
  *           items:
  *             type: string
- *         linkedComboId:
- *           type: string
+ *         linkedProduct:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               productId:
+ *                 type: string
+ *         linkedCombo:
+ *           type: array
+ *           items:
+ *             type: object
+ *             properties:
+ *               comboId:
+ *                 type: string
  *         likeCount:
  *           type: number
- *         saveCount:
- *           type: number
  *         purchaseCount:
+ *           type: number
+ *         price:
  *           type: number
  *         status:
  *           type: string
@@ -67,6 +80,10 @@ const router = express.Router();
  *         schema:
  *           type: string
  *       - in: query
+ *         name: linkedProductId
+ *         schema:
+ *           type: string
+ *       - in: query
  *         name: page
  *         schema:
  *           type: integer
@@ -93,36 +110,53 @@ router.get(
  * /diy-posts:
  *   post:
  *     summary: Create a DIY post
- *     description: Create a new DIY post. Requires authentication.
+ *     description: Create a new DIY post. Requires authentication and DIYPost create permission. Supports file upload for images.
  *     tags: [DIYPosts]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - title
- *               - description
+ *               - data
  *             properties:
- *               creatorId:
- *                 type: string
- *               title:
- *                 type: string
- *               description:
- *                 type: string
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing post data (title, description, tags, linkedProduct, linkedCombo, price)'
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   linkedProduct:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         productId:
+ *                           type: string
+ *                   linkedCombo:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         comboId:
+ *                           type: string
+ *                   price:
+ *                     type: number
  *               images:
  *                 type: array
  *                 items:
  *                   type: string
- *               tags:
- *                 type: array
- *                 items:
- *                   type: string
- *               linkedComboId:
- *                 type: string
+ *                   format: binary
+ *                 description: Post images (upload multiple files)
  *     responses:
  *       201:
  *         description: DIY Post created successfully
@@ -130,6 +164,41 @@ router.get(
 router.post(
     "/",
     authentication,
+    checkPermission('DIYPost', 'create'),
+    uploadDIYPost.any(),
+    (req, res, next) => {
+        try {
+            if (!req.body.data && !req.body.title) {
+                // If no 'data' field, try to use req.body directly
+                next();
+                return;
+            }
+            
+            if (req.body.data) {
+                let postData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+                
+                // Attach uploaded image paths
+                if (req.files && req.files.length > 0) {
+                    const imagePaths = req.files.map(f => f.path);
+                    if (!postData.images) postData.images = [];
+                    postData.images.push(...imagePaths);
+                }
+                
+                req.body = postData;
+            } else if (req.files && req.files.length > 0) {
+                if (!req.body.images) req.body.images = [];
+                req.body.images.push(...req.files.map(f => f.path));
+            }
+            
+            next();
+        } catch (error) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid form data format. Make sure 'data' is valid JSON.",
+                error: error.message
+            });
+        }
+    },
     async (req, res, next) => {
         const diyPostController = req.container.resolve("diyPostController");
         await diyPostController.createPost(req, res, next);
@@ -166,7 +235,7 @@ router.get(
  * /diy-posts/{id}:
  *   put:
  *     summary: Update a DIY post
- *     description: Update an existing DIY post by ID. Requires authentication.
+ *     description: Update an existing DIY post by ID. Requires authentication and DIYPost update permission. Supports file upload for images.
  *     tags: [DIYPosts]
  *     security:
  *       - bearerAuth: []
@@ -178,27 +247,46 @@ router.get(
  *           type: string
  *     requestBody:
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing fields to update'
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   linkedProduct:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         productId:
+ *                           type: string
+ *                   linkedCombo:
+ *                     type: array
+ *                     items:
+ *                       type: object
+ *                       properties:
+ *                         comboId:
+ *                           type: string
+ *                   price:
+ *                     type: number
+ *                   status:
+ *                     type: string
+ *                     enum: [pending, approved, rejected]
  *               images:
  *                 type: array
  *                 items:
  *                   type: string
- *               tags:
- *                 type: array
- *                 items:
- *                   type: string
- *               linkedComboId:
- *                 type: string
- *               status:
- *                 type: string
- *                 enum: [pending, approved, rejected]
+ *                   format: binary
  *     responses:
  *       200:
  *         description: DIY Post updated successfully
@@ -206,6 +294,34 @@ router.get(
 router.put(
     "/:id",
     authentication,
+    checkPermission('DIYPost', 'update'),
+    uploadDIYPost.any(),
+    (req, res, next) => {
+        try {
+            if (req.body.data) {
+                let postData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+                
+                if (req.files && req.files.length > 0) {
+                    const imagePaths = req.files.map(f => f.path);
+                    if (!postData.images) postData.images = [];
+                    postData.images.push(...imagePaths);
+                }
+                
+                req.body = postData;
+            } else if (req.files && req.files.length > 0) {
+                if (!req.body.images) req.body.images = [];
+                req.body.images.push(...req.files.map(f => f.path));
+            }
+            
+            next();
+        } catch (error) {
+            return res.status(400).json({
+                status: "error",
+                message: "Invalid form data format. Make sure 'data' is valid JSON.",
+                error: error.message
+            });
+        }
+    },
     async (req, res, next) => {
         const diyPostController = req.container.resolve("diyPostController");
         await diyPostController.updatePost(req, res, next);
@@ -217,7 +333,7 @@ router.put(
  * /diy-posts/{id}:
  *   delete:
  *     summary: Delete a DIY post
- *     description: Delete a DIY post by ID. Requires authentication.
+ *     description: Delete a DIY post by ID. Requires authentication and DIYPost delete permission.
  *     tags: [DIYPosts]
  *     security:
  *       - bearerAuth: []
@@ -234,6 +350,7 @@ router.put(
 router.delete(
     "/:id",
     authentication,
+    checkPermission('DIYPost', 'delete'),
     async (req, res, next) => {
         const diyPostController = req.container.resolve("diyPostController");
         await diyPostController.deletePost(req, res, next);

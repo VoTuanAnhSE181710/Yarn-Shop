@@ -61,3 +61,14 @@ const productStorage = new CloudinaryStorage({
 });
 
 export const uploadProduct = multer({ storage: productStorage });
+
+const diyPostStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'diy_posts',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [{ quality: "auto", fetch_format: "auto" }]
+    }
+});
+
+export const uploadDIYPost = multer({ storage: diyPostStorage });

@@ -4,12 +4,13 @@ export default class DIYPostService {
     }
 
     async getPosts(query) {
-        const { page = 1, limit = 10, status, creatorId, linkedComboId } = query;
+        const { page = 1, limit = 10, status, creatorId, linkedComboId, linkedProductId } = query;
         let filter = {};
 
         if (status) filter.status = status;
         if (creatorId) filter.creatorId = creatorId;
-        if (linkedComboId) filter.linkedComboId = linkedComboId;
+        if (linkedComboId) filter['linkedCombo.comboId'] = linkedComboId;
+        if (linkedProductId) filter['linkedProduct.productId'] = linkedProductId;
 
         return this.diyPostRepository.findAll({
             filter,

@@ -1,5 +1,21 @@
 import mongoose from "mongoose";
 
+const linkedProductSchema = new mongoose.Schema({
+    productId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+        required: true,
+    },
+}, { _id: false });
+
+const linkedComboSchema = new mongoose.Schema({
+    comboId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Kit",
+        required: true,
+    },
+}, { _id: false });
+
 const diyPostSchema = new mongoose.Schema({
     creatorId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -21,20 +37,23 @@ const diyPostSchema = new mongoose.Schema({
     tags: [{
         type: String,
     }],
-    linkedComboId: {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Kit",
-        default: null,
+    linkedProduct: {
+        type: [linkedProductSchema],
+        default: [],
+    },
+    linkedCombo: {
+        type: [linkedComboSchema],
+        default: [],
     },
     likeCount: {
         type: Number,
         default: 0,
     },
-    saveCount: {
+    purchaseCount: {
         type: Number,
         default: 0,
     },
-    purchaseCount: {
+    price: {
         type: Number,
         default: 0,
     },

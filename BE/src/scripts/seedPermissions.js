@@ -316,6 +316,26 @@ const seedPermissions = async () => {
                 description: "Permission to view system logs"
             },
 
+            // ===== ORDER REPORT PERMISSIONS =====
+            {
+                name: "Read OrderReport",
+                resource: "OrderReport",
+                action: "read",
+                description: "Permission to view order report information and list all reports"
+            },
+            {
+                name: "Update OrderReport",
+                resource: "OrderReport",
+                action: "update",
+                description: "Permission to update order report status, assign staff, and add notes"
+            },
+            {
+                name: "Delete OrderReport",
+                resource: "OrderReport",
+                action: "delete",
+                description: "Permission to delete order reports"
+            },
+
             // ===== MAIL PERMISSIONS =====
             {
                 name: "Create Mail",

@@ -2,7 +2,7 @@ import DIYPost from '../models/diyPost.js';
 
 export default class DIYPostRepository {
     async findById(postId) {
-        return DIYPost.findById(postId).populate('creatorId').populate('linkedComboId');
+        return DIYPost.findById(postId).lean();
     }
 
     async create(data) {
@@ -13,8 +13,6 @@ export default class DIYPostRepository {
         const skip = (page - 1) * limit;
 
         const posts = await DIYPost.find(filter)
-            .populate('creatorId')
-            .populate('linkedComboId')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
@@ -32,9 +30,7 @@ export default class DIYPostRepository {
     }
 
     async update(postId, updateData) {
-        return DIYPost.findByIdAndUpdate(postId, updateData, { new: true, runValidators: true })
-            .populate('creatorId')
-            .populate('linkedComboId');
+        return DIYPost.findByIdAndUpdate(postId, updateData, { new: true, runValidators: true }).lean();
     }
 
     async delete(postId) {
