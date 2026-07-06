@@ -2,9 +2,11 @@ import { Course } from "../models/Model.js";
 
 class CourseService {
     #courseModel
+    #userRepository
 
-    constructor() {
+    constructor({ userRepository }) {
         this.#courseModel = Course;
+        this.#userRepository = userRepository;
     }
 
     #formatCourseResponse = (course) => {
@@ -278,8 +280,9 @@ class CourseService {
     /**
      * Enroll in a course (increment enrolledCount)
      * @param {string} courseId
+     * @param {string} userId
      */
-    enrollCourse = async (courseId) => {
+    enrollCourse = async (courseId, userId) => {
         const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
 
         if (!course) {
@@ -288,10 +291,36 @@ class CourseService {
             throw error;
         }
 
+        const user = await this.#userRepository.findUserById({ userId });
+
+        if (!user) {
+            const error = new Error("User not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        // Check if user already enrolled
+        const enrolledArray = user.enrolled || [];
+        const alreadyEnrolled = enrolledArray.some(id => id.toString() === courseId);
+
+        if (alreadyEnrolled) {
+            return {
+                alreadyEnrolled: true,
+                enrolledCount: course.enrolledCount || 0,
+                userEnrolled: true
+            };
+        }
+
+        // Enroll user and increment course count
+        await this.#userRepository.enrollCourse({ userId, courseId });
         course.enrolledCount = (course.enrolledCount || 0) + 1;
         await course.save();
 
-        return this.#formatCourseResponse(course);
+        return {
+            alreadyEnrolled: false,
+            enrolledCount: course.enrolledCount,
+            userEnrolled: true
+        };
     }
 
     /**

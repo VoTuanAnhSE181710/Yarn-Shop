@@ -416,6 +416,33 @@ class UserRepository {
             usersByStatus
         };
     }
+
+    /**
+     * Enroll a user in a course
+     * @param {string} userId - User ObjectId
+     * @param {string} courseId - Course ObjectId
+     */
+    enrollCourse = async ({ userId, courseId }) => {
+        const updatedUser = await User.findByIdAndUpdate(
+            userId,
+            {
+                $addToSet: { enrolled: courseId }
+            },
+            {
+                returnDocument: 'after',
+                context: "query"
+            }
+        ).populate('roleId').lean();
+
+        if (!updatedUser) {
+            return null;
+        }
+
+        return {
+            ...updatedUser,
+            userId: updatedUser._id.toString(),
+        };
+    }
 }
 
-export default UserRepository
+export default UserRepository;

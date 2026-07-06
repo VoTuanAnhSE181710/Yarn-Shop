@@ -181,7 +181,7 @@ router.get("/courses/:id", async (req, res, next) => {
  * /courses/{id}/enroll:
  *   post:
  *     summary: Enroll in a course
- *     description: Increment the enrollment count of a course. Authenticated access.
+ *     description: Enroll the authenticated user in a course. If already enrolled, returns 'Already enrolled' message. Authenticated access required.
  *     tags: [Courses]
  *     security:
  *       - bearerAuth: []
@@ -194,11 +194,34 @@ router.get("/courses/:id", async (req, res, next) => {
  *         description: Course ID
  *     responses:
  *       200:
- *         description: Enrolled successfully
+ *         description: Enrolled successfully or already enrolled
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                   example: success
+ *                 message:
+ *                   type: string
+ *                   example: Enroll successful
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     courseId:
+ *                       type: string
+ *                       example: '65be000000000000000001'
+ *                     enrolledCount:
+ *                       type: number
+ *                       example: 10
+ *                     userEnrolled:
+ *                       type: boolean
+ *                       example: true
  *       401:
  *         description: Unauthorized
  *       404:
- *         description: Course not found
+ *         description: Course or User not found
  */
 router.post("/courses/:id/enroll", authentication, async (req, res, next) => {
     const courseController = req.container.resolve("courseController");

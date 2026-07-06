@@ -135,6 +135,7 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     }),
     courseService: asClass(CourseService, {
       lifetime: Lifetime.SCOPED,
+      injectionMode: 'PROXY'
     }),
     lessonService: asClass(LessonService, {
       lifetime: Lifetime.SCOPED,

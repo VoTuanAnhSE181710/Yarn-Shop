@@ -243,7 +243,15 @@ class UserService {
 
         const { password, loginAttempts, lockUntil, deletedAt, deletedBy, __v, ...cleanUser } = existingUser;
 
-        return cleanUser;
+        // Ensure enrolled is an array of strings
+        const enrolled = (existingUser.enrolled || []).map(id => 
+            id.toString()
+        );
+
+        return {
+            ...cleanUser,
+            enrolled,
+        };
     }
 
     getMyProfile = async ({ userId }) => {
@@ -255,7 +263,15 @@ class UserService {
 
         const { password, loginAttempts, lockUntil, deletedAt, deletedBy, __v, ...cleanProfile } = userProfile;
 
-        return cleanProfile;
+        // Ensure enrolled is an array of strings
+        const enrolled = (userProfile.enrolled || []).map(id => 
+            id.toString()
+        );
+
+        return {
+            ...cleanProfile,
+            enrolled,
+        };
     }
 
     adminUpdateUser = async ({ queryUserId, userData, userId }) => {

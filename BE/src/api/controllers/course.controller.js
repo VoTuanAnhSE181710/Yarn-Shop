@@ -157,13 +157,26 @@ class CourseController {
     enroll = async (req, res, next) => {
         try {
             const { id } = req.params;
+            const { userId } = req.user;
 
-            const course = await this.#courseService.enrollCourse(id);
+            const result = await this.#courseService.enrollCourse(id, userId);
 
-            res.status(200).json({
-                status: 'success',
-                data: { course },
-            });
+            if (result.alreadyEnrolled) {
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Already enrolled',
+                });
+            } else {
+                res.status(200).json({
+                    status: 'success',
+                    message: 'Enroll successful',
+                    data: {
+                        courseId: id,
+                        enrolledCount: result.enrolledCount,
+                        userEnrolled: result.userEnrolled
+                    },
+                });
+            }
         } catch (error) {
             next(error);
         }
