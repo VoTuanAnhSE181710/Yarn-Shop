@@ -1,4 +1,5 @@
 import { Lesson, Course } from "../models/Model.js";
+import { NotFoundError } from "../error/error.js";
 
 class LessonService {
     #lessonModel
@@ -84,9 +85,7 @@ class LessonService {
         const lesson = await this.#lessonModel.findById(lessonId).select("-__v").lean();
 
         if (!lesson) {
-            const error = new Error("Lesson not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Lesson not found");
         }
 
         return this.#formatLessonResponse(lesson);
@@ -101,9 +100,7 @@ class LessonService {
         const lesson = await this.#lessonModel.findById(lessonId);
 
         if (!lesson) {
-            const error = new Error("Lesson not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Lesson not found");
         }
 
         const durationChanged = updateData.duration !== undefined && updateData.duration !== lesson.duration;
@@ -135,9 +132,7 @@ class LessonService {
         const lesson = await this.#lessonModel.findById(lessonId);
 
         if (!lesson) {
-            const error = new Error("Lesson not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Lesson not found");
         }
 
         await this.#lessonModel.findByIdAndDelete(lessonId);

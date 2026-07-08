@@ -1,3 +1,5 @@
+import { NotFoundError } from "../error/error.js";
+
 export default class KitService {
     constructor({ kitRepository }) {
         this.kitRepository = kitRepository;
@@ -20,9 +22,7 @@ export default class KitService {
     async getKitById(id) {
         const kit = await this.kitRepository.findById(id);
         if (!kit) {
-            const error = new Error("Kit not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Kit not found");
         }
         return kit;
     }
@@ -34,9 +34,7 @@ export default class KitService {
     async updateKit(id, data) {
         const kit = await this.kitRepository.update(id, data);
         if (!kit) {
-            const error = new Error("Kit not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Kit not found");
         }
         return kit;
     }
@@ -44,9 +42,7 @@ export default class KitService {
     async deleteKit(id) {
         const kit = await this.kitRepository.softDelete(id);
         if (!kit) {
-            const error = new Error("Kit not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Kit not found");
         }
         return kit;
     }

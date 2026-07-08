@@ -1,4 +1,5 @@
 import Product from "../models/product.js";
+import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
 
 export default class OrderService {
     constructor({ orderRepository }) {
@@ -12,9 +13,7 @@ export default class OrderService {
     async getOrderById(id) {
         const order = await this.orderRepository.findById(id);
         if (!order) {
-            const error = new Error("Order not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Order not found");
         }
         return order;
     }
@@ -49,9 +48,7 @@ export default class OrderService {
             ...(orderStatus === "DELIVERED" ? { deliveredAt: new Date() } : {}),
         });
         if (!order) {
-            const error = new Error("Order not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Order not found");
         }
         return order;
     }
@@ -59,21 +56,15 @@ export default class OrderService {
     async cancelOrder(id, userId, cancelReason) {
         const order = await this.orderRepository.findById(id);
         if (!order) {
-            const error = new Error("Order not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Order not found");
         }
         // Handle both populated (object with _id) and non-populated (ObjectId string) user
         const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
         if (orderUserId !== userId.toString()) {
-            const error = new Error("Not authorized to cancel this order");
-            error.statusCode = 403;
-            throw error;
+            throw new ForbiddenError("Not authorized to cancel this order");
         }
         if (order.orderStatus !== "PENDING") {
-            const error = new Error("Only pending orders can be cancelled");
-            error.statusCode = 400;
-            throw error;
+            throw new BadRequestError("Only pending orders can be cancelled");
         }
         return this.orderRepository.update(id, {
             orderStatus: "CANCELLED",
@@ -89,9 +80,7 @@ export default class OrderService {
         };
         const order = await this.orderRepository.update(id, update);
         if (!order) {
-            const error = new Error("Order not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Order not found");
         }
         return order;
     }
@@ -106,14 +95,10 @@ export default class OrderService {
         for (const item of items) {
             const product = await Product.findById(item.productId);
             if (!product) {
-                const error = new Error(`Product ${item.productId} not found`);
-                error.statusCode = 404;
-                throw error;
+                throw new NotFoundError(`Product ${item.productId} not found`);
             }
             if (!product.isActive) {
-                const error = new Error(`Product "${product.name}" is no longer available`);
-                error.statusCode = 400;
-                throw error;
+                throw new BadRequestError(`Product "${product.name}" is no longer available`);
             }
 
             // Find matching variant by color/hexCode
@@ -127,9 +112,7 @@ export default class OrderService {
                 if (matchedVariant) {
                     price = matchedVariant.price;
                     if (matchedVariant.stock < item.quantity) {
-                        const error = new Error(`Insufficient stock for "${product.name}" - ${matchedVariant.color}`);
-                        error.statusCode = 400;
-                        throw error;
+                        throw new BadRequestError(`Insufficient stock for "${product.name}" - ${matchedVariant.color}`);
                     }
                     variantInfo = { color: matchedVariant.color, hexCode: matchedVariant.hexCode };
                 }

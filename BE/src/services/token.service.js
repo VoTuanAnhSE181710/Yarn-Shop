@@ -30,8 +30,7 @@ class TokenService {
         const accessToken = jwt.sign(
             { userId, roleName, roleId, fullName, deviceId: finalDeviceId, jti},
             SECRET_KEY,
-            // { expiresIn: "15m" }
-            { expiresIn: "300m" }
+            { expiresIn: "30m" }
         )
 
         const refreshToken = jwt.sign(

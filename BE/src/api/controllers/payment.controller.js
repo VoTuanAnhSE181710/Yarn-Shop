@@ -3,6 +3,7 @@ import qs from 'qs';
 import moment from 'moment';
 import { verifyVNPaySignature } from '../../utils/vnpayHelper.js';
 import Order from '../../models/order.js';
+import { ForbiddenError, BadRequestError, NotFoundError } from '../../error/error.js';
 
 // ─────────────────────────────────────────────
 //  HELPER: Sort object keys alphabetically (VNPay requirement)
@@ -28,11 +29,26 @@ function sortObject(obj) {
 // ─────────────────────────────────────────────
 export const createPayment = async (req, res) => {
     try {
-        const { amount, orderInfo } = req.body;
+        const { orderId } = req.body;
 
-        if (!amount) {
-            return res.status(400).json({ message: "Invalid amount" });
+        if (!orderId) {
+            throw new BadRequestError("Missing orderId");
         }
+
+        // Fetch order from DB to get the actual totalPrice
+        const order = await Order.findById(orderId);
+        if (!order) {
+            throw new NotFoundError("Order not found");
+        }
+
+        // Verify order belongs to authenticated user
+        const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
+        if (orderUserId !== req.user.userId.toString()) {
+            throw new ForbiddenError("Not authorized to create payment for this order");
+        }
+
+        const amount = order.totalPrice;
+        const orderInfo = `Yarn Shop order ${orderId}`;
 
         const partnerCode = process.env.MOMO_PARTNER_CODE;
         const accessKey = process.env.MOMO_ACCESS_KEY;
@@ -40,18 +56,16 @@ export const createPayment = async (req, res) => {
         const moMoApiUrl = process.env.MOMO_API_URL;
 
         const timestamp = Date.now().toString();
-        const orderId = "YARN" + timestamp;
-        const requestId = orderId;
+        const momoOrderId = "YARN" + timestamp;
+        const requestId = momoOrderId;
         const requestType = "captureWallet";
         const extraData = "";
 
         const redirectUrl = "http://localhost:3000/order/success";
         const ipnUrl = "https://webhook.site/test";
 
-        const orderInfoRaw = orderInfo || "Yarn Shop order payment";
-
         const rawSignature =
-            `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${orderId}&orderInfo=${orderInfoRaw}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
+            `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${momoOrderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
 
         const signature = crypto
             .createHmac("sha256", secretKey)
@@ -62,8 +76,8 @@ export const createPayment = async (req, res) => {
             partnerCode,
             requestId,
             amount: Number(amount),
-            orderId,
-            orderInfo: orderInfoRaw,
+            orderId: momoOrderId,
+            orderInfo,
             redirectUrl,
             ipnUrl,
             requestType,
@@ -93,7 +107,7 @@ export const createPayment = async (req, res) => {
         }
     } catch (error) {
         console.error("Momo Payment Error:", error);
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        return res.status(error.statusCode || 500).json({ message: error.message || "Internal server error" });
     }
 };
 
@@ -102,11 +116,26 @@ export const createPayment = async (req, res) => {
 // ─────────────────────────────────────────────
 export const createVNPayPayment = async (req, res) => {
     try {
-        const { amount, orderInfo, orderId } = req.body;
+        const { orderId } = req.body;
 
         if (!orderId) {
-            return res.status(400).json({ message: "Missing orderId (MongoDB Order _id)" });
+            throw new BadRequestError("Missing orderId");
         }
+
+        // Fetch order from DB to get the actual totalPrice
+        const order = await Order.findById(orderId);
+        if (!order) {
+            throw new NotFoundError("Order not found");
+        }
+
+        // Verify order belongs to authenticated user
+        const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
+        if (orderUserId !== req.user.userId.toString()) {
+            throw new ForbiddenError("Not authorized to create payment for this order");
+        }
+
+        const amount = order.totalPrice;
+        const orderInfo = `Yarn shop order ${orderId}`;
 
         const tmnCode = process.env.VNP_TMN_CODE;
         const secretKey = process.env.VNP_HASH_SECRET;
@@ -134,7 +163,7 @@ export const createVNPayPayment = async (req, res) => {
         vnp_Params["vnp_Locale"] = "vn";
         vnp_Params["vnp_CurrCode"] = "VND";
         vnp_Params["vnp_TxnRef"] = orderId;
-        vnp_Params["vnp_OrderInfo"] = orderInfo || "Yarn shop order payment";
+        vnp_Params["vnp_OrderInfo"] = orderInfo;
         vnp_Params["vnp_OrderType"] = "other";
         vnp_Params["vnp_Amount"] = amount * 100; // VNPay requires amount * 100
         vnp_Params["vnp_ReturnUrl"] = returnUrl;
@@ -158,7 +187,7 @@ export const createVNPayPayment = async (req, res) => {
         });
     } catch (error) {
         console.error("Error creating VNPay payment link:", error);
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        return res.status(error.statusCode || 500).json({ message: error.message || "Internal server error" });
     }
 };
 

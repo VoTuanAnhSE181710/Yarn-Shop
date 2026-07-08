@@ -1,4 +1,5 @@
 import { Course } from "../models/Model.js";
+import { NotFoundError } from "../error/error.js";
 
 class CourseService {
     #courseModel
@@ -142,9 +143,7 @@ class CourseService {
             .lean();
 
         if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Course not found");
         }
 
         const formatted = this.#formatCourseResponse(course);
@@ -169,9 +168,7 @@ class CourseService {
         const course = await this.#courseModel.findOne({ _id: id, deletedAt: null });
 
         if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Course not found");
         }
 
         if (updateData) {
@@ -198,9 +195,7 @@ class CourseService {
         const course = await this.#courseModel.findOne({ _id: id, deletedAt: null });
 
         if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Course not found");
         }
 
         course.deletedAt = new Date();
@@ -236,9 +231,7 @@ class CourseService {
         const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
 
         if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Course not found");
         }
 
         if (!course.linkedLessons.includes(lessonId)) {
@@ -261,9 +254,7 @@ class CourseService {
         const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
 
         if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Course not found");
         }
 
         course.linkedLessons = course.linkedLessons.filter(
@@ -286,17 +277,13 @@ class CourseService {
         const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
 
         if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Course not found");
         }
 
         const user = await this.#userRepository.findUserById({ userId });
 
         if (!user) {
-            const error = new Error("User not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("User not found");
         }
 
         // Check if user already enrolled
@@ -332,9 +319,7 @@ class CourseService {
         const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
 
         if (!course) {
-            const error = new Error("Course not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Course not found");
         }
 
         course.rating = ratingValue;

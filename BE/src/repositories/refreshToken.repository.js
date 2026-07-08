@@ -1,4 +1,3 @@
-// import RefreshToken from "../models/RefreshToken.js";
 import { configDotenv } from "dotenv";
 configDotenv()
 
@@ -10,55 +9,6 @@ class RefreshTokenRepository {
     constructor({ redis }){
         this.#redis = redis;
     }
-    //login
-    // async saveToken({
-    //     userId,
-    //     refreshToken,
-    //     expiredAt,
-    // }) {
-    //     return await RefreshToken.create({
-    //         userId,
-    //         refreshToken,
-    //         expiredAt,
-    //     });
-    // }
-
-    // //tim token de cap accesstoken moi
-    // async findToken(token) {
-    //     return await RefreshToken.findOne({ token })
-    //     .populate("userId")
-    //     .lean();
-    // }
-
-    // async deleteToken(token) {
-    //     return await RefreshToken.deleteOne({ token })
-    // }
-
-    // //su dung khi changepassword va logout toan bo thiet bi
-    // async deleteAllTokenByUserId(userId) {
-    //     return await RefreshToken.deleteMany({ userId })
-    // }
-
-    // saveRefreshToken = async ({
-    //     userId,
-    //     refreshToken,
-    //     expiresIn = REFRESH_TOKEN_EXPIRED_SECONDS,
-    // }) => {
-    //     const key = `refresh_token:${userId}`;
-
-    //     try {
-    //         await this.#redis.setex(key, expiresIn, refreshToken);
-    //         return true;
-    //     } catch (error) {
-    //         console.log(`Error saving refresh token to Redis: ${error}`);
-    //         throw error;
-    //     }
-    // }
-
-
-    
-
-    
     saveMultiRefreshToken = async ({
         userId,
         refreshToken,

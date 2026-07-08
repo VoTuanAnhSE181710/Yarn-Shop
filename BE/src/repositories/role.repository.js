@@ -1,6 +1,7 @@
 import Role from '../models/role.js';
 import User from '../models/user.js';
 import Permission from '../models/permission.js';
+import { BadRequestError } from '../error/error.js';
 
 export default class RoleRepository {
     async findById(roleId){
@@ -16,7 +17,7 @@ export default class RoleRepository {
             const validPermissions = await Permission.find({ _id: { $in: data.permission } });
 
             if (validPermissions.length !== data.permission.length) {
-                throw new Error('One or more permissions are invalid');
+                throw new BadRequestError('One or more permissions are invalid');
             }
         }
         return Role.create(data);
@@ -51,7 +52,7 @@ export default class RoleRepository {
             const validPermissions = await Permission.find({ _id: { $in: updateData.permission } });
 
             if (validPermissions.length !== updateData.permission.length) {
-                throw new Error('One or more permissions are invalid');
+                throw new BadRequestError('One or more permissions are invalid');
             }
         }
 

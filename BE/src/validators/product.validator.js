@@ -61,11 +61,11 @@ const createProductSchema = Joi.object({
     "string.empty": "Product description cannot be empty",
   }),
   category: Joi.string()
-    .valid("yarn", "hook", "needle", "kit", "accessory")
+    .valid("yarn", "hook", "needle", "accessory")
     .required()
     .messages({
       "any.required": "Product category is required",
-      "any.only": "Category must be one of: yarn, hook, needle, kit, accessory",
+      "any.only": "Category must be one of: yarn, hook, needle, accessory",
     }),
   image: Joi.string().trim().required().messages({
     "any.required": "Product image is required",
@@ -90,10 +90,10 @@ const updateProductSchema = Joi.object({
     "string.empty": "Product description cannot be empty",
   }),
   category: Joi.string()
-    .valid("yarn", "hook", "needle", "kit", "accessory")
+    .valid("yarn", "hook", "needle", "accessory")
     .optional()
     .messages({
-      "any.only": "Category must be one of: yarn, hook, needle, kit, accessory",
+      "any.only": "Category must be one of: yarn, hook, needle, accessory",
     }),
   image: Joi.string().trim().optional().messages({
     "string.empty": "Product image cannot be empty",
@@ -113,10 +113,10 @@ const updateProductSchema = Joi.object({
 
 const productQuerySchema = Joi.object({
   category: Joi.string()
-    .valid("yarn", "hook", "needle", "kit", "accessory")
+    .valid("yarn", "hook", "needle", "accessory")
     .optional()
     .messages({
-      "any.only": "Category must be one of: yarn, hook, needle, kit, accessory",
+      "any.only": "Category must be one of: yarn, hook, needle, accessory",
     }),
   tag: Joi.string().trim().optional(),
   search: Joi.string().trim().optional().allow(""),

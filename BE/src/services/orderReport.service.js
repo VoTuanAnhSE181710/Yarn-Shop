@@ -1,4 +1,5 @@
 import Order from "../models/order.js";
+import { NotFoundError, ForbiddenError, BadRequestError } from "../error/error.js";
 
 export default class OrderReportService {
     constructor({ orderReportRepository }) {
@@ -11,17 +12,13 @@ export default class OrderReportService {
         // Validate order exists
         const order = await Order.findById(orderId);
         if (!order) {
-            const error = new Error("Order not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Order not found");
         }
 
         // Validate user owns the order
         const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
         if (orderUserId !== userId.toString()) {
-            const error = new Error("You can only report issues on your own orders");
-            error.statusCode = 403;
-            throw error;
+            throw new ForbiddenError("You can only report issues on your own orders");
         }
 
         return this.orderReportRepository.create({
@@ -45,16 +42,12 @@ export default class OrderReportService {
     async getReportById(reportId, userId, isAdmin) {
         const report = await this.orderReportRepository.findById(reportId);
         if (!report) {
-            const error = new Error("Report not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Report not found");
         }
 
         // Non-admin users can only view their own reports
         if (!isAdmin && report.reporterId?.toString() !== userId?.toString()) {
-            const error = new Error("Not authorized to view this report");
-            error.statusCode = 403;
-            throw error;
+            throw new ForbiddenError("Not authorized to view this report");
         }
 
         return report;
@@ -63,22 +56,16 @@ export default class OrderReportService {
     async updateReport(reportId, data, userId) {
         const report = await this.orderReportRepository.findById(reportId);
         if (!report) {
-            const error = new Error("Report not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Report not found");
         }
 
         // Only reporter can update, and only when PENDING
         if (report.reporterId?.toString() !== userId?.toString()) {
-            const error = new Error("Not authorized to update this report");
-            error.statusCode = 403;
-            throw error;
+            throw new ForbiddenError("Not authorized to update this report");
         }
 
         if (report.status !== "PENDING") {
-            const error = new Error("Cannot update report when status is not PENDING");
-            error.statusCode = 400;
-            throw error;
+            throw new BadRequestError("Cannot update report when status is not PENDING");
         }
 
         return this.orderReportRepository.update(reportId, data);
@@ -87,32 +74,31 @@ export default class OrderReportService {
     async deleteReport(reportId, userId) {
         const report = await this.orderReportRepository.findById(reportId);
         if (!report) {
-            const error = new Error("Report not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Report not found");
         }
 
         // Only reporter can delete, and only when PENDING
         if (report.reporterId?.toString() !== userId?.toString()) {
-            const error = new Error("Not authorized to delete this report");
-            error.statusCode = 403;
-            throw error;
+            throw new ForbiddenError("Not authorized to delete this report");
         }
 
         if (report.status !== "PENDING") {
-            const error = new Error("Cannot delete report when status is not PENDING");
-            error.statusCode = 400;
-            throw error;
+            throw new BadRequestError("Cannot delete report when status is not PENDING");
         }
 
         return this.orderReportRepository.delete(reportId);
     }
 
     async getAllReports(query = {}) {
-        const { page = 1, limit = 10, search, status, sort } = query;
+        const { page = 1, limit = 10, search, status, sort, assignedStaff } = query;
         let filter = {};
 
         if (status) filter.status = status;
+
+        // Filter by assignedStaff if provided
+        if (assignedStaff) {
+            filter.assignedStaff = assignedStaff;
+        }
 
         if (search) {
             const searchRegex = new RegExp(search.trim(), "i");
@@ -142,9 +128,7 @@ export default class OrderReportService {
     async updateStatus(reportId, status, adminNote) {
         const report = await this.orderReportRepository.findById(reportId);
         if (!report) {
-            const error = new Error("Report not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Report not found");
         }
 
         const updateData = { status };
@@ -156,9 +140,7 @@ export default class OrderReportService {
     async assignStaff(reportId, staffId) {
         const report = await this.orderReportRepository.findById(reportId);
         if (!report) {
-            const error = new Error("Report not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Report not found");
         }
 
         return this.orderReportRepository.update(reportId, { assignedStaff: staffId });
@@ -167,9 +149,7 @@ export default class OrderReportService {
     async updateAdminNote(reportId, adminNote) {
         const report = await this.orderReportRepository.findById(reportId);
         if (!report) {
-            const error = new Error("Report not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Report not found");
         }
 
         return this.orderReportRepository.update(reportId, { adminNote });
@@ -179,9 +159,7 @@ export default class OrderReportService {
     async adminDeleteReport(reportId) {
         const report = await this.orderReportRepository.delete(reportId);
         if (!report) {
-            const error = new Error("Report not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("Report not found");
         }
         return report;
     }

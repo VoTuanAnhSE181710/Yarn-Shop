@@ -1,5 +1,6 @@
 import express from 'express';
 import { createPayment, createVNPayPayment, handleVNPayIPN } from '../controllers/payment.controller.js';
+import { authentication, checkPermission } from '../middlewares/middleware.js';
 
 const router = express.Router();
 
@@ -63,7 +64,7 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
-router.post('/momo-payment', createPayment);
+router.post('/momo-payment', authentication, checkPermission("Order", "create"), createPayment);
 
 /**
  * @swagger
@@ -90,7 +91,7 @@ router.post('/momo-payment', createPayment);
  *       500:
  *         description: Internal server error
  */
-router.post('/vnpay-payment', createVNPayPayment);
+router.post('/vnpay-payment', authentication, checkPermission("Order", "create"), createVNPayPayment);
 
 /**
  * @swagger

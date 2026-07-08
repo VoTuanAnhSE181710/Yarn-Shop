@@ -59,15 +59,6 @@ export default class OrderController {
     getById = async (req, res, next) => {
         try {
             const order = await this.orderService.getOrderById(req.params.id);
-
-            // Customers can only view their own orders
-            if (req.user.role !== "Admin" && req.user.role !== "Staff") {
-                const userId = req.user.userId || req.user._id;
-                if (order.user._id.toString() !== userId.toString()) {
-                    return res.status(403).json({ message: "Not authorized" });
-                }
-            }
-
             return res.status(200).json({ message: "Order retrieved successfully", order });
         } catch (error) {
             next(error);

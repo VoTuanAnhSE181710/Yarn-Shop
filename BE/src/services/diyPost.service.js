@@ -1,3 +1,5 @@
+import { NotFoundError } from "../error/error.js";
+
 export default class DIYPostService {
     constructor({ diyPostRepository }) {
         this.diyPostRepository = diyPostRepository;
@@ -22,9 +24,7 @@ export default class DIYPostService {
     async getPostById(id) {
         const post = await this.diyPostRepository.findById(id);
         if (!post) {
-            const error = new Error("DIY Post not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("DIY Post not found");
         }
         return post;
     }
@@ -36,9 +36,7 @@ export default class DIYPostService {
     async updatePost(id, data) {
         const post = await this.diyPostRepository.update(id, data);
         if (!post) {
-            const error = new Error("DIY Post not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("DIY Post not found");
         }
         return post;
     }
@@ -46,9 +44,7 @@ export default class DIYPostService {
     async deletePost(id) {
         const post = await this.diyPostRepository.delete(id);
         if (!post) {
-            const error = new Error("DIY Post not found");
-            error.statusCode = 404;
-            throw error;
+            throw new NotFoundError("DIY Post not found");
         }
         return post;
     }

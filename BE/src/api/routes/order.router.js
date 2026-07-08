@@ -255,6 +255,7 @@ router.get(
 router.get(
     "/:id",
     authentication,
+    checkPermission("Order", "read"),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.getById(req, res, next);
