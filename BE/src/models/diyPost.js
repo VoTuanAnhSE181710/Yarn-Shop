@@ -59,8 +59,8 @@ const diyPostSchema = new mongoose.Schema({
     },
     status: {
         type: String,
-        enum: ["pending", "approved", "rejected"],
-        default: "pending",
+        enum: ["Pending", "Done", "Cancel"],
+        default: "Pending",
     }
 }, {
     timestamps: true
