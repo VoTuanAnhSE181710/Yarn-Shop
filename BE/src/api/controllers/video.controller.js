@@ -196,6 +196,66 @@ class VideoController {
             next(error);
         }
     }
+
+    /**
+     * PATCH /api/v1/videos/admin-update/:id - Admin Update video
+     * Access: Admin or Staff
+     */
+    adminUpdate = async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const updateData = req.body;
+
+            const video = await this.#videoService.updateVideo(id, updateData, null, true);
+
+            res.status(200).json({
+                status: 'success',
+                data: { video },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * DELETE /api/v1/videos/admin-delete/:id - Admin Delete video
+     * Access: Admin or Staff
+     */
+    adminDelete = async (req, res, next) => {
+        try {
+            const { id } = req.params;
+
+            const result = await this.#videoService.deleteVideo(id, null, true);
+
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * POST /api/v1/videos/:id/rate - Rate a video
+     * Access: All authenticated users
+     */
+    rate = async (req, res, next) => {
+        try {
+            const { id } = req.params;
+            const { userId } = req.user;
+            const { score } = req.body;
+
+            const result = await this.#videoService.rateVideo(id, userId, score);
+
+            res.status(200).json({
+                status: 'success',
+                data: result,
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default VideoController;

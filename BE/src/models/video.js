@@ -56,6 +56,31 @@ const videoSchema = new mongoose.Schema({
         type: String,
         enum: ["PENDING", "APPROVED", "REJECTED"],
         default: "APPROVED"
+    },
+    attachedProducts: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product"
+    }],
+    attachedKits: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Kit"
+    }],
+    ratings: [{
+        user: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "User",
+            required: true
+        },
+        score: {
+            type: Number,
+            required: true,
+            min: 1,
+            max: 5
+        }
+    }],
+    averageRating: {
+        type: Number,
+        default: 0
     }
 }, {
     timestamps: true

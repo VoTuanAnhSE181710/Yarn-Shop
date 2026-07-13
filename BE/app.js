@@ -52,6 +52,7 @@ import orderRouter from "./src/api/routes/order.router.js";
 import productRouter from "./src/api/routes/product.router.js";
 import diyPostRouter from "./src/api/routes/diyPost.router.js";
 import orderReportRouter from "./src/api/routes/orderReport.router.js";
+import videoRouter from "./src/api/routes/video.router.js";
 
 app.get("/", (req, res) => {
   res.send(`Hello World!`);
@@ -86,6 +87,7 @@ app.use(`${url}/orders`, orderRouter);
 app.use(`${url}/products`, productRouter);
 app.use(`${url}/diy-posts`, diyPostRouter);
 app.use(`${url}/order-reports`, orderReportRouter);
+app.use(`${url}/videos`, videoRouter);
 
 app.use(handleError);
 

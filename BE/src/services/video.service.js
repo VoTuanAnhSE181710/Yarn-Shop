@@ -19,8 +19,10 @@ class VideoService {
      * @param {string} param.category - Category ObjectId
      * @param {string[]} param.tags
      * @param {string} param.uploader - User ObjectId
+     * @param {string[]} [param.attachedProducts] - Array of Product ObjectIds
+     * @param {string[]} [param.attachedKits] - Array of Kit ObjectIds
      */
-    createVideo = async ({ title, description, type, url, thumbnail, duration, category, tags, uploader }) => {
+    createVideo = async ({ title, description, type, url, thumbnail, duration, category, tags, uploader, attachedProducts, attachedKits }) => {
         const video = await this.#videoModel.create({
             title,
             description: description || "",
@@ -31,6 +33,8 @@ class VideoService {
             category: category || null,
             tags: tags || [],
             uploader,
+            attachedProducts: attachedProducts || [],
+            attachedKits: attachedKits || [],
         });
 
         return video;
@@ -76,6 +80,8 @@ class VideoService {
             this.#videoModel.find(query)
                 .populate("uploader", "username fullName avatar")
                 .populate("category", "name slug")
+                .populate("attachedProducts", "name image variants")
+                .populate("attachedKits", "name thumbnail price")
                 .sort(sortOption)
                 .skip(skip)
                 .limit(limit)
@@ -101,7 +107,9 @@ class VideoService {
     getVideoById = async (id) => {
         const video = await this.#videoModel.findById(id)
             .populate("uploader", "username fullName avatar")
-            .populate("category", "name slug");
+            .populate("category", "name slug")
+            .populate("attachedProducts", "name image variants")
+            .populate("attachedKits", "name thumbnail price");
 
         if (!video) {
             const error = new Error("Video not found");
@@ -120,8 +128,9 @@ class VideoService {
      * @param {string} id
      * @param {Object} updateData
      * @param {string} userId - requesting user id
+     * @param {boolean} [isAdminUpdate=false] - whether this is an admin override
      */
-    updateVideo = async (id, updateData, userId) => {
+    updateVideo = async (id, updateData, userId, isAdminUpdate = false) => {
         const video = await this.#videoModel.findById(id);
 
         if (!video) {
@@ -130,10 +139,16 @@ class VideoService {
             throw error;
         }
 
-        // Only uploader or staff can update
-        if (video.uploader.toString() !== userId) {
-            // Check if user is staff via role - will be validated at controller level
+        // Only uploader can update (unless admin)
+        if (!isAdminUpdate && video.uploader.toString() !== userId.toString()) {
+            const error = new Error("You do not have permission to modify this video");
+            error.statusCode = 403;
+            throw error;
         }
+
+        // Allow update of attachments
+        if (updateData.attachedProducts !== undefined) video.attachedProducts = updateData.attachedProducts;
+        if (updateData.attachedKits !== undefined) video.attachedKits = updateData.attachedKits;
 
         Object.assign(video, updateData);
         await video.save();
@@ -145,13 +160,21 @@ class VideoService {
      * Delete video (soft delete)
      * @param {string} id
      * @param {string} userId
+     * @param {boolean} [isAdminUpdate=false]
      */
-    deleteVideo = async (id, userId) => {
+    deleteVideo = async (id, userId, isAdminUpdate = false) => {
         const video = await this.#videoModel.findById(id);
 
         if (!video) {
             const error = new Error("Video not found");
             error.statusCode = 404;
+            throw error;
+        }
+
+        // Only uploader can delete (unless admin)
+        if (!isAdminUpdate && video.uploader.toString() !== userId.toString()) {
+            const error = new Error("You do not have permission to delete this video");
+            error.statusCode = 403;
             throw error;
         }
 
@@ -173,6 +196,8 @@ class VideoService {
         const [videos, total] = await Promise.all([
             this.#videoModel.find({ uploader: uploaderId })
                 .populate("category", "name slug")
+                .populate("attachedProducts", "name image variants")
+                .populate("attachedKits", "name thumbnail price")
                 .sort({ createdAt: -1 })
                 .skip(skip)
                 .limit(limit)
@@ -188,6 +213,48 @@ class VideoService {
                 total,
                 totalPages: Math.ceil(total / limit),
             },
+        };
+    }
+
+    /**
+     * Rate a video
+     * @param {string} id - Video ObjectId
+     * @param {string} userId - User ObjectId rating the video
+     * @param {number} score - 1 to 5
+     */
+    rateVideo = async (id, userId, score) => {
+        const video = await this.#videoModel.findById(id);
+
+        if (!video) {
+            const error = new Error("Video not found");
+            error.statusCode = 404;
+            throw error;
+        }
+
+        if (score < 1 || score > 5) {
+            const error = new Error("Rating score must be between 1 and 5");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        // Check if user already rated
+        const existingRatingIndex = video.ratings.findIndex(r => r.user.toString() === userId.toString());
+
+        if (existingRatingIndex !== -1) {
+            video.ratings[existingRatingIndex].score = score;
+        } else {
+            video.ratings.push({ user: userId, score });
+        }
+
+        // Calculate average
+        const totalScore = video.ratings.reduce((acc, curr) => acc + curr.score, 0);
+        video.averageRating = Number((totalScore / video.ratings.length).toFixed(1));
+
+        await video.save();
+
+        return {
+            averageRating: video.averageRating,
+            totalRatings: video.ratings.length
         };
     }
 }
