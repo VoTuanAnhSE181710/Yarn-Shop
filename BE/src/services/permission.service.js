@@ -22,6 +22,7 @@ class PermissionService {
             "Category",
             "DIYPost",
             "Order",
+            "OrderReport",
             "Log",
             "Mail"
         ];
