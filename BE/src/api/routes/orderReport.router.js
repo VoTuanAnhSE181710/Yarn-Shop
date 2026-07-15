@@ -1,5 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { uploadOrderReport } from '../../utils/multerStorage.js';
 
 const router = express.Router();
 
@@ -54,6 +55,8 @@ const router = express.Router();
  *           type: array
  *           items:
  *             type: string
+ *             format: binary
+ *           description: Upload image files from device
  */
 
 /**
@@ -68,9 +71,26 @@ const router = express.Router();
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
- *             $ref: '#/components/schemas/CreateOrderReportRequest'
+ *             type: object
+ *             required:
+ *               - orderId
+ *               - title
+ *               - description
+ *             properties:
+ *               orderId:
+ *                 type: string
+ *               title:
+ *                 type: string
+ *               description:
+ *                 type: string
+ *               images:
+ *                 type: array
+ *                 items:
+ *                   type: string
+ *                   format: binary
+ *                 description: Upload image files from device
  *     responses:
  *       201:
  *         description: Report created successfully
@@ -86,6 +106,22 @@ const router = express.Router();
 router.post(
     "/",
     authentication,
+    uploadOrderReport.array('images', 5),
+    (req, res, next) => {
+        try {
+            // Attach uploaded image paths from Cloudinary
+            if (req.files && req.files.length > 0) {
+                req.body.images = req.files.map(f => f.path);
+            }
+            next();
+        } catch (error) {
+            return res.status(400).json({
+                status: "error",
+                message: "Error processing uploaded images",
+                error: error.message
+            });
+        }
+    },
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.create(req, res, next);
