@@ -1,8 +1,10 @@
 import { generateVNPayUrl } from "../../utils/vnpayHelper.js";
+import Address from "../../models/address.js";
 
 export default class OrderController {
-    constructor({ orderService }) {
+    constructor({ orderService, ghnService }) {
         this.orderService = orderService;
+        this.ghnService = ghnService;
     }
 
     /**
@@ -20,8 +22,28 @@ export default class OrderController {
             }
 
             // 1. Calculate total from DB (secure, prevents price manipulation)
-            const { validatedItems, itemsPrice, shippingFee, totalPrice } =
+            let { validatedItems, itemsPrice, shippingFee, totalPrice } =
                 await this.orderService.calculateOrderTotal(items);
+
+            if (shippingAddress.districtId && shippingAddress.wardCode) {
+                let cartWeight = 0;
+                validatedItems.forEach(item => {
+                    cartWeight += (item.weight || 100) * item.quantity;
+                });
+                
+                try {
+                    const fee = await this.ghnService.calculateShippingFee({
+                        to_district_id: shippingAddress.districtId,
+                        to_ward_code: shippingAddress.wardCode,
+                        weight: cartWeight,
+                        insurance_value: itemsPrice,
+                    });
+                    shippingFee = fee.total;
+                    totalPrice = itemsPrice + shippingFee;
+                } catch (error) {
+                    console.error("Failed to fetch GHN fee, using default:", error.message);
+                }
+            }
 
             // 2. Create order in DB
             const order = await this.orderService.createOrder({
@@ -47,6 +69,61 @@ export default class OrderController {
                 message: "Order created successfully",
                 order,
                 payUrl,
+            });
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * Calculate shipping fee
+     */
+    calculateShippingFee = async (req, res, next) => {
+        try {
+            const { items, addressId, districtId, wardCode } = req.body;
+            const userId = req.user.userId || req.user._id;
+
+            if (!items || items.length === 0) {
+                return res.status(400).json({ message: "Cart is empty" });
+            }
+
+            let address = null;
+            if (districtId && wardCode) {
+                // Use provided district and ward directly (useful for testing or one-time addresses)
+                address = { districtId, wardCode, districtName: "Testing District", wardName: "Testing Ward" };
+            } else if (addressId) {
+                address = await Address.findById(addressId);
+            } else {
+                address = await Address.findOne({ user: userId, isDefault: true });
+            }
+
+            if (!address) {
+                return res.status(400).json({ message: 'Chưa có địa chỉ giao hàng hợp lệ.' });
+            }
+
+            // Calculate items total value
+            const { validatedItems, itemsPrice } = await this.orderService.calculateOrderTotal(items);
+            
+            // Calculate total weight (default to 100g per item if no weight field)
+            let cartWeight = 0;
+            validatedItems.forEach(item => {
+                cartWeight += (item.weight || 100) * item.quantity;
+            });
+
+            const fee = await this.ghnService.calculateShippingFee({
+                to_district_id: address.districtId,
+                to_ward_code: address.wardCode,
+                weight: cartWeight,
+                insurance_value: itemsPrice,
+            });
+
+            return res.status(200).json({
+                shipping_fee: fee.total,
+                service_id: fee.serviceId || null,
+                address: {
+                    district: address.districtName,
+                    ward: address.wardName,
+                },
             });
         } catch (error) {
             next(error);

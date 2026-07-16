@@ -36,6 +36,7 @@ import OrderService from "./src/services/order.service.js";
 import ProductService from "./src/services/product.service.js";
 import DIYPostService from "./src/services/diyPost.service.js";
 import OrderReportService from "./src/services/orderReport.service.js";
+import GHNService from "./src/services/ghn.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -156,6 +157,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     orderReportService: asClass(OrderReportService, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    ghnService: asClass(GHNService, {
       lifetime: Lifetime.SCOPED,
     }),
 

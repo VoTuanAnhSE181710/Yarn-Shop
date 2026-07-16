@@ -40,6 +40,9 @@ const orderSchema = new mongoose.Schema({
         fullName: { type: String, required: true },
         phone: { type: String, required: true },
         address: { type: String, required: true },
+        provinceId: { type: Number },
+        districtId: { type: Number },
+        wardCode: { type: String },
     },
     itemsPrice: {
         type: Number,

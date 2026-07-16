@@ -145,6 +145,52 @@ router.post(
 
 /**
  * @swagger
+ * /orders/shipping-fee:
+ *   post:
+ *     summary: Calculate shipping fee
+ *     description: Calculate shipping fee for order items using GHN API based on address.
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               items:
+ *                 type: array
+ *                 items:
+ *                   $ref: '#/components/schemas/OrderItem'
+ *               addressId:
+ *                 type: string
+ *                 description: Optional. ObjectId of a specific Address. If not provided, user's default address will be used.
+ *               districtId:
+ *                 type: integer
+ *                 description: Optional. GHN District ID for one-time testing/checkout.
+ *               wardCode:
+ *                 type: string
+ *                 description: Optional. GHN Ward Code for one-time testing/checkout.
+ *     responses:
+ *       200:
+ *         description: Shipping fee calculated successfully
+ *       400:
+ *         description: Invalid input or address not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+    "/shipping-fee",
+    authentication,
+    async (req, res, next) => {
+        const orderController = req.container.resolve("orderController");
+        await orderController.calculateShippingFee(req, res, next);
+    }
+);
+
+/**
+ * @swagger
  * /orders/my:
  *   get:
  *     summary: Get my orders
