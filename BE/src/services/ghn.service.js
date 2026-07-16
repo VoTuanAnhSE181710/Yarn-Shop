@@ -3,7 +3,7 @@ import { configDotenv } from "dotenv";
 
 configDotenv();
 
-const GHN_API_URL = "https://dev-online-gateway.ghn.vn/shiip/public-api";
+const GHN_API_URL = process.env.GHN_API_URL || "https://online-gateway.ghn.vn/shiip/public-api";
 const GHN_API_KEY = process.env.GHN_API_KEY;
 const GHN_SHOP_ID = process.env.GHN_SHOP_ID;
 
@@ -45,7 +45,8 @@ class GHNService {
             throw new Error(response.data.message || "Failed to calculate shipping fee");
         } catch (error) {
             console.error("GHN API Error:", error.response?.data || error.message);
-            throw new Error("Không tính được phí vận chuyển. Vui lòng kiểm tra lại địa chỉ.");
+            const ghnError = error.response?.data?.message || error.message;
+            throw new Error(`Không tính được phí vận chuyển. Lỗi từ GHN: ${ghnError}`);
         }
     }
 }
