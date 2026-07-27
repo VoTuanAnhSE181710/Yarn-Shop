@@ -2,6 +2,7 @@ import express from 'express';
 import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
 import { createCourseSchema, updateCourseSchema, courseQuerySchema, rateCourseSchema } from '../../validators/course.validator.js';
 import { createLessonSchema, updateLessonSchema } from '../../validators/lesson.validator.js';
+import { uploadCourse } from '../../utils/multerStorage.js';
 
 const router = express.Router();
 
@@ -289,36 +290,41 @@ router.post("/courses/:id/rate", authentication, validateData(rateCourseSchema, 
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - title
- *               - level
+ *               - data
  *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing course details'
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   level:
+ *                     type: string
+ *                     enum: [beginner, mid, pro]
+ *                   linkedLessons:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   linkedCombo:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   isPublished:
+ *                     type: boolean
  *               thumbnail:
  *                 type: string
- *               level:
- *                 type: string
- *                 enum: [beginner, mid, pro]
- *               linkedLessons:
- *                 type: array
- *                 items:
- *                   type: string
- *               tags:
- *                 type: array
- *                 items:
- *                   type: string
- *               linkedCombo:
- *                 type: array
- *                 items:
- *                   type: string
- *               isPublished:
- *                 type: boolean
+ *                 format: binary
+ *                 description: Upload image file for thumbnail
  *     responses:
  *       201:
  *         description: Course created successfully
@@ -327,7 +333,22 @@ router.post("/courses/:id/rate", authentication, validateData(rateCourseSchema, 
  *       401:
  *         description: Unauthorized
  */
-router.post("/courses", authentication, checkPermission('Course', 'create'), validateData(createCourseSchema, "body"), async (req, res, next) => {
+router.post("/courses", authentication, checkPermission('Course', 'create'), uploadCourse.single('thumbnail'), (req, res, next) => {
+    try {
+        if (req.body.data) {
+            let courseData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+            if (req.file) {
+                courseData.thumbnail = req.file.path;
+            }
+            req.body = courseData;
+        } else if (req.file) {
+            req.body.thumbnail = req.file.path;
+        }
+        next();
+    } catch (error) {
+        return res.status(400).json({ status: "error", message: "Invalid form data format. Make sure 'data' is valid JSON.", error: error.message });
+    }
+}, validateData(createCourseSchema, "body"), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.create(req, res, next);
 });
@@ -349,33 +370,39 @@ router.post("/courses", authentication, checkPermission('Course', 'create'), val
  *         required: true
  *     requestBody:
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               title:
- *                 type: string
- *               description:
- *                 type: string
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing course details to update'
+ *                 properties:
+ *                   title:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   level:
+ *                     type: string
+ *                     enum: [beginner, mid, pro]
+ *                   linkedLessons:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   tags:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   linkedCombo:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   isPublished:
+ *                     type: boolean
  *               thumbnail:
  *                 type: string
- *               level:
- *                 type: string
- *                 enum: [beginner, mid, pro]
- *               linkedLessons:
- *                 type: array
- *                 items:
- *                   type: string
- *               tags:
- *                 type: array
- *                 items:
- *                   type: string
- *               linkedCombo:
- *                 type: array
- *                 items:
- *                   type: string
- *               isPublished:
- *                 type: boolean
+ *                 format: binary
+ *                 description: Upload new image file for thumbnail (Optional)
  *     responses:
  *       200:
  *         description: Course updated successfully
@@ -384,7 +411,22 @@ router.post("/courses", authentication, checkPermission('Course', 'create'), val
  *       404:
  *         description: Course not found
  */
-router.put("/courses/:id", authentication, checkPermission('Course', 'update'), validateData(updateCourseSchema, "body"), async (req, res, next) => {
+router.put("/courses/:id", authentication, checkPermission('Course', 'update'), uploadCourse.single('thumbnail'), (req, res, next) => {
+    try {
+        if (req.body.data) {
+            let courseData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+            if (req.file) {
+                courseData.thumbnail = req.file.path;
+            }
+            req.body = courseData;
+        } else if (req.file) {
+            req.body.thumbnail = req.file.path;
+        }
+        next();
+    } catch (error) {
+        return res.status(400).json({ status: "error", message: "Invalid form data format. Make sure 'data' is valid JSON.", error: error.message });
+    }
+}, validateData(updateCourseSchema, "body"), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.update(req, res, next);
 });

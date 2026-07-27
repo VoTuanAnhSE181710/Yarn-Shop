@@ -83,3 +83,25 @@ const orderReportStorage = new CloudinaryStorage({
 });
 
 export const uploadOrderReport = multer({ storage: orderReportStorage });
+
+const kitStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'kits',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [{ quality: "auto", fetch_format: "auto" }]
+    }
+});
+
+export const uploadKit = multer({ storage: kitStorage });
+
+const courseStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'courses',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [{ quality: "auto", fetch_format: "auto" }]
+    }
+});
+
+export const uploadCourse = multer({ storage: courseStorage });

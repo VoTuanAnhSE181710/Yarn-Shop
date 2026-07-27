@@ -1,5 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { uploadKit } from '../../utils/multerStorage.js';
 
 const router = express.Router();
 
@@ -98,30 +99,35 @@ router.get(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             required:
- *               - name
- *               - price
+ *               - data
  *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing kit details'
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   level:
+ *                     type: string
+ *                     enum: [beginner, intermediate, advanced]
+ *                   price:
+ *                     type: number
+ *                   productIds:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   isActive:
+ *                     type: boolean
  *               thumbnail:
  *                 type: string
- *               level:
- *                 type: string
- *                 enum: [beginner, intermediate, advanced]
- *               price:
- *                 type: number
- *               productIds:
- *                 type: array
- *                 items:
- *                   type: string
- *               isActive:
- *                 type: boolean
+ *                 format: binary
+ *                 description: Upload image file for thumbnail
  *     responses:
  *       201:
  *         description: Kit created successfully
@@ -134,6 +140,23 @@ router.post(
     "/",
     authentication,
     checkPermission('Kit', 'create'),
+    uploadKit.single('thumbnail'),
+    (req, res, next) => {
+        try {
+            if (req.body.data) {
+                let kitData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+                if (req.file) {
+                    kitData.thumbnail = req.file.path;
+                }
+                req.body = kitData;
+            } else if (req.file) {
+                req.body.thumbnail = req.file.path;
+            }
+            next();
+        } catch (error) {
+            return res.status(400).json({ status: "error", message: "Invalid form data format. Make sure 'data' is valid JSON.", error: error.message });
+        }
+    },
     async (req, res, next) => {
         const kitController = req.container.resolve("kitController");
         await kitController.createKit(req, res, next);
@@ -197,27 +220,33 @@ router.get(
  *           type: string
  *     requestBody:
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing kit details to update'
+ *                 properties:
+ *                   name:
+ *                     type: string
+ *                   description:
+ *                     type: string
+ *                   level:
+ *                     type: string
+ *                     enum: [beginner, intermediate, advanced]
+ *                   price:
+ *                     type: number
+ *                   productIds:
+ *                     type: array
+ *                     items:
+ *                       type: string
+ *                   isActive:
+ *                     type: boolean
  *               thumbnail:
  *                 type: string
- *               level:
- *                 type: string
- *                 enum: [beginner, intermediate, advanced]
- *               price:
- *                 type: number
- *               productIds:
- *                 type: array
- *                 items:
- *                   type: string
- *               isActive:
- *                 type: boolean
+ *                 format: binary
+ *                 description: Upload new image file for thumbnail (Optional)
  *     responses:
  *       200:
  *         description: Kit updated successfully
@@ -232,6 +261,23 @@ router.put(
     "/:id",
     authentication,
     checkPermission('Kit', 'update'),
+    uploadKit.single('thumbnail'),
+    (req, res, next) => {
+        try {
+            if (req.body.data) {
+                let kitData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+                if (req.file) {
+                    kitData.thumbnail = req.file.path;
+                }
+                req.body = kitData;
+            } else if (req.file) {
+                req.body.thumbnail = req.file.path;
+            }
+            next();
+        } catch (error) {
+            return res.status(400).json({ status: "error", message: "Invalid form data format. Make sure 'data' is valid JSON.", error: error.message });
+        }
+    },
     async (req, res, next) => {
         const kitController = req.container.resolve("kitController");
         await kitController.updateKit(req, res, next);

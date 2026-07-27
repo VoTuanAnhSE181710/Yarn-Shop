@@ -264,7 +264,7 @@ router.get(
  *           type: string
  *     requestBody:
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
@@ -276,6 +276,8 @@ router.get(
  *                 type: array
  *                 items:
  *                   type: string
+ *                   format: binary
+ *                 description: Upload image files from device
  *     responses:
  *       200:
  *         description: Report updated successfully
@@ -291,6 +293,21 @@ router.get(
 router.put(
     "/:id",
     authentication,
+    uploadOrderReport.array('images', 5),
+    (req, res, next) => {
+        try {
+            if (req.files && req.files.length > 0) {
+                req.body.images = req.files.map(f => f.path);
+            }
+            next();
+        } catch (error) {
+            return res.status(400).json({
+                status: "error",
+                message: "Error processing uploaded images",
+                error: error.message
+            });
+        }
+    },
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.update(req, res, next);
