@@ -69,12 +69,6 @@ const productSchema = new mongoose.Schema(
       type: [variantSchema],
       required: [true, "At least one variant is required!"],
     },
-    rate: {
-      type: Number,
-      default: 0,
-      min: 0,
-      max: 5,
-    },
     ratings: [{
       userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
       score: { type: Number, required: true, min: 1, max: 5 }

@@ -37,7 +37,6 @@ class CourseService {
             creatorId: course.creatorId ? course.creatorId.toString() : null,
             totalDuration: course.totalDuration || 0,
             totalLessons: course.totalLessons || 0,
-            rating: course.averageRating || 0,
             averageRating: course.averageRating || 0,
             totalRatings: course.totalRatings || 0,
             enrolledCount: course.enrolledCount || 0,

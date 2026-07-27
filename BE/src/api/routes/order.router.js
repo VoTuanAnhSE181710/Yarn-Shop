@@ -398,7 +398,6 @@ router.patch(
 router.post(
     "/:id/cancel",
     authentication,
-    checkPermission("Order", "delete"),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.cancel(req, res, next);
