@@ -66,7 +66,8 @@ export default class DIYPostController {
                 data.images.push(...imagePaths);
             }
             
-            const post = await this.diyPostService.updatePost(id, data);
+            const { userId } = req.user;
+            const post = await this.diyPostService.updatePost(id, data, userId);
             res.status(200).json({
                 status: 'success',
                 data: { post }
@@ -83,7 +84,8 @@ export default class DIYPostController {
             if (!status) {
                 return res.status(400).json({ status: 'error', message: 'Status is required' });
             }
-            const post = await this.diyPostService.updateStatus(id, status);
+            const { userId } = req.user;
+            const post = await this.diyPostService.updateStatus(id, status, userId);
             res.status(200).json({
                 status: 'success',
                 data: { post }
@@ -96,7 +98,8 @@ export default class DIYPostController {
     async deletePost(req, res, next) {
         try {
             const { id } = req.params;
-            await this.diyPostService.deletePost(id);
+            const { userId } = req.user;
+            await this.diyPostService.deletePost(id, userId);
             res.status(200).json({
                 status: 'success',
                 message: 'DIY Post deleted successfully'

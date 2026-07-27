@@ -2,6 +2,10 @@ import RefundInvoice from "../models/RefundInvoice.js";
 import { NotFoundError, BadRequestError } from "../error/error.js";
 
 export default class RefundInvoiceService {
+    constructor({ logRepository }) {
+        this.logRepository = logRepository;
+    }
+
     async getAll(query) {
         const { page = 1, limit = 10, status } = query;
         let filter = {};
@@ -36,6 +40,17 @@ export default class RefundInvoiceService {
         if (!invoice) {
             throw new NotFoundError("Refund Invoice not found");
         }
+        
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "UPDATE",
+                targetType: "ORDER", // Refund invoices are related to orders
+                outcome: "SUCCESS",
+                actorId: adminId,
+                details: { refundInvoiceId: invoice._id, orderId: invoice.orderId, status }
+            });
+        }
+        
         return invoice;
     }
 }

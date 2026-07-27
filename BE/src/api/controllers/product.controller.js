@@ -15,7 +15,8 @@ class ProductController {
     try {
       const productData = req.body;
 
-      const product = await this.#productService.createProduct(productData);
+      const { userId } = req.user;
+      const product = await this.#productService.createProduct(productData, userId);
 
       res.status(201).json({
         status: "success",
@@ -96,7 +97,8 @@ class ProductController {
       const { id } = req.params;
       const updateData = req.body;
 
-      const product = await this.#productService.updateProduct(id, updateData);
+      const { userId } = req.user;
+      const product = await this.#productService.updateProduct(id, updateData, userId);
 
       res.status(200).json({
         status: "success",
@@ -115,7 +117,8 @@ class ProductController {
     try {
       const { id } = req.params;
 
-      const product = await this.#productService.deleteProduct(id);
+      const { userId } = req.user;
+      const product = await this.#productService.deleteProduct(id, userId);
 
       res.status(200).json({
         status: "success",
@@ -135,7 +138,8 @@ class ProductController {
     try {
       const { id } = req.params;
 
-      const product = await this.#productService.restoreProduct(id);
+      const { userId } = req.user;
+      const product = await this.#productService.restoreProduct(id, userId);
 
       res.status(200).json({
         status: "success",

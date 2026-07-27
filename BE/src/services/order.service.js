@@ -2,9 +2,10 @@ import Product from "../models/product.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
 
 export default class OrderService {
-    constructor({ orderRepository, notificationService }) {
+    constructor({ orderRepository, notificationService, logRepository }) {
         this.orderRepository = orderRepository;
         this.notificationService = notificationService;
+        this.logRepository = logRepository;
     }
 
     async createOrder(data) {
@@ -17,6 +18,15 @@ export default class OrderService {
                 message: `Khách hàng vừa đặt đơn hàng mới: ${order._id}`,
                 targetRole: "Admin"
             }).catch(console.error);
+        }
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "CREATE",
+                targetType: "ORDER",
+                outcome: "SUCCESS",
+                actorId: data.user,
+                details: { orderId: order._id, itemsPrice: data.itemsPrice }
+            });
         }
         return order;
     }
@@ -71,6 +81,15 @@ export default class OrderService {
                 userId: orderUserId
             }).catch(console.error);
         }
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "UPDATE",
+                targetType: "ORDER",
+                outcome: "SUCCESS",
+                actorId: null, // Usually admin triggers this
+                details: { orderId: id, status: orderStatus }
+            });
+        }
         return order;
     }
 
@@ -113,6 +132,15 @@ export default class OrderService {
             }
         }
         
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "DELETE", // Represents cancellation
+                targetType: "ORDER",
+                outcome: "SUCCESS",
+                actorId: userId,
+                details: { orderId: id, reason: cancelReason }
+            });
+        }
         return updatedOrder;
     }
 

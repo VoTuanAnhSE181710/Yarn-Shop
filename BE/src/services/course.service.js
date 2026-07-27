@@ -4,10 +4,12 @@ import { NotFoundError } from "../error/error.js";
 class CourseService {
     #courseModel
     #userRepository
+    #logRepository
 
-    constructor({ userRepository }) {
+    constructor({ userRepository, logRepository }) {
         this.#courseModel = Course;
         this.#userRepository = userRepository;
+        this.#logRepository = logRepository;
     }
 
     #formatCourseResponse = (course) => {
@@ -67,6 +69,16 @@ class CourseService {
             delete data.totalDuration;
         }
         const course = await this.#courseModel.create(data);
+        if (this.#logRepository) {
+            await this.#logRepository.saveLog({
+                action: "CREATE",
+                targetType: "COURSE",
+                outcome: "SUCCESS",
+                actorId: data.creatorId,
+                details: { courseId: course._id, title: course.title }
+            });
+        }
+        
         if (course.linkedLessons && course.linkedLessons.length > 0) {
             await this.#recalculateCourseStats(course._id);
             const updatedCourse = await this.#courseModel.findById(course._id);
@@ -165,7 +177,7 @@ class CourseService {
      * @param {string} id
      * @param {Object} updateData
      */
-    updateCourse = async (id, updateData) => {
+    updateCourse = async (id, updateData, actorId) => {
         const course = await this.#courseModel.findOne({ _id: id, deletedAt: null });
 
         if (!course) {
@@ -185,6 +197,17 @@ class CourseService {
         }
 
         const updatedCourse = await this.#courseModel.findOne({ _id: id, deletedAt: null });
+        
+        if (this.#logRepository) {
+            await this.#logRepository.saveLog({
+                action: "UPDATE",
+                targetType: "COURSE",
+                outcome: "SUCCESS",
+                actorId,
+                details: { courseId: id, title: updatedCourse.title }
+            });
+        }
+        
         return this.#formatCourseResponse(updatedCourse);
     }
 
@@ -192,7 +215,7 @@ class CourseService {
      * Delete course (soft delete)
      * @param {string} id
      */
-    deleteCourse = async (id) => {
+    deleteCourse = async (id, actorId) => {
         const course = await this.#courseModel.findOne({ _id: id, deletedAt: null });
 
         if (!course) {
@@ -202,6 +225,16 @@ class CourseService {
         course.deletedAt = new Date();
         course.isPublished = false;
         await course.save();
+
+        if (this.#logRepository) {
+            await this.#logRepository.saveLog({
+                action: "DELETE",
+                targetType: "COURSE",
+                outcome: "SUCCESS",
+                actorId,
+                details: { courseId: id, title: course.title }
+            });
+        }
 
         return { message: "Course deleted successfully" };
     }

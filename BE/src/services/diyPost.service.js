@@ -1,8 +1,9 @@
 import { NotFoundError, BadRequestError } from "../error/error.js";
 
 export default class DIYPostService {
-    constructor({ diyPostRepository }) {
+    constructor({ diyPostRepository, logRepository }) {
         this.diyPostRepository = diyPostRepository;
+        this.logRepository = logRepository;
     }
 
     async getPosts(query) {
@@ -30,18 +31,37 @@ export default class DIYPostService {
     }
 
     async createPost(data) {
-        return this.diyPostRepository.create(data);
-    }
-
-    async updatePost(id, data) {
-        const post = await this.diyPostRepository.update(id, data);
-        if (!post) {
-            throw new NotFoundError("DIY Post not found");
+        const post = await this.diyPostRepository.create(data);
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "CREATE",
+                targetType: "DIYPOST",
+                outcome: "SUCCESS",
+                actorId: data.creatorId,
+                details: { postId: post._id, title: post.title }
+            });
         }
         return post;
     }
 
-    async updateStatus(id, status) {
+    async updatePost(id, data, actorId) {
+        const post = await this.diyPostRepository.update(id, data);
+        if (!post) {
+            throw new NotFoundError("DIY Post not found");
+        }
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "UPDATE",
+                targetType: "DIYPOST",
+                outcome: "SUCCESS",
+                actorId,
+                details: { postId: post._id, title: post.title }
+            });
+        }
+        return post;
+    }
+
+    async updateStatus(id, status, actorId) {
         const validStatuses = ["Pending", "Done", "Cancel"];
         if (!validStatuses.includes(status)) {
             throw new BadRequestError(`Invalid status. Must be one of: ${validStatuses.join(", ")}`);
@@ -50,13 +70,31 @@ export default class DIYPostService {
         if (!post) {
             throw new NotFoundError("DIY Post not found");
         }
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "UPDATE",
+                targetType: "DIYPOST",
+                outcome: "SUCCESS",
+                actorId,
+                details: { postId: post._id, status }
+            });
+        }
         return post;
     }
 
-    async deletePost(id) {
+    async deletePost(id, actorId) {
         const post = await this.diyPostRepository.delete(id);
         if (!post) {
             throw new NotFoundError("DIY Post not found");
+        }
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "DELETE",
+                targetType: "DIYPOST",
+                outcome: "SUCCESS",
+                actorId,
+                details: { postId: id }
+            });
         }
         return post;
     }

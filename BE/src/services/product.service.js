@@ -67,9 +67,11 @@ function shapeVariantForResponse(variant) {
 
 export default class ProductService {
   #productRepository;
+  #logRepository;
 
-  constructor({ productRepository }) {
+  constructor({ productRepository, logRepository }) {
     this.#productRepository = productRepository;
+    this.#logRepository = logRepository;
   }
 
   /**
@@ -101,9 +103,18 @@ export default class ProductService {
     return data;
   }
 
-  async createProduct(data) {
+  async createProduct(data, actorId) {
     const normalized = this.#normalizeProductData({ ...data });
     const product = await this.#productRepository.create(normalized);
+    if (this.#logRepository) {
+      await this.#logRepository.saveLog({
+        action: "CREATE",
+        targetType: "PRODUCT",
+        outcome: "SUCCESS",
+        actorId,
+        details: { productId: product._id, name: product.name }
+      });
+    }
     return shapeProductForResponse(product);
   }
 
@@ -174,7 +185,7 @@ export default class ProductService {
     return shapeProductForResponse(product);
   }
 
-  async updateProduct(id, updateData) {
+  async updateProduct(id, updateData, actorId) {
     if (!updateData || Object.keys(updateData).length === 0) {
       throw new BadRequestError("Update data must not be empty");
     }
@@ -184,21 +195,48 @@ export default class ProductService {
     if (!product) {
       throw new NotFoundError("Product not found");
     }
-    return shapeProductForResponse(product);
-  }
-
-  async deleteProduct(id) {
-    const product = await this.#productRepository.softDelete(id);
-    if (!product) {
-      throw new NotFoundError("Product not found");
+    if (this.#logRepository) {
+      await this.#logRepository.saveLog({
+        action: "UPDATE",
+        targetType: "PRODUCT",
+        outcome: "SUCCESS",
+        actorId,
+        details: { productId: product._id, name: product.name }
+      });
     }
     return shapeProductForResponse(product);
   }
 
-  async restoreProduct(id) {
+  async deleteProduct(id, actorId) {
+    const product = await this.#productRepository.softDelete(id);
+    if (!product) {
+      throw new NotFoundError("Product not found");
+    }
+    if (this.#logRepository) {
+      await this.#logRepository.saveLog({
+        action: "DELETE",
+        targetType: "PRODUCT",
+        outcome: "SUCCESS",
+        actorId,
+        details: { productId: product._id, name: product.name }
+      });
+    }
+    return shapeProductForResponse(product);
+  }
+
+  async restoreProduct(id, actorId) {
     const product = await this.#productRepository.restore(id);
     if (!product) {
       throw new NotFoundError("Product not found");
+    }
+    if (this.#logRepository) {
+      await this.#logRepository.saveLog({
+        action: "UPDATE",
+        targetType: "PRODUCT",
+        outcome: "SUCCESS",
+        actorId,
+        details: { productId: product._id, action: "RESTORE" }
+      });
     }
     return shapeProductForResponse(product);
   }

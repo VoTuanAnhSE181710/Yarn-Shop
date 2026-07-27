@@ -82,7 +82,8 @@ class CourseController {
             const { id } = req.params;
             const updateData = req.body;
 
-            const course = await this.#courseService.updateCourse(id, updateData);
+            const { userId } = req.user;
+            const course = await this.#courseService.updateCourse(id, updateData, userId);
 
             res.status(200).json({
                 status: 'success',
@@ -101,7 +102,8 @@ class CourseController {
         try {
             const { id } = req.params;
 
-            const result = await this.#courseService.deleteCourse(id);
+            const { userId } = req.user;
+            const result = await this.#courseService.deleteCourse(id, userId);
 
             res.status(200).json({
                 status: 'success',
