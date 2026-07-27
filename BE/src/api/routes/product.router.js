@@ -309,29 +309,37 @@ router.get(
  *     requestBody:
  *       required: true
  *       content:
- *         application/json:
+ *         multipart/form-data:
  *           schema:
  *             type: object
  *             properties:
- *               name:
- *                 type: string
- *               description:
- *                 type: string
- *               category:
- *                 type: string
- *                 enum: [yarn, hook, needle, kit, accessory]
+ *               data:
+ *                 type: object
+ *                 description: 'JSON object containing product details to update'
  *               image:
  *                 type: string
- *               tags:
- *                 type: array
- *                 items:
- *                   type: string
- *               variants:
- *                 type: array
- *                 items:
- *                   type: object
- *               isActive:
- *                 type: boolean
+ *                 format: binary
+ *                 description: Main product image
+ *               variantImage_0:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 0 (Optional)'
+ *               variantImage_1:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 1 (Optional)'
+ *               variantImage_2:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 2 (Optional)'
+ *               variantImage_3:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 3 (Optional)'
+ *               variantImage_4:
+ *                 type: string
+ *                 format: binary
+ *                 description: 'Image file for variant at index 4 (Optional)'
  *     responses:
  *       200:
  *         description: Product updated successfully
@@ -349,6 +357,33 @@ router.put(
   authentication,
   checkPermission('Product', 'update'),
   validateData(productIdParamSchema, "params"),
+  uploadProduct.any(),
+  (req, res, next) => {
+    try {
+      if (req.body.data) {
+        let productData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
+        
+        if (req.files) {
+          const mainImageFile = req.files.find(f => f.fieldname === 'image');
+          if (mainImageFile) productData.image = mainImageFile.path;
+        }
+
+        if (Array.isArray(productData.variants) && req.files) {
+          productData.variants.forEach((variant, index) => {
+            const variantImageFile = req.files.find(f => f.fieldname === `variantImage_${index}`);
+            if (variantImageFile) {
+              variant.image = variantImageFile.path;
+            }
+          });
+        }
+        
+        req.body = productData;
+      }
+      next();
+    } catch (error) {
+      return res.status(400).json({ status: "error", message: "Invalid form data format. Make sure 'data' is valid JSON.", error: error.message });
+    }
+  },
   validateData(updateProductSchema, "body"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
