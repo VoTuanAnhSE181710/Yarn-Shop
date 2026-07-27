@@ -1,7 +1,7 @@
 import { createContainer, asClass, asValue, Lifetime } from "awilix";
 
 //import Models
-import { Role, Permission, User } from "./src/models/Model.js";
+import { Role, Permission, User, Message, Conversation } from "./src/models/Model.js";
 
 //import Controller
 import AuthController from "./src/api/controllers/auth.controller.js";
@@ -90,6 +90,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
 
     transporter: asValue(transporter, { lifetime: Lifetime.SINGLETON }),
     cloudinary: asValue(cloudinary, { lifetime: Lifetime.SINGLETON }),
+
+    Message: asValue(Message),
+    Conversation: asValue(Conversation),
 
     //Repositories
     refreshTokenRepository: asClass(RefreshTokenRepository, {
