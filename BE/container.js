@@ -23,6 +23,7 @@ import AddressController from "./src/api/controllers/address.controller.js";
 import RefundInvoiceController from "./src/api/controllers/refundInvoice.controller.js";
 import NotificationController from "./src/api/controllers/notification.controller.js";
 import MessageController from "./src/api/controllers/message.controller.js";
+import LogController from "./src/api/controllers/log.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -47,6 +48,7 @@ import GHNService from "./src/services/ghn.service.js";
 import RefundInvoiceService from "./src/services/refundInvoice.service.js";
 import NotificationService from "./src/services/notification.service.js";
 import MessageService from "./src/services/message.service.js";
+import LogService from "./src/services/log.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -206,6 +208,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     messageService: asClass(MessageService, {
       lifetime: Lifetime.SCOPED,
     }),
+    logService: asClass(LogService, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     // Controllers
     authController: asClass(AuthController, {
@@ -272,6 +277,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     messageController: asClass(MessageController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    logController: asClass(LogController, {
       lifetime: Lifetime.SCOPED,
     }),
   });
