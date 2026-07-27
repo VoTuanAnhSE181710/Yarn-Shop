@@ -13,7 +13,7 @@ import Order from "./order.js";
 import OrderReport from "./orderReport.js";
 import SupportDIY from "./supportDIY.js";
 import Address from "./address.js";
-import Message from "./Message.js";
-import Conversation from "./Conversation.js";
+import Message from "./message.js";
+import Conversation from "./conversation.js";
 
 export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order, OrderReport, SupportDIY, Address, Message, Conversation };
