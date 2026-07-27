@@ -6,14 +6,22 @@ export default class NotificationService {
         this.notifications = notifications; // socket.io namespace
     }
 
-    async getMyNotifications(userId, query) {
+    async getMyNotifications(userId, roleName, query) {
         const { page = 1, limit = 10 } = query;
-        const notifications = await Notification.find({ userId })
+        
+        const filter = {
+            $or: [
+                { userId },
+                { targetRole: roleName }
+            ]
+        };
+
+        const notifications = await Notification.find(filter)
             .sort({ createdAt: -1 })
             .skip((page - 1) * limit)
             .limit(parseInt(limit));
         
-        const total = await Notification.countDocuments({ userId });
+        const total = await Notification.countDocuments(filter);
         
         return {
             notifications,

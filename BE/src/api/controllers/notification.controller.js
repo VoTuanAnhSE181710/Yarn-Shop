@@ -6,8 +6,9 @@ export default class NotificationController {
     async getMyNotifications(req, res, next) {
         try {
             const userId = req.user.userId;
+            const roleName = req.user.roleName;
             const query = req.query;
-            const result = await this.notificationService.getMyNotifications(userId, query);
+            const result = await this.notificationService.getMyNotifications(userId, roleName, query);
             res.status(200).json({
                 status: 'success',
                 data: result
