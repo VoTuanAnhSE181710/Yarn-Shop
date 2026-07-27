@@ -463,4 +463,49 @@ router.delete(
   },
 );
 
+/**
+ * @swagger
+ * /products/{id}/rate:
+ *   post:
+ *     summary: Rate a product
+ *     description: Rate a product with a score between 1 and 5.
+ *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [score]
+ *             properties:
+ *               score:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *     responses:
+ *       200:
+ *         description: Product rated successfully
+ *       400:
+ *         description: Bad Request
+ *       404:
+ *         description: Product not found
+ */
+router.post(
+  "/:id/rate",
+  authentication,
+  validateData(productIdParamSchema, "params"),
+  async (req, res, next) => {
+    const productController = req.container.resolve("productController");
+    await productController.rate(req, res, next);
+  },
+);
+
 export default router;

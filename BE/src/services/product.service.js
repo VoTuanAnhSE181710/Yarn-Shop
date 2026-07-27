@@ -202,4 +202,33 @@ export default class ProductService {
     }
     return shapeProductForResponse(product);
   }
+
+  async rateProduct(id, userId, score) {
+    const product = await this.#productRepository.findById(id);
+    if (!product) {
+      throw new NotFoundError("Product not found");
+    }
+
+    if (score < 1 || score > 5) {
+      throw new BadRequestError("Rating score must be between 1 and 5");
+    }
+
+    if (!product.ratings) product.ratings = [];
+
+    const existingRatingIndex = product.ratings.findIndex(r => r.userId.toString() === userId.toString());
+
+    if (existingRatingIndex !== -1) {
+      product.ratings[existingRatingIndex].score = score;
+    } else {
+      product.ratings.push({ userId, score });
+    }
+
+    const totalScore = product.ratings.reduce((acc, curr) => acc + curr.score, 0);
+    product.averageRating = Number((totalScore / product.ratings.length).toFixed(1));
+    product.totalRatings = product.ratings.length;
+
+    await product.save();
+
+    return shapeProductForResponse(product);
+  }
 }

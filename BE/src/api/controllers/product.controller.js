@@ -146,6 +146,27 @@ class ProductController {
       next(error);
     }
   };
+
+  /**
+   * POST /api/products/:id/rate - Rate a product
+   * Access: Authenticated
+   */
+  rate = async (req, res, next) => {
+    try {
+      const { id } = req.params;
+      const { score } = req.body;
+      const { userId } = req.user;
+
+      const product = await this.#productService.rateProduct(id, userId, score);
+
+      res.status(200).json({
+        status: "success",
+        data: { product },
+      });
+    } catch (error) {
+      next(error);
+    }
+  };
 }
 
 export default ProductController;

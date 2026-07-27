@@ -53,6 +53,11 @@ import productRouter from "./src/api/routes/product.router.js";
 import diyPostRouter from "./src/api/routes/diyPost.router.js";
 import orderReportRouter from "./src/api/routes/orderReport.router.js";
 import videoRouter from "./src/api/routes/video.router.js";
+import supportDIYRouter from "./src/api/routes/supportDIY.router.js";
+import addressRouter from "./src/api/routes/address.router.js";
+import refundInvoiceRouter from "./src/api/routes/refundInvoice.router.js";
+import notificationRouter from "./src/api/routes/notification.router.js";
+import messageRouter from "./src/api/routes/message.router.js";
 
 app.get("/", (req, res) => {
   res.send(`Hello World!`);
@@ -88,6 +93,11 @@ app.use(`${url}/products`, productRouter);
 app.use(`${url}/diy-posts`, diyPostRouter);
 app.use(`${url}/order-reports`, orderReportRouter);
 app.use(`${url}/videos`, videoRouter);
+app.use(`${url}/support-diy`, supportDIYRouter);
+app.use(`${url}/addresses`, addressRouter);
+app.use(`${url}/refund-invoices`, refundInvoiceRouter);
+app.use(`${url}/notifications`, notificationRouter);
+app.use(`${url}/messages`, messageRouter);
 
 app.use(handleError);
 

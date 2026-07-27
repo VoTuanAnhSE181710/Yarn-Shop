@@ -37,7 +37,9 @@ class CourseService {
             creatorId: course.creatorId ? course.creatorId.toString() : null,
             totalDuration: course.totalDuration || 0,
             totalLessons: course.totalLessons || 0,
-            rating: course.rating || 0,
+            rating: course.averageRating || 0,
+            averageRating: course.averageRating || 0,
+            totalRatings: course.totalRatings || 0,
             enrolledCount: course.enrolledCount || 0,
             isPublished: !!course.isPublished,
             createdAt: course.createdAt,
@@ -313,16 +315,36 @@ class CourseService {
     /**
      * Rate a course (update rating)
      * @param {string} courseId
-     * @param {number} ratingValue
+     * @param {string} userId
+     * @param {number} score
      */
-    rateCourse = async (courseId, ratingValue) => {
+    rateCourse = async (courseId, userId, score) => {
         const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
 
         if (!course) {
             throw new NotFoundError("Course not found");
         }
 
-        course.rating = ratingValue;
+        if (score < 1 || score > 5) {
+            const error = new Error("Rating score must be between 1 and 5");
+            error.statusCode = 400;
+            throw error;
+        }
+
+        if (!course.ratings) course.ratings = [];
+
+        const existingRatingIndex = course.ratings.findIndex(r => r.user.toString() === userId.toString());
+
+        if (existingRatingIndex !== -1) {
+            course.ratings[existingRatingIndex].score = score;
+        } else {
+            course.ratings.push({ user: userId, score });
+        }
+
+        const totalScore = course.ratings.reduce((acc, curr) => acc + curr.score, 0);
+        course.averageRating = Number((totalScore / course.ratings.length).toFixed(1));
+        course.totalRatings = course.ratings.length;
+
         await course.save();
 
         return this.#formatCourseResponse(course);

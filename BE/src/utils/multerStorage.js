@@ -105,3 +105,14 @@ const courseStorage = new CloudinaryStorage({
 });
 
 export const uploadCourse = multer({ storage: courseStorage });
+
+const supportDIYStorage = new CloudinaryStorage({
+    cloudinary: cloudinary,
+    params: {
+        folder: 'support_diy',
+        allowed_formats: ['jpg', 'png', 'jpeg', 'webp'],
+        transformation: [{ quality: "auto", fetch_format: "auto" }]
+    }
+});
+
+export const uploadSupportDIY = multer({ storage: supportDIYStorage });

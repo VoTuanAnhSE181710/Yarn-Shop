@@ -18,6 +18,11 @@ import OrderController from "./src/api/controllers/order.controller.js";
 import ProductController from "./src/api/controllers/product.controller.js";
 import DIYPostController from "./src/api/controllers/diyPost.controller.js";
 import OrderReportController from "./src/api/controllers/orderReport.controller.js";
+import SupportDIYController from "./src/api/controllers/supportDIY.controller.js";
+import AddressController from "./src/api/controllers/address.controller.js";
+import RefundInvoiceController from "./src/api/controllers/refundInvoice.controller.js";
+import NotificationController from "./src/api/controllers/notification.controller.js";
+import MessageController from "./src/api/controllers/message.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -36,7 +41,12 @@ import OrderService from "./src/services/order.service.js";
 import ProductService from "./src/services/product.service.js";
 import DIYPostService from "./src/services/diyPost.service.js";
 import OrderReportService from "./src/services/orderReport.service.js";
+import SupportDIYService from "./src/services/supportDIY.service.js";
+import AddressService from "./src/services/address.service.js";
 import GHNService from "./src/services/ghn.service.js";
+import RefundInvoiceService from "./src/services/refundInvoice.service.js";
+import NotificationService from "./src/services/notification.service.js";
+import MessageService from "./src/services/message.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -49,6 +59,10 @@ import OrderRepository from "./src/repositories/order.repository.js";
 import ProductRepository from "./src/repositories/product.repository.js";
 import DIYPostRepository from "./src/repositories/diyPost.repository.js";
 import OrderReportRepository from "./src/repositories/orderReport.repository.js";
+import SupportDIYRepository from "./src/repositories/supportDIY.repository.js";
+import AddressRepository from "./src/repositories/address.repository.js";
+import MessageRepository from "./src/repositories/message.repository.js";
+import ConversationRepository from "./src/repositories/conversation.repository.js";
 
 //3rd party
 import redisClient from "./src/utils/redisClient.js";
@@ -108,6 +122,18 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     orderReportRepository: asClass(OrderReportRepository, {
       lifetime: Lifetime.SCOPED,
     }),
+    supportDIYRepository: asClass(SupportDIYRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    addressRepository: asClass(AddressRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    messageRepository: asClass(MessageRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    conversationRepository: asClass(ConversationRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     //Services
     authService: asClass(AuthService, {
@@ -162,6 +188,21 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     ghnService: asClass(GHNService, {
       lifetime: Lifetime.SCOPED,
     }),
+    supportDIYService: asClass(SupportDIYService, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    addressService: asClass(AddressService, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    refundInvoiceService: asClass(RefundInvoiceService, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    notificationService: asClass(NotificationService, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    messageService: asClass(MessageService, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     // Controllers
     authController: asClass(AuthController, {
@@ -213,6 +254,21 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     orderReportController: asClass(OrderReportController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    supportDIYController: asClass(SupportDIYController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    addressController: asClass(AddressController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    refundInvoiceController: asClass(RefundInvoiceController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    notificationController: asClass(NotificationController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    messageController: asClass(MessageController, {
       lifetime: Lifetime.SCOPED,
     }),
   });

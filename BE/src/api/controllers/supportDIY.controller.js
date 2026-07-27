@@ -1,11 +1,11 @@
-export default class DIYPostController {
-    constructor({ diyPostService }) {
-        this.diyPostService = diyPostService;
+export default class SupportDIYController {
+    constructor({ supportDIYService }) {
+        this.supportDIYService = supportDIYService;
     }
 
     async getAllPosts(req, res, next) {
         try {
-            const result = await this.diyPostService.getPosts(req.query);
+            const result = await this.supportDIYService.getPosts(req.query);
             res.status(200).json({
                 status: 'success',
                 data: result
@@ -18,7 +18,7 @@ export default class DIYPostController {
     async getPostById(req, res, next) {
         try {
             const { id } = req.params;
-            const post = await this.diyPostService.getPostById(id);
+            const post = await this.supportDIYService.getPostById(id);
             res.status(200).json({
                 status: 'success',
                 data: { post }
@@ -44,7 +44,7 @@ export default class DIYPostController {
                 data.images.push(...imagePaths);
             }
             
-            const post = await this.diyPostService.createPost(data);
+            const post = await this.supportDIYService.createPost(data);
             res.status(201).json({
                 status: 'success',
                 data: { post }
@@ -66,7 +66,7 @@ export default class DIYPostController {
                 data.images.push(...imagePaths);
             }
             
-            const post = await this.diyPostService.updatePost(id, data);
+            const post = await this.supportDIYService.updatePost(id, data);
             res.status(200).json({
                 status: 'success',
                 data: { post }
@@ -83,7 +83,7 @@ export default class DIYPostController {
             if (!status) {
                 return res.status(400).json({ status: 'error', message: 'Status is required' });
             }
-            const post = await this.diyPostService.updateStatus(id, status);
+            const post = await this.supportDIYService.updateStatus(id, status);
             res.status(200).json({
                 status: 'success',
                 data: { post }
@@ -96,26 +96,10 @@ export default class DIYPostController {
     async deletePost(req, res, next) {
         try {
             const { id } = req.params;
-            await this.diyPostService.deletePost(id);
+            await this.supportDIYService.deletePost(id);
             res.status(200).json({
                 status: 'success',
-                message: 'DIY Post deleted successfully'
-            });
-        } catch (error) {
-            next(error);
-        }
-    }
-
-    async rate(req, res, next) {
-        try {
-            const { id } = req.params;
-            const { score } = req.body;
-            const { userId } = req.user;
-
-            const post = await this.diyPostService.ratePost(id, userId, score);
-            res.status(200).json({
-                status: 'success',
-                data: { post }
+                message: 'Support DIY Post deleted successfully'
             });
         } catch (error) {
             next(error);

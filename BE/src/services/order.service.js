@@ -2,12 +2,23 @@ import Product from "../models/product.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
 
 export default class OrderService {
-    constructor({ orderRepository }) {
+    constructor({ orderRepository, notificationService }) {
         this.orderRepository = orderRepository;
+        this.notificationService = notificationService;
     }
 
     async createOrder(data) {
-        return this.orderRepository.create(data);
+        const order = await this.orderRepository.create(data);
+        if (this.notificationService) {
+            await this.notificationService.createAndEmitNotification({
+                type: "ORDER",
+                priority: "NORMAL",
+                title: "Đơn hàng mới",
+                message: `Khách hàng vừa đặt đơn hàng mới: ${order._id}`,
+                targetRole: "Admin"
+            }).catch(console.error);
+        }
+        return order;
     }
 
     async getOrderById(id) {
@@ -50,6 +61,16 @@ export default class OrderService {
         if (!order) {
             throw new NotFoundError("Order not found");
         }
+        if (this.notificationService) {
+            const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
+            await this.notificationService.createAndEmitNotification({
+                type: "ORDER",
+                priority: "NORMAL",
+                title: "Cập nhật trạng thái đơn hàng",
+                message: `Đơn hàng ${order._id} của bạn đã chuyển sang trạng thái ${orderStatus}`,
+                userId: orderUserId
+            }).catch(console.error);
+        }
         return order;
     }
 
@@ -66,10 +87,33 @@ export default class OrderService {
         if (order.orderStatus !== "PENDING") {
             throw new BadRequestError("Only pending orders can be cancelled");
         }
-        return this.orderRepository.update(id, {
+        const updatedOrder = await this.orderRepository.update(id, {
             orderStatus: "CANCELLED",
             cancelReason,
         });
+        
+        if (order.payment && order.payment.status === "PAID") {
+            const RefundInvoice = (await import("../models/RefundInvoice.js")).default;
+            const refundAmount = order.totalPrice * 0.9;
+            await RefundInvoice.create({
+                orderId: order._id,
+                userId: orderUserId,
+                amount: refundAmount,
+                reason: cancelReason || "Order cancelled by user (10% fee deducted)",
+                status: "PENDING"
+            });
+            if (this.notificationService) {
+                await this.notificationService.createAndEmitNotification({
+                    type: "ORDER",
+                    priority: "HIGH",
+                    title: "Yêu cầu hoàn tiền",
+                    message: `Khách hàng đã hủy đơn hàng đã thanh toán ${order._id}. Cần hoàn tiền!`,
+                    targetRole: "Admin"
+                }).catch(console.error);
+            }
+        }
+        
+        return updatedOrder;
     }
 
     async updatePaymentStatus(id, paymentStatus, transactionNo) {

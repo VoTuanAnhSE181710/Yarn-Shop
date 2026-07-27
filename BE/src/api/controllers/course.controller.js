@@ -190,8 +190,9 @@ class CourseController {
         try {
             const { id } = req.params;
             const { rating } = req.body;
+            const { userId } = req.user;
 
-            const course = await this.#courseService.rateCourse(id, rating);
+            const course = await this.#courseService.rateCourse(id, userId, rating);
 
             res.status(200).json({
                 status: 'success',

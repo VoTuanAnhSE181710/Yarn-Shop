@@ -16,7 +16,7 @@ const linkedComboSchema = new mongoose.Schema({
     },
 }, { _id: false });
 
-const diyPostSchema = new mongoose.Schema({
+const supportDIYSchema = new mongoose.Schema({
     creatorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
@@ -61,22 +61,10 @@ const diyPostSchema = new mongoose.Schema({
         type: String,
         enum: ["Pending", "Done", "Cancel"],
         default: "Pending",
-    },
-    ratings: [{
-        userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-        score: { type: Number, required: true, min: 1, max: 5 }
-    }],
-    averageRating: {
-        type: Number,
-        default: 0,
-    },
-    totalRatings: {
-        type: Number,
-        default: 0,
     }
 }, {
     timestamps: true
 });
 
-const DIYPost = mongoose.model("DIYPost", diyPostSchema, "diyposts");
-export default DIYPost;
+const SupportDIY = mongoose.model("SupportDIY", supportDIYSchema, "supportdiys");
+export default SupportDIY;

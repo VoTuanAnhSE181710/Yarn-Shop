@@ -1,6 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission } from '../middlewares/middleware.js';
-import { uploadDIYPost } from '../../utils/multerStorage.js';
+import { uploadSupportDIY } from '../../utils/multerStorage.js';
 
 const router = express.Router();
 
@@ -8,7 +8,7 @@ const router = express.Router();
  * @swagger
  * components:
  *   schemas:
- *     DIYPost:
+ *     SupportDIY:
  *       type: object
  *       properties:
  *         _id:
@@ -60,11 +60,11 @@ const router = express.Router();
 
 /**
  * @swagger
- * /diy-posts:
+ * /support-diy:
  *   get:
- *     summary: Get all DIY posts
- *     description: Retrieve a list of DIY posts. Public access.
- *     tags: [DIYPosts]
+ *     summary: Get all Support DIY posts
+ *     description: Retrieve a list of Support DIY posts. Public access.
+ *     tags: [SupportDIY]
  *     parameters:
  *       - in: query
  *         name: status
@@ -95,23 +95,23 @@ const router = express.Router();
  *           default: 10
  *     responses:
  *       200:
- *         description: A list of DIY posts
+ *         description: A list of Support DIY posts
  */
 router.get(
     "/",
     async (req, res, next) => {
-        const diyPostController = req.container.resolve("diyPostController");
-        await diyPostController.getAllPosts(req, res, next);
+        const supportDIYController = req.container.resolve("supportDIYController");
+        await supportDIYController.getAllPosts(req, res, next);
     }
 );
 
 /**
  * @swagger
- * /diy-posts:
+ * /support-diy:
  *   post:
- *     summary: Create a DIY post
- *     description: Create a new DIY post. Requires authentication and DIYPost create permission. Supports file upload for images.
- *     tags: [DIYPosts]
+ *     summary: Create a Support DIY post
+ *     description: Create a new Support DIY post. Requires authentication and SupportDIY create permission. Supports file upload for images.
+ *     tags: [SupportDIY]
  *     security:
  *       - bearerAuth: []
  *     requestBody:
@@ -159,13 +159,13 @@ router.get(
  *                 description: Post images (upload multiple files)
  *     responses:
  *       201:
- *         description: DIY Post created successfully
+ *         description: Support DIY Post created successfully
  */
 router.post(
     "/",
     authentication,
-    checkPermission('DIYPost', 'create'),
-    uploadDIYPost.any(),
+    checkPermission('SupportDIY', 'create'),
+    uploadSupportDIY.any(),
     (req, res, next) => {
         try {
             if (!req.body.data && !req.body.title) {
@@ -200,18 +200,18 @@ router.post(
         }
     },
     async (req, res, next) => {
-        const diyPostController = req.container.resolve("diyPostController");
-        await diyPostController.createPost(req, res, next);
+        const supportDIYController = req.container.resolve("supportDIYController");
+        await supportDIYController.createPost(req, res, next);
     }
 );
 
 /**
  * @swagger
- * /diy-posts/{id}:
+ * /support-diy/{id}:
  *   get:
- *     summary: Get a DIY post by ID
- *     description: Retrieve detailed information about a specific DIY post. Public access.
- *     tags: [DIYPosts]
+ *     summary: Get a Support DIY post by ID
+ *     description: Retrieve detailed information about a specific Support DIY post. Public access.
+ *     tags: [SupportDIY]
  *     parameters:
  *       - in: path
  *         name: id
@@ -220,23 +220,23 @@ router.post(
  *           type: string
  *     responses:
  *       200:
- *         description: DIY Post details
+ *         description: Support DIY Post details
  */
 router.get(
     "/:id",
     async (req, res, next) => {
-        const diyPostController = req.container.resolve("diyPostController");
-        await diyPostController.getPostById(req, res, next);
+        const supportDIYController = req.container.resolve("supportDIYController");
+        await supportDIYController.getPostById(req, res, next);
     }
 );
 
 /**
  * @swagger
- * /diy-posts/{id}:
+ * /support-diy/{id}:
  *   put:
- *     summary: Update a DIY post
- *     description: Update an existing DIY post by ID. Requires authentication and DIYPost update permission. Supports file upload for images.
- *     tags: [DIYPosts]
+ *     summary: Update a Support DIY post
+ *     description: Update an existing Support DIY post by ID. Requires authentication and SupportDIY update permission. Supports file upload for images.
+ *     tags: [SupportDIY]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -289,13 +289,13 @@ router.get(
  *                   format: binary
  *     responses:
  *       200:
- *         description: DIY Post updated successfully
+ *         description: Support DIY Post updated successfully
  */
 router.put(
     "/:id",
     authentication,
-    checkPermission('DIYPost', 'update'),
-    uploadDIYPost.any(),
+    checkPermission('SupportDIY', 'update'),
+    uploadSupportDIY.any(),
     (req, res, next) => {
         try {
             if (req.body.data) {
@@ -323,18 +323,18 @@ router.put(
         }
     },
     async (req, res, next) => {
-        const diyPostController = req.container.resolve("diyPostController");
-        await diyPostController.updatePost(req, res, next);
+        const supportDIYController = req.container.resolve("supportDIYController");
+        await supportDIYController.updatePost(req, res, next);
     }
 );
 
 /**
  * @swagger
- * /diy-posts/{id}:
+ * /support-diy/{id}:
  *   delete:
- *     summary: Delete a DIY post
- *     description: Delete a DIY post by ID. Requires authentication and DIYPost delete permission.
- *     tags: [DIYPosts]
+ *     summary: Delete a Support DIY post
+ *     description: Delete a Support DIY post by ID. Requires authentication and SupportDIY delete permission.
+ *     tags: [SupportDIY]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -345,25 +345,25 @@ router.put(
  *           type: string
  *     responses:
  *       200:
- *         description: DIY Post deleted successfully
+ *         description: Support DIY Post deleted successfully
  */
 router.delete(
     "/:id",
     authentication,
-    checkPermission('DIYPost', 'delete'),
+    checkPermission('SupportDIY', 'delete'),
     async (req, res, next) => {
-        const diyPostController = req.container.resolve("diyPostController");
-        await diyPostController.deletePost(req, res, next);
+        const supportDIYController = req.container.resolve("supportDIYController");
+        await supportDIYController.deletePost(req, res, next);
     }
 );
 
 /**
  * @swagger
- * /diy-posts/{id}/status:
+ * /support-diy/{id}/status:
  *   patch:
- *     summary: Update DIY post status
- *     description: Update the status of a DIY post. Requires authentication and DIYPost update permission.
- *     tags: [DIYPosts]
+ *     summary: Update Support DIY post status
+ *     description: Update the status of a Support DIY post. Requires authentication and SupportDIY update permission.
+ *     tags: [SupportDIY]
  *     security:
  *       - bearerAuth: []
  *     parameters:
@@ -386,61 +386,17 @@ router.delete(
  *                 enum: ["Pending", "Done", "Cancel"]
  *     responses:
  *       200:
- *         description: DIY Post status updated successfully
+ *         description: Support DIY Post status updated successfully
  *       400:
  *         description: Invalid status
  */
 router.patch(
     "/:id/status",
     authentication,
-    checkPermission('DIYPost', 'update'),
+    checkPermission('SupportDIY', 'update'),
     async (req, res, next) => {
-        const diyPostController = req.container.resolve("diyPostController");
-        await diyPostController.updateStatus(req, res, next);
-    }
-);
-
-/**
- * @swagger
- * /diy-posts/{id}/rate:
- *   post:
- *     summary: Rate a DIY post
- *     description: Rate a DIY post with a score between 1 and 5. Requires authentication.
- *     tags: [DIYPosts]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required: [score]
- *             properties:
- *               score:
- *                 type: number
- *                 minimum: 1
- *                 maximum: 5
- *     responses:
- *       200:
- *         description: DIY Post rated successfully
- *       400:
- *         description: Bad Request
- *       404:
- *         description: DIY Post not found
- */
-router.post(
-    "/:id/rate",
-    authentication,
-    async (req, res, next) => {
-        const diyPostController = req.container.resolve("diyPostController");
-        await diyPostController.rate(req, res, next);
+        const supportDIYController = req.container.resolve("supportDIYController");
+        await supportDIYController.updateStatus(req, res, next);
     }
 );
 

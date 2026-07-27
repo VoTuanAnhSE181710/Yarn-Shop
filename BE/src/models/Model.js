@@ -11,5 +11,7 @@ import Lesson from "./lesson.js";
 import DIYPost from "./diyPost.js";
 import Order from "./order.js";
 import OrderReport from "./orderReport.js";
+import SupportDIY from "./supportDIY.js";
+import Address from "./address.js";
 
-export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order, OrderReport };
+export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order, OrderReport, SupportDIY, Address };
