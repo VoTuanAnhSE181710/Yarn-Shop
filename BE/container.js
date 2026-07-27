@@ -1,7 +1,7 @@
 import { createContainer, asClass, asValue, Lifetime } from "awilix";
 
 //import Models
-import { Role, Permission, User, Message, Conversation } from "./src/models/Model.js";
+import { Role, Permission, User, Message, Conversation, Log } from "./src/models/Model.js";
 
 //import Controller
 import AuthController from "./src/api/controllers/auth.controller.js";
@@ -95,6 +95,7 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
 
     Message: asValue(Message),
     Conversation: asValue(Conversation),
+    Log: asValue(Log),
 
     //Repositories
     refreshTokenRepository: asClass(RefreshTokenRepository, {
