@@ -69,6 +69,12 @@ const router = express.Router();
  *         schema:
  *           type: integer
  *           default: 10
+ *       - in: query
+ *         name: isActive
+ *         schema:
+ *           type: string
+ *           enum: [true, false]
+ *         description: Filter by active status (defaults to true)
  *     responses:
  *       200:
  *         description: A list of kits
