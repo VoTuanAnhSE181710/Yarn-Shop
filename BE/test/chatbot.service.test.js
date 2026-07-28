@@ -46,7 +46,7 @@ class FakeChatbotRepository {
           description: "Khóa học cho người mới",
           thumbnail: "course.jpg",
           level: "beginner",
-          totalDuration: 1800,
+          totalDuration: 30,
           averageRating: 4.8,
           totalRatings: 20,
           enrolledCount: 120,
@@ -155,6 +155,15 @@ test("word matching does not mistake mua for the project mũ", () => {
   assert.equal(answers.maxPrice, 200000);
 });
 
+test("free text extracts a learning duration in minutes", () => {
+  const answers = extractAnswersFromMessage(
+    "Tôi là beginner, muốn học đan móc với nội dung dưới 30 phút",
+  );
+
+  assert.equal(answers.level, "beginner");
+  assert.equal(answers.maxDuration, 1800);
+});
+
 test("product scoring favors suitable in-stock cotton", () => {
   const cotton = scoreProduct(
     {
@@ -223,6 +232,8 @@ test("learn recommendation returns course and video metadata", async () => {
 
   assert.equal(recommendation.total, 2);
   assert.equal(recommendation.courses[0].level, "beginner");
+  assert.equal(recommendation.courses[0].duration, "30 phút");
+  assert.equal(recommendation.courses[0].durationSeconds, 1800);
   assert.equal(recommendation.videos[0].duration, "8 phút");
 });
 

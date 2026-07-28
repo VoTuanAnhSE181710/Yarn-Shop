@@ -186,43 +186,47 @@ export default class ChatbotService {
       userId,
     });
 
-    const courses = learning.courses.map((course) => ({
-      id: String(course._id),
-      type: "course",
-      title: course.title,
-      description: course.description,
-      thumbnail: course.thumbnail,
-      level: course.level,
-      duration: formatDuration(course.totalDuration),
-      durationSeconds: course.totalDuration || 0,
-      averageRating: course.averageRating || 0,
-      totalRatings: course.totalRatings || 0,
-      enrolledCount: course.enrolledCount || 0,
-      enrolled: Boolean(course.enrolled),
-      deepLink: `/learn?course=${course._id}`,
-      availableActions: [
-        {
-          id: course.enrolled ? "continue" : "enroll",
-          label: course.enrolled ? "Tiếp tục học" : "Đăng ký học",
-          method: course.enrolled ? "GET" : "POST",
-          endpoint: course.enrolled
-            ? `/api/v1/courses/${course._id}`
-            : `/api/v1/courses/${course._id}/enroll`,
-          requiresAuth: true,
-        },
-        {
-          id: "rate",
-          label: "Đánh giá khóa học",
-          method: "POST",
-          endpoint: `/api/v1/courses/${course._id}/rate`,
-          requiresAuth: true,
-        },
-      ],
-      reason:
-        course.level === level
-          ? "Phù hợp với trình độ bạn đã chọn."
-          : "Được đánh giá tốt và phù hợp với nội dung tìm kiếm.",
-    }));
+    const courses = learning.courses.map((course) => {
+      const durationSeconds = (Number(course.totalDuration) || 0) * 60;
+
+      return {
+        id: String(course._id),
+        type: "course",
+        title: course.title,
+        description: course.description,
+        thumbnail: course.thumbnail,
+        level: course.level,
+        duration: formatDuration(durationSeconds),
+        durationSeconds,
+        averageRating: course.averageRating || 0,
+        totalRatings: course.totalRatings || 0,
+        enrolledCount: course.enrolledCount || 0,
+        enrolled: Boolean(course.enrolled),
+        deepLink: `/learn?course=${course._id}`,
+        availableActions: [
+          {
+            id: course.enrolled ? "continue" : "enroll",
+            label: course.enrolled ? "Tiếp tục học" : "Đăng ký học",
+            method: course.enrolled ? "GET" : "POST",
+            endpoint: course.enrolled
+              ? `/api/v1/courses/${course._id}`
+              : `/api/v1/courses/${course._id}/enroll`,
+            requiresAuth: true,
+          },
+          {
+            id: "rate",
+            label: "Đánh giá khóa học",
+            method: "POST",
+            endpoint: `/api/v1/courses/${course._id}/rate`,
+            requiresAuth: true,
+          },
+        ],
+        reason:
+          course.level === level
+            ? "Phù hợp với trình độ bạn đã chọn."
+            : "Được đánh giá tốt và phù hợp với nội dung tìm kiếm.",
+      };
+    });
 
     const videos = learning.videos.map((video) => ({
       id: String(video._id),

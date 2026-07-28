@@ -413,6 +413,18 @@ export function extractAnswersFromMessage(message = "") {
     }
   }
 
+  const durationMatch = normalized.match(
+    /(?:duoi|toi da|khoang)?\s*(\d+(?:[.,]\d+)?)\s*(phut|gio)\b/,
+  );
+  if (durationMatch) {
+    let durationSeconds = Number(durationMatch[1].replace(",", "."));
+    if (durationMatch[2] === "gio") durationSeconds *= 60;
+    durationSeconds *= 60;
+    if (durationSeconds > 0) {
+      answers.maxDuration = Math.round(durationSeconds);
+    }
+  }
+
   const moneyMatch = normalized.match(/(?:duoi|toi da|khoang)?\s*(\d+(?:[.,]\d+)?)\s*(trieu|k|nghin|ngan)?/);
   if (moneyMatch) {
     let amount = Number(moneyMatch[1].replace(",", "."));
