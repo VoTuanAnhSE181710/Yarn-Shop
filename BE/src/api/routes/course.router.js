@@ -83,6 +83,8 @@ const router = express.Router();
  *             properties:
  *               productId:
  *                 type: string
+ *               variantId:
+ *                 type: string
  *         linkedCombo:
  *           type: array
  *           items:
@@ -627,6 +629,8 @@ router.get("/lessons", authentication, checkPermission('Lesson', 'read'), async 
  *                   properties:
  *                     productId:
  *                       type: string
+ *                     variantId:
+ *                       type: string
  *               linkedCombo:
  *                 type: array
  *                 items:
@@ -684,6 +688,8 @@ router.post("/lessons", authentication, checkPermission('Lesson', 'create'), val
  *                   type: object
  *                   properties:
  *                     productId:
+ *                       type: string
+ *                     variantId:
  *                       type: string
  *               linkedCombo:
  *                 type: array

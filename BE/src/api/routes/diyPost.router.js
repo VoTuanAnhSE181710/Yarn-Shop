@@ -34,6 +34,8 @@ const router = express.Router();
  *             properties:
  *               productId:
  *                 type: string
+ *               variantId:
+ *                 type: string
  *         linkedCombo:
  *           type: array
  *           items:
@@ -141,6 +143,8 @@ router.get(
  *                       type: object
  *                       properties:
  *                         productId:
+ *                           type: string
+ *                         variantId:
  *                           type: string
  *                   linkedCombo:
  *                     type: array
@@ -269,6 +273,8 @@ router.get(
  *                       type: object
  *                       properties:
  *                         productId:
+ *                           type: string
+ *                         variantId:
  *                           type: string
  *                   linkedCombo:
  *                     type: array

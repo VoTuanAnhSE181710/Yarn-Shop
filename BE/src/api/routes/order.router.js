@@ -16,6 +16,9 @@ const router = express.Router();
  *         productId:
  *           type: string
  *           description: Product ObjectId
+ *         variantId:
+ *           type: string
+ *           description: Variant ObjectId
  *         quantity:
  *           type: integer
  *           minimum: 1

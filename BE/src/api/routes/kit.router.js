@@ -31,6 +31,8 @@ const router = express.Router();
  *             properties:
  *               productId:
  *                 type: string
+ *               variantId:
+ *                 type: string
  *               quantity:
  *                 type: number
  *                 default: 1
@@ -130,6 +132,8 @@ router.get(
  *                       type: object
  *                       properties:
  *                         productId:
+ *                           type: string
+ *                         variantId:
  *                           type: string
  *                         quantity:
  *                           type: number
@@ -255,6 +259,8 @@ router.get(
  *                       type: object
  *                       properties:
  *                         productId:
+ *                           type: string
+ *                         variantId:
  *                           type: string
  *                         quantity:
  *                           type: number
