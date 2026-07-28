@@ -58,4 +58,12 @@ export default class NotificationService {
         
         return notification;
     }
+
+    async deleteNotification(id) {
+        const notification = await Notification.findByIdAndDelete(id);
+        if (!notification) {
+            throw new NotFoundError("Notification not found");
+        }
+        return { message: "Notification deleted successfully" };
+    }
 }

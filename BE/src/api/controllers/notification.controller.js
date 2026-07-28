@@ -30,4 +30,17 @@ export default class NotificationController {
             next(error);
         }
     }
+
+    async deleteNotification(req, res, next) {
+        try {
+            const { id } = req.params;
+            const result = await this.notificationService.deleteNotification(id);
+            res.status(200).json({
+                status: 'success',
+                message: result.message
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }

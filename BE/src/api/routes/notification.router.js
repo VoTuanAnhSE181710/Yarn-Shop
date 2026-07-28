@@ -62,4 +62,35 @@ router.patch(
     }
 );
 
+/**
+ * @swagger
+ * /notifications/{id}:
+ *   delete:
+ *     summary: Delete a notification
+ *     description: Delete a specific notification by ID.
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Notification ID
+ *     responses:
+ *       200:
+ *         description: Notification deleted successfully
+ *       404:
+ *         description: Notification not found
+ */
+router.delete(
+    "/:id",
+    authentication,
+    async (req, res, next) => {
+        const notificationController = req.container.resolve("notificationController");
+        await notificationController.deleteNotification(req, res, next);
+    }
+);
+
 export default router;
