@@ -9,7 +9,7 @@ export default class RefundInvoiceService {
     async getAll(query) {
         const { page = 1, limit = 10, status } = query;
         let filter = {};
-        if (status) filter.status = status;
+        if (status) filter.status = status.toUpperCase();
 
         const invoices = await RefundInvoice.find(filter)
             .populate('orderId', 'orderStatus totalPrice')
