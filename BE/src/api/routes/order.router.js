@@ -248,7 +248,7 @@ router.get(
  *         name: status
  *         schema:
  *           type: string
- *           enum: [PENDING, CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED]
+ *           enum: [PENDING, CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED, PROCESSED, REJECTED]
  *         description: Filter by order status
  *       - in: query
  *         name: paymentStatus
@@ -335,7 +335,7 @@ router.get(
  *             properties:
  *               orderStatus:
  *                 type: string
- *                 enum: [CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED]
+ *                 enum: [CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED, PROCESSED, REJECTED]
  *     responses:
  *       200:
  *         description: Order status updated successfully

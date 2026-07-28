@@ -178,7 +178,7 @@ export default class OrderController {
                 return res.status(400).json({ message: "Order status is required" });
             }
 
-            const validStatuses = ["CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED"];
+            const validStatuses = ["CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED", "PROCESSED", "REJECTED"];
             if (!validStatuses.includes(orderStatus)) {
                 return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
             }
