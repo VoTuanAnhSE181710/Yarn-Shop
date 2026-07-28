@@ -45,6 +45,15 @@ const addressSchema = new mongoose.Schema({
     isDefault: {
         type: Boolean,
         default: false
+    },
+    // Optional coordinates for map pin display
+    lat: {
+        type: Number,
+        default: null
+    },
+    lng: {
+        type: Number,
+        default: null
     }
 }, {
     timestamps: true
@@ -52,3 +61,4 @@ const addressSchema = new mongoose.Schema({
 
 const Address = mongoose.model("Address", addressSchema, "addresses");
 export default Address;
+
