@@ -95,7 +95,7 @@ const seedAssignPermissions = async () => {
             .map(p => p._id);
 
         const customerRole = await Role.findOneAndUpdate(
-            { roleName: "Customer" },
+            { roleName: "Cus" },
             { permission: customerPermissionIds },
             { returnDocument: 'after' }
         );
