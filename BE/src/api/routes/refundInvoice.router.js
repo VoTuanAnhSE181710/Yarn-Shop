@@ -3,11 +3,6 @@ import { authentication, checkPermission } from '../middlewares/middleware.js';
 
 const router = express.Router();
 
-router.get("/fix", async (req, res, next) => {
-    const refundInvoiceController = req.container.resolve("refundInvoiceController");
-    await refundInvoiceController.fixStatus(req, res, next);
-});
-
 /**
  * @swagger
  * /refund-invoices:
