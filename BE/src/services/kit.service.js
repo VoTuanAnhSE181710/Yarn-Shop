@@ -61,7 +61,7 @@ export default class KitService {
 
     async updateKit(id, data) {
         // Backward compatibility: Convert old productIds payload to new products array
-        if (data.productIds && Array.isArray(data.productIds) && data.products === undefined) {
+        if (data.productIds && Array.isArray(data.productIds) && (!data.products || data.products.length === 0)) {
             data.products = data.productIds.map(pid => ({ productId: pid, quantity: 1 }));
         }
 
