@@ -27,7 +27,6 @@ export default class RefundInvoiceController {
                 data: { invoice }
             });
         } catch (error) {
-        } catch (error) {
             next(error);
         }
     }
