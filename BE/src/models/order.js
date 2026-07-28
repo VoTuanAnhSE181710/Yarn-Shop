@@ -27,6 +27,11 @@ const orderItemSchema = new mongoose.Schema({
         color: { type: String },
         hexCode: { type: String },
     },
+    kitId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Kit",
+        default: null,
+    },
 });
 
 const orderSchema = new mongoose.Schema({
@@ -78,6 +83,8 @@ const orderSchema = new mongoose.Schema({
     },
     deliveredAt: { type: Date },
     cancelReason: { type: String },
+    isCancelRequested: { type: Boolean, default: false },
+    cancelRequestedAt: { type: Date, default: null },
 }, {
     timestamps: true,
 });

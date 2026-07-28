@@ -65,4 +65,20 @@ export default class KitController {
             next(error);
         }
     }
+
+    async rate(req, res, next) {
+        try {
+            const { id } = req.params;
+            const { score } = req.body;
+            const { userId } = req.user;
+
+            const kit = await this.kitService.rateKit(id, userId, Number(score));
+            res.status(200).json({
+                status: 'success',
+                data: { kit }
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }

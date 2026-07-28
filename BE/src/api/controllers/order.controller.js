@@ -12,9 +12,9 @@ export default class OrderController {
      */
     create = async (req, res, next) => {
         try {
-            const { items, shippingAddress, paymentMethod } = req.body;
+            const { items, kits, shippingAddress, paymentMethod } = req.body;
 
-            if (!items || items.length === 0) {
+            if ((!items || items.length === 0) && (!kits || kits.length === 0)) {
                 return res.status(400).json({ message: "Cart is empty" });
             }
             if (!shippingAddress) {
@@ -22,8 +22,9 @@ export default class OrderController {
             }
 
             // 1. Calculate total from DB (secure, prevents price manipulation)
+            // Supports both product items and kit items
             let { validatedItems, itemsPrice, shippingFee, totalPrice } =
-                await this.orderService.calculateOrderTotal(items);
+                await this.orderService.calculateOrderTotal(items || [], kits || []);
 
             if (shippingAddress.districtId && shippingAddress.wardCode) {
                 let cartWeight = 0;
@@ -197,7 +198,24 @@ export default class OrderController {
             const userId = req.user.userId || req.user._id;
             const { cancelReason } = req.body;
             const order = await this.orderService.cancelOrder(req.params.id, userId, cancelReason);
-            return res.status(200).json({ message: "Order cancelled successfully", order });
+            return res.status(200).json({ message: "Cancel request submitted. Awaiting admin approval.", order });
+        } catch (error) {
+            next(error);
+        }
+    };
+
+    /**
+     * Admin approves or rejects a customer's cancel request
+     */
+    handleCancelRequest = async (req, res, next) => {
+        try {
+            const { decision } = req.body; // "APPROVED" | "REJECTED"
+            const adminId = req.user.userId || req.user._id;
+            if (!decision) {
+                return res.status(400).json({ message: "Decision is required (APPROVED or REJECTED)" });
+            }
+            const order = await this.orderService.handleCancelRequest(req.params.id, decision, adminId);
+            return res.status(200).json({ message: `Cancel request ${decision.toLowerCase()}`, order });
         } catch (error) {
             next(error);
         }

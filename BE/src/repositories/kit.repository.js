@@ -2,7 +2,7 @@ import Kit from '../models/kit.js';
 
 export default class KitRepository {
     async findById(kitId) {
-        return Kit.findById(kitId).populate('productIds');
+        return Kit.findById(kitId).populate('products.productId');
     }
 
     async create(data) {
@@ -13,7 +13,7 @@ export default class KitRepository {
         const skip = (page - 1) * limit;
 
         const kits = await Kit.find(filter)
-            .populate('productIds')
+            .populate('products.productId')
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
@@ -27,12 +27,12 @@ export default class KitRepository {
             page,
             limit,
             totalPages: Math.ceil(total / limit)
-        }
+        };
     }
 
     async update(kitId, updateData) {
         return Kit.findByIdAndUpdate(kitId, updateData, { new: true, runValidators: true })
-            .populate('productIds');
+            .populate('products.productId');
     }
 
     async delete(kitId) {

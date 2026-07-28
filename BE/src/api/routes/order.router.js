@@ -404,4 +404,54 @@ router.post(
     }
 );
 
+/**
+ * @swagger
+ * /orders/{id}/cancel-request:
+ *   patch:
+ *     summary: Approve or reject a cancel request (Admin/Staff)
+ *     description: Admin reviews a customer cancel request and approves or rejects it.
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Order ObjectId
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - decision
+ *             properties:
+ *               decision:
+ *                 type: string
+ *                 enum: [APPROVED, REJECTED]
+ *     responses:
+ *       200:
+ *         description: Decision applied successfully
+ *       400:
+ *         description: No pending cancel request
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Forbidden
+ *       404:
+ *         description: Order not found
+ */
+router.patch(
+    "/:id/cancel-request",
+    authentication,
+    checkPermission("Order", "update"),
+    async (req, res, next) => {
+        const orderController = req.container.resolve("orderController");
+        await orderController.handleCancelRequest(req, res, next);
+    }
+);
+
 export default router;

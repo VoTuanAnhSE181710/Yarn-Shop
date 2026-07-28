@@ -319,4 +319,49 @@ router.delete(
     }
 );
 
+/**
+ * @swagger
+ * /kits/{id}/rate:
+ *   post:
+ *     summary: Rate a kit
+ *     description: Submit a rating (1-5) for a kit. Requires authentication.
+ *     tags: [Kits]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - score
+ *             properties:
+ *               score:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *     responses:
+ *       200:
+ *         description: Rating submitted successfully
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Kit not found
+ */
+router.post(
+    "/:id/rate",
+    authentication,
+    async (req, res, next) => {
+        const kitController = req.container.resolve("kitController");
+        await kitController.rate(req, res, next);
+    }
+);
+
 export default router;

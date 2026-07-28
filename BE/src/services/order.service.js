@@ -1,4 +1,5 @@
 import Product from "../models/product.js";
+import Kit from "../models/kit.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
 
 export default class OrderService {
@@ -50,10 +51,12 @@ export default class OrderService {
     }
 
     async getAllOrders(query = {}) {
-        const { page = 1, limit = 20, status, paymentStatus } = query;
+        const { page = 1, limit = 20, status, paymentStatus, isCancelRequested } = query;
         let filter = {};
         if (status) filter.orderStatus = status;
         if (paymentStatus) filter["payment.status"] = paymentStatus;
+        // Allow Admin to filter pending cancel requests
+        if (isCancelRequested !== undefined) filter.isCancelRequested = isCancelRequested === "true";
 
         return this.orderRepository.findAll({
             filter,
@@ -63,7 +66,7 @@ export default class OrderService {
         });
     }
 
-    async updateOrderStatus(id, orderStatus) {
+    async updateOrderStatus(id, orderStatus, actorId = null) {
         const order = await this.orderRepository.update(id, {
             orderStatus,
             ...(orderStatus === "DELIVERED" ? { deliveredAt: new Date() } : {}),
@@ -86,19 +89,23 @@ export default class OrderService {
                 action: "UPDATE",
                 targetType: "ORDER",
                 outcome: "SUCCESS",
-                actorId: null, // Usually admin triggers this
+                actorId,
                 details: { orderId: id, status: orderStatus }
             });
         }
         return order;
     }
 
+    /**
+     * Customer requests to cancel an order.
+     * Does NOT cancel immediately — sets isCancelRequested = true and notifies Admin.
+     */
     async cancelOrder(id, userId, cancelReason) {
         const order = await this.orderRepository.findById(id);
         if (!order) {
             throw new NotFoundError("Order not found");
         }
-        // Handle both populated (object with _id) and non-populated (ObjectId string) user
+
         const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
         if (orderUserId !== userId.toString()) {
             throw new ForbiddenError("Not authorized to cancel this order");
@@ -106,42 +113,125 @@ export default class OrderService {
         if (order.orderStatus !== "PENDING") {
             throw new BadRequestError("Only pending orders can be cancelled");
         }
-        const updatedOrder = await this.orderRepository.update(id, {
-            orderStatus: "CANCELLED",
-            cancelReason,
-        });
-        
-        if (order.payment && order.payment.status === "PAID") {
-            const RefundInvoice = (await import("../models/RefundInvoice.js")).default;
-            const refundAmount = order.totalPrice * 0.9;
-            await RefundInvoice.create({
-                orderId: order._id,
-                userId: orderUserId,
-                amount: refundAmount,
-                reason: cancelReason || "Order cancelled by user (10% fee deducted)",
-                status: "PENDING"
-            });
-            if (this.notificationService) {
-                await this.notificationService.createAndEmitNotification({
-                    type: "ORDER",
-                    priority: "HIGH",
-                    title: "Yêu cầu hoàn tiền",
-                    message: `Khách hàng đã hủy đơn hàng đã thanh toán ${order._id}. Cần hoàn tiền!`,
-                    targetRole: "Admin"
-                }).catch(console.error);
-            }
+        if (order.isCancelRequested) {
+            throw new BadRequestError("A cancel request is already pending for this order");
         }
-        
+
+        const updatedOrder = await this.orderRepository.update(id, {
+            isCancelRequested: true,
+            cancelReason,
+            cancelRequestedAt: new Date(),
+        });
+
+        if (this.notificationService) {
+            await this.notificationService.createAndEmitNotification({
+                type: "ORDER",
+                priority: "HIGH",
+                title: "Yêu cầu hủy đơn hàng",
+                message: `Khách hàng yêu cầu hủy đơn hàng ${order._id}. Lý do: ${cancelReason || "Không có lý do"}`,
+                targetRole: "Admin"
+            }).catch(console.error);
+        }
+
         if (this.logRepository) {
             await this.logRepository.saveLog({
-                action: "DELETE", // Represents cancellation
+                action: "UPDATE",
                 targetType: "ORDER",
                 outcome: "SUCCESS",
                 actorId: userId,
-                details: { orderId: id, reason: cancelReason }
+                details: { orderId: id, action: "CANCEL_REQUESTED", reason: cancelReason }
             });
         }
+
         return updatedOrder;
+    }
+
+    /**
+     * Admin approves or rejects a customer's cancel request.
+     * decision: "APPROVED" | "REJECTED"
+     */
+    async handleCancelRequest(id, decision, adminId) {
+        const order = await this.orderRepository.findById(id);
+        if (!order) {
+            throw new NotFoundError("Order not found");
+        }
+        if (!order.isCancelRequested) {
+            throw new BadRequestError("This order has no pending cancel request");
+        }
+
+        const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
+
+        if (decision === "APPROVED") {
+            // Cancel the order
+            await this.orderRepository.update(id, {
+                orderStatus: "CANCELLED",
+                isCancelRequested: false,
+            });
+
+            // Create refund invoice if order was already PAID
+            if (order.payment && order.payment.status === "PAID") {
+                const RefundInvoice = (await import("../models/RefundInvoice.js")).default;
+                const refundAmount = order.totalPrice * 0.9;
+                await RefundInvoice.create({
+                    orderId: order._id,
+                    userId: orderUserId,
+                    amount: refundAmount,
+                    reason: order.cancelReason || "Order cancelled by user (10% fee deducted)",
+                    status: "PENDING"
+                });
+            }
+
+            if (this.notificationService) {
+                await this.notificationService.createAndEmitNotification({
+                    type: "ORDER",
+                    priority: "NORMAL",
+                    title: "Yêu cầu hủy đơn được chấp thuận",
+                    message: `Đơn hàng ${order._id} của bạn đã được hủy thành công.`,
+                    userId: orderUserId
+                }).catch(console.error);
+            }
+
+            if (this.logRepository) {
+                await this.logRepository.saveLog({
+                    action: "DELETE",
+                    targetType: "ORDER",
+                    outcome: "SUCCESS",
+                    actorId: adminId,
+                    details: { orderId: id, decision: "APPROVED" }
+                });
+            }
+        } else if (decision === "REJECTED") {
+            // Keep PENDING, just clear the cancel request flag
+            await this.orderRepository.update(id, {
+                isCancelRequested: false,
+                cancelReason: null,
+                cancelRequestedAt: null,
+            });
+
+            if (this.notificationService) {
+                await this.notificationService.createAndEmitNotification({
+                    type: "ORDER",
+                    priority: "NORMAL",
+                    title: "Yêu cầu hủy đơn bị từ chối",
+                    message: `Yêu cầu hủy đơn hàng ${order._id} của bạn đã bị từ chối. Đơn hàng vẫn đang được xử lý.`,
+                    userId: orderUserId
+                }).catch(console.error);
+            }
+
+            if (this.logRepository) {
+                await this.logRepository.saveLog({
+                    action: "UPDATE",
+                    targetType: "ORDER",
+                    outcome: "SUCCESS",
+                    actorId: adminId,
+                    details: { orderId: id, decision: "REJECTED" }
+                });
+            }
+        } else {
+            throw new BadRequestError("Decision must be APPROVED or REJECTED");
+        }
+
+        return this.orderRepository.findById(id);
     }
 
     async updatePaymentStatus(id, paymentStatus, transactionNo) {
@@ -158,13 +248,34 @@ export default class OrderService {
     }
 
     /**
-     * Calculate total from cart items by querying DB prices
+     * Calculate total from cart items (products) by querying DB prices.
+     * Optionally accepts kits: [{kitId, quantity}] to expand kit products into items.
      */
-    async calculateOrderTotal(items) {
+    async calculateOrderTotal(items, kits = []) {
+        let allItems = [...(items || [])];
+
+        // Expand kit items into product items
+        if (kits && kits.length > 0) {
+            for (const kitEntry of kits) {
+                const kit = await Kit.findById(kitEntry.kitId).populate("products.productId");
+                if (!kit) throw new NotFoundError(`Kit ${kitEntry.kitId} not found`);
+                if (!kit.isActive) throw new BadRequestError(`Kit "${kit.name}" is no longer available`);
+
+                const kitQty = kitEntry.quantity || 1;
+                for (const kitProduct of kit.products) {
+                    allItems.push({
+                        productId: kitProduct.productId._id,
+                        quantity: kitProduct.quantity * kitQty,
+                        kitId: kit._id, // track which kit this came from
+                    });
+                }
+            }
+        }
+
         let itemsPrice = 0;
         const validatedItems = [];
 
-        for (const item of items) {
+        for (const item of allItems) {
             const product = await Product.findById(item.productId);
             if (!product) {
                 throw new NotFoundError(`Product ${item.productId} not found`);
@@ -173,7 +284,6 @@ export default class OrderService {
                 throw new BadRequestError(`Product "${product.name}" is no longer available`);
             }
 
-            // Find matching variant by color/hexCode
             let price = product.variants[0]?.price || 0;
             let variantInfo = {};
 
@@ -200,6 +310,7 @@ export default class OrderService {
                 price,
                 quantity: item.quantity,
                 variant: variantInfo,
+                kitId: item.kitId || null,
             });
         }
 
