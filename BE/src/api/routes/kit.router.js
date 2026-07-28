@@ -24,10 +24,16 @@ const router = express.Router();
  *           enum: [beginner, intermediate, advanced]
  *         price:
  *           type: number
- *         productIds:
+ *         products:
  *           type: array
  *           items:
- *             type: string
+ *             type: object
+ *             properties:
+ *               productId:
+ *                 type: string
+ *               quantity:
+ *                 type: number
+ *                 default: 1
  *         isActive:
  *           type: boolean
  *         createdAt:
@@ -118,10 +124,16 @@ router.get(
  *                     enum: [beginner, intermediate, advanced]
  *                   price:
  *                     type: number
- *                   productIds:
+ *                   products:
  *                     type: array
  *                     items:
- *                       type: string
+ *                       type: object
+ *                       properties:
+ *                         productId:
+ *                           type: string
+ *                         quantity:
+ *                           type: number
+ *                           default: 1
  *                   isActive:
  *                     type: boolean
  *               thumbnail:
@@ -237,10 +249,16 @@ router.get(
  *                     enum: [beginner, intermediate, advanced]
  *                   price:
  *                     type: number
- *                   productIds:
+ *                   products:
  *                     type: array
  *                     items:
- *                       type: string
+ *                       type: object
+ *                       properties:
+ *                         productId:
+ *                           type: string
+ *                         quantity:
+ *                           type: number
+ *                           default: 1
  *                   isActive:
  *                     type: boolean
  *               thumbnail:
