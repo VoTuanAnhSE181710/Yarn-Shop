@@ -41,6 +41,14 @@ export default class RefundInvoiceService {
             throw new NotFoundError("Refund Invoice not found");
         }
         
+        // Update the order status when refund is processed/rejected
+        const Order = (await import("../models/order.js")).default;
+        if (status === "PROCESSED") {
+            await Order.findByIdAndUpdate(invoice.orderId, { orderStatus: "CANCELLED", isCancelRequested: false });
+        } else if (status === "REJECTED") {
+            await Order.findByIdAndUpdate(invoice.orderId, { isCancelRequested: false });
+        }
+        
         if (this.logRepository) {
             await this.logRepository.saveLog({
                 action: "UPDATE",

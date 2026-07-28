@@ -123,6 +123,21 @@ export default class OrderService {
             cancelRequestedAt: new Date(),
         });
 
+        // Immediately create a RefundInvoice (as PENDING) so it shows up in the admin's refund invoices list.
+        // Even if the order is not paid, we create it so the Admin can process the cancellation request from that screen.
+        const RefundInvoice = (await import("../models/RefundInvoice.js")).default;
+        let refundAmount = 0;
+        if (order.payment && order.payment.status === "PAID") {
+            refundAmount = order.totalPrice * 0.9;
+        }
+        await RefundInvoice.create({
+            orderId: order._id,
+            userId: orderUserId,
+            amount: refundAmount,
+            reason: cancelReason || "Order cancelled by user",
+            status: "PENDING"
+        });
+
         if (this.notificationService) {
             await this.notificationService.createAndEmitNotification({
                 type: "ORDER",
@@ -167,19 +182,6 @@ export default class OrderService {
                 orderStatus: "CANCELLED",
                 isCancelRequested: false,
             });
-
-            // Create refund invoice if order was already PAID
-            if (order.payment && order.payment.status === "PAID") {
-                const RefundInvoice = (await import("../models/RefundInvoice.js")).default;
-                const refundAmount = order.totalPrice * 0.9;
-                await RefundInvoice.create({
-                    orderId: order._id,
-                    userId: orderUserId,
-                    amount: refundAmount,
-                    reason: order.cancelReason || "Order cancelled by user (10% fee deducted)",
-                    status: "PENDING"
-                });
-            }
 
             if (this.notificationService) {
                 await this.notificationService.createAndEmitNotification({
