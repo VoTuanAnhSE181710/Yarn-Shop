@@ -47,8 +47,8 @@ const seedAssignPermissions = async () => {
         // 2. Assign to Staff: all CRUD permissions (including manage & delete) on operational resources, plus read-only on admin resources
         const staffPermissionIds = allPermissions
             .filter(p => {
-                // Staff has manage & delete on operational resources (Kit, Course, Lesson, Product, Video, Category, DIYPost, Order)
-                if (['Kit', 'Course', 'Lesson', 'Product', 'Video', 'Category', 'DIYPost', 'Order'].includes(p.resource)) {
+                // Staff has manage & delete on operational resources (Kit, Course, Lesson, Product, Video, Category, DIYPost, Order, SupportDIY)
+                if (['Kit', 'Course', 'Lesson', 'Product', 'Video', 'Category', 'DIYPost', 'Order', 'SupportDIY'].includes(p.resource)) {
                     return ['create', 'read', 'update', 'delete', 'manage'].includes(p.action);
                 }
                 // Staff can read User, Role, Permission, Log
@@ -78,9 +78,13 @@ const seedAssignPermissions = async () => {
         // 3. Assign to Customer: read-only on browsing resources + create/read Order
         const customerPermissionIds = allPermissions
             .filter(p => {
-                // Customer can read products, kits, courses, lessons, categories, DIY posts
-                if (['Product', 'Kit', 'Course', 'Lesson', 'Category', 'DIYPost', 'Video'].includes(p.resource)) {
+                // Customer can read products, kits, courses, lessons, categories, DIY posts, SupportDIY
+                if (['Product', 'Kit', 'Course', 'Lesson', 'Category', 'DIYPost', 'Video', 'SupportDIY'].includes(p.resource)) {
                     return p.action === 'read';
+                }
+                // Customer can create SupportDIY posts (send support requests)
+                if (p.resource === 'SupportDIY') {
+                    return ['create', 'read'].includes(p.action);
                 }
                 // Customer can create and read orders
                 if (p.resource === 'Order') {

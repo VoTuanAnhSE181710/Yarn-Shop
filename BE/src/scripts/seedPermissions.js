@@ -380,6 +380,32 @@ const seedPermissions = async () => {
                 resource: "Mail",
                 action: "read",
                 description: "Permission to verify OTP codes"
+            },
+
+            // ===== SUPPORT DIY PERMISSIONS =====
+            {
+                name: "Create SupportDIY",
+                resource: "SupportDIY",
+                action: "create",
+                description: "Permission to create a SupportDIY post"
+            },
+            {
+                name: "Read SupportDIY",
+                resource: "SupportDIY",
+                action: "read",
+                description: "Permission to view SupportDIY posts"
+            },
+            {
+                name: "Update SupportDIY",
+                resource: "SupportDIY",
+                action: "update",
+                description: "Permission to update SupportDIY posts"
+            },
+            {
+                name: "Delete SupportDIY",
+                resource: "SupportDIY",
+                action: "delete",
+                description: "Permission to delete SupportDIY posts"
             }
         ];
 
