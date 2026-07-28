@@ -30,4 +30,30 @@ export default class RefundInvoiceController {
             next(error);
         }
     }
+
+    // Tạm thời fix status
+    async fixStatus(req, res, next) {
+        try {
+            const Order = (await import("../../models/order.js")).default;
+            const RefundInvoice = (await import("../../models/RefundInvoice.js")).default;
+            
+            const invoices = await RefundInvoice.find({ 
+                status: { $in: ["PROCESSED", "REJECTED"] }
+            });
+
+            let count = 0;
+            for (const invoice of invoices) {
+                const result = await Order.updateOne(
+                    { _id: invoice.orderId },
+                    { $set: { orderStatus: invoice.status, isCancelRequested: false } }
+                );
+                if (result.modifiedCount > 0) {
+                    count++;
+                }
+            }
+            res.status(200).json({ message: `Updated ${count} orders successfully!` });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
