@@ -60,6 +60,7 @@ import notificationRouter from "./src/api/routes/notification.router.js";
 import messageRouter from "./src/api/routes/message.router.js";
 import ghnRouter from "./src/api/routes/ghn.router.js";
 import shippingRouter from "./src/api/routes/shipping.router.js";
+import chatbotRouter from "./src/api/routes/chatbot.router.js";
 
 app.get("/", (req, res) => {
   res.send(`Hello World!`);
@@ -102,6 +103,7 @@ app.use(`${url}/notifications`, notificationRouter);
 app.use(`${url}/messages`, messageRouter);
 app.use(`${url}/ghn`, ghnRouter);
 app.use(`${url}/shipping`, shippingRouter);
+app.use(`${url}/chatbot`, chatbotRouter);
 
 app.use(handleError);
 

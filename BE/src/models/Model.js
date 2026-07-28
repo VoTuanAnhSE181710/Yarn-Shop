@@ -17,5 +17,6 @@ import Message from "./message.js";
 import Conversation from "./conversation.js";
 import Log from "./log.js";
 import ShopLocation from "./shopLocation.js";
+import ChatSession from "./chatSession.js";
 
-export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order, OrderReport, SupportDIY, Address, Message, Conversation, Log, ShopLocation };
+export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order, OrderReport, SupportDIY, Address, Message, Conversation, Log, ShopLocation, ChatSession };
