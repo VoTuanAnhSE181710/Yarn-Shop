@@ -145,6 +145,16 @@ test("intent parser detects Vietnamese shop questions", () => {
   assert.equal(answers.maxPrice, 500000);
 });
 
+test("word matching does not mistake mua for the project mũ", () => {
+  const answers = extractAnswersFromMessage(
+    "Tôi là người mới học móc len, nên mua gì dưới 200000 đồng?",
+  );
+
+  assert.equal(answers.recipient, "beginner");
+  assert.equal(answers.project, undefined);
+  assert.equal(answers.maxPrice, 200000);
+});
+
 test("product scoring favors suitable in-stock cotton", () => {
   const cotton = scoreProduct(
     {

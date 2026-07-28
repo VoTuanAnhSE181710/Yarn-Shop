@@ -356,6 +356,18 @@ export function normalizeText(value = "") {
     .trim();
 }
 
+export function containsTerm(text = "", term = "") {
+  const normalizedText = normalizeText(text);
+  const normalizedTerm = normalizeText(term);
+  if (!normalizedTerm) return false;
+
+  const escapedTerm = normalizedTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const phrasePattern = escapedTerm.replace(/\s+/g, "\\s+");
+  return new RegExp(`(?:^|\\s)${phrasePattern}(?=\\s|$)`, "u").test(
+    normalizedText,
+  );
+}
+
 export function inferIntent(message = "") {
   const normalized = normalizeText(message);
   let winner = "UNKNOWN";
@@ -364,7 +376,7 @@ export function inferIntent(message = "") {
   for (const [intent, keywords] of Object.entries(INTENT_KEYWORDS)) {
     const score = keywords.reduce(
       (total, keyword) =>
-        total + (normalized.includes(normalizeText(keyword)) ? 1 : 0),
+        total + (containsTerm(normalized, keyword) ? 1 : 0),
       0,
     );
     if (score > bestScore) {
@@ -395,7 +407,7 @@ export function extractAnswersFromMessage(message = "") {
   }
 
   for (const project of Object.keys(PROJECT_TERMS)) {
-    if (PROJECT_TERMS[project].some((term) => normalized.includes(normalizeText(term)))) {
+    if (PROJECT_TERMS[project].some((term) => containsTerm(normalized, term))) {
       answers.project = project;
       break;
     }
@@ -432,7 +444,7 @@ export function getVariantSummary(product = {}) {
 
 function countTermMatches(haystack, terms = []) {
   return terms.reduce(
-    (total, term) => total + (haystack.includes(normalizeText(term)) ? 1 : 0),
+    (total, term) => total + (containsTerm(haystack, term) ? 1 : 0),
     0,
   );
 }

@@ -55,8 +55,11 @@ function optionalAuthentication(req, _res, next) {
  *       properties:
  *         sessionId:
  *           type: string
+ *           minLength: 8
+ *           example: test-session-001
  *         message:
  *           type: string
+ *           example: Tôi là người mới học móc len, nên mua gì dưới 200000 đồng?
  *         action:
  *           type: string
  *           example: FREE_TEXT
@@ -110,6 +113,8 @@ router.get("/menu", async (req, res, next) => {
  *             properties:
  *               sessionId:
  *                 type: string
+ *                 minLength: 8
+ *                 example: test-session-001
  *     responses:
  *       201:
  *         description: Session created
