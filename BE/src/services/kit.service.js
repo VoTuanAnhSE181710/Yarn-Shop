@@ -47,6 +47,11 @@ export default class KitService {
     }
 
     async createKit(data) {
+        // Backward compatibility: Convert old productIds payload to new products array
+        if (data.productIds && Array.isArray(data.productIds) && (!data.products || data.products.length === 0)) {
+            data.products = data.productIds.map(id => ({ productId: id, quantity: 1 }));
+        }
+
         // Auto-calculate price from products
         if (data.products && data.products.length > 0) {
             data.price = await this.#recalculatePrice(data.products);
@@ -55,6 +60,11 @@ export default class KitService {
     }
 
     async updateKit(id, data) {
+        // Backward compatibility: Convert old productIds payload to new products array
+        if (data.productIds && Array.isArray(data.productIds) && data.products === undefined) {
+            data.products = data.productIds.map(pid => ({ productId: pid, quantity: 1 }));
+        }
+
         // Auto-calculate price if products are being updated
         if (data.products !== undefined) {
             data.price = await this.#recalculatePrice(data.products);
