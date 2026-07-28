@@ -36,6 +36,9 @@ const router = express.Router();
  *                 type: string
  *               variantId:
  *                 type: string
+ *               quantity:
+ *                 type: integer
+ *                 default: 1
  *         linkedCombo:
  *           type: array
  *           items:
@@ -146,6 +149,8 @@ router.get(
  *                           type: string
  *                         variantId:
  *                           type: string
+ *                         quantity:
+ *                           type: integer
  *                   linkedCombo:
  *                     type: array
  *                     items:

@@ -11,6 +11,35 @@ export default class OrderService {
 
     async createOrder(data) {
         const order = await this.orderRepository.create(data);
+
+        // Deduct stock from product variants for each item
+        for (const item of data.items || []) {
+            const product = await Product.findById(item.product);
+            if (!product) continue;
+
+            if (item.variantId) {
+                // Deduct from the specific variant
+                const variantIndex = product.variants.findIndex(
+                    v => v._id.toString() === item.variantId.toString()
+                );
+                if (variantIndex !== -1) {
+                    product.variants[variantIndex].stock = Math.max(
+                        0,
+                        product.variants[variantIndex].stock - item.quantity
+                    );
+                }
+            } else {
+                // Deduct from first variant if no variantId
+                if (product.variants.length > 0) {
+                    product.variants[0].stock = Math.max(
+                        0,
+                        product.variants[0].stock - item.quantity
+                    );
+                }
+            }
+            await product.save();
+        }
+
         if (this.notificationService) {
             await this.notificationService.createAndEmitNotification({
                 type: "ORDER",
