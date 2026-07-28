@@ -248,6 +248,49 @@ export default class OrderService {
     }
 
     /**
+     * Retry payment for a cancelled or unpaid order
+     */
+    async retryPayment(id, userId) {
+        const order = await this.orderRepository.findById(id);
+        if (!order) {
+            throw new NotFoundError("Order not found");
+        }
+
+        const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
+        if (orderUserId !== userId.toString()) {
+            throw new ForbiddenError("Not authorized to access this order");
+        }
+
+        if (order.orderStatus !== "CANCELLED" && order.orderStatus !== "PENDING") {
+            throw new BadRequestError("Only cancelled or pending orders can be retried for payment");
+        }
+        
+        if (order.payment && order.payment.status === "PAID") {
+            throw new BadRequestError("Order is already paid");
+        }
+
+        const updatedOrder = await this.orderRepository.update(id, {
+            orderStatus: "PENDING",
+            "payment.status": "PENDING",
+            isCancelRequested: false,
+            cancelReason: null,
+            cancelRequestedAt: null,
+        });
+
+        if (this.logRepository) {
+            await this.logRepository.saveLog({
+                action: "UPDATE",
+                targetType: "ORDER",
+                outcome: "SUCCESS",
+                actorId: userId,
+                details: { orderId: id, action: "RETRY_PAYMENT" }
+            });
+        }
+
+        return updatedOrder;
+    }
+
+    /**
      * Calculate total from cart items (products) by querying DB prices.
      * Optionally accepts kits: [{kitId, quantity}] to expand kit products into items.
      */

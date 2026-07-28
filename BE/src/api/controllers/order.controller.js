@@ -220,4 +220,27 @@ export default class OrderController {
             next(error);
         }
     };
+    /**
+     * Retry payment for a cancelled or unpaid order
+     */
+    retryPayment = async (req, res, next) => {
+        try {
+            const userId = req.user.userId || req.user._id;
+            const order = await this.orderService.retryPayment(req.params.id, userId);
+
+            let payUrl = null;
+            // Generate new VNPay URL if payment method is VNPAY (or default)
+            if (!order.payment.method || order.payment.method === "VNPAY") {
+                payUrl = generateVNPayUrl(order._id.toString(), order.totalPrice, req);
+            }
+
+            return res.status(200).json({
+                message: "Retry payment initiated successfully",
+                order,
+                payUrl,
+            });
+        } catch (error) {
+            next(error);
+        }
+    };
 }

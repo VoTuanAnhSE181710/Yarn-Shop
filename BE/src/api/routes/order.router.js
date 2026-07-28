@@ -454,4 +454,41 @@ router.patch(
     }
 );
 
+/**
+ * @swagger
+ * /orders/{id}/retry-payment:
+ *   post:
+ *     summary: Retry payment for a cancelled or unpaid order (Customer)
+ *     description: Resets the order status to PENDING and generates a new payment link (VNPay).
+ *     tags: [Orders]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *         description: Order ObjectId
+ *     responses:
+ *       200:
+ *         description: Retry payment initiated successfully
+ *       400:
+ *         description: Cannot retry - order is already paid or not in correct status
+ *       401:
+ *         description: Unauthorized
+ *       403:
+ *         description: Not authorized to access this order
+ *       404:
+ *         description: Order not found
+ */
+router.post(
+    "/:id/retry-payment",
+    authentication,
+    async (req, res, next) => {
+        const orderController = req.container.resolve("orderController");
+        await orderController.retryPayment(req, res, next);
+    }
+);
+
 export default router;
