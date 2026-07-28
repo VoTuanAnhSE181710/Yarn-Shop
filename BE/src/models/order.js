@@ -26,10 +26,6 @@ const orderItemSchema = new mongoose.Schema({
         required: true,
         min: 1,
     },
-    variant: {
-        color: { type: String },
-        hexCode: { type: String },
-    },
     kitId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "Kit",

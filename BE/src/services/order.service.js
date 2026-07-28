@@ -330,18 +330,15 @@ export default class OrderService {
             }
 
             let price = product.variants[0]?.price || 0;
-            let variantInfo = {};
-
-            if (item.color || item.hexCode) {
+            if (item.variantId) {
                 const matchedVariant = product.variants.find(
-                    (v) => v.color === item.color || v.hexCode === item.hexCode
+                    (v) => v._id && v._id.toString() === item.variantId.toString()
                 );
                 if (matchedVariant) {
                     price = matchedVariant.price;
                     if (matchedVariant.stock < item.quantity) {
-                        throw new BadRequestError(`Insufficient stock for "${product.name}" - ${matchedVariant.color}`);
+                        throw new BadRequestError(`Insufficient stock for "${product.name}" variant`);
                     }
-                    variantInfo = { color: matchedVariant.color, hexCode: matchedVariant.hexCode };
                 }
             }
 
@@ -354,7 +351,7 @@ export default class OrderService {
                 image: product.image || product.images?.[0] || "",
                 price,
                 quantity: item.quantity,
-                variant: variantInfo,
+                variantId: item.variantId || null,
                 kitId: item.kitId || null,
             });
         }
