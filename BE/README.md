@@ -449,3 +449,48 @@ describe("Auth Service", () => {
 **Version:** 3.0.0  
 **Architecture:** ESM + Awilix + Repository Pattern  
 **Date:** February 2026
+## Shipping API
+
+Shipping endpoints are available under `/api/v1/shipping`:
+
+- `GET /shop-location`: get the primary shop origin. If the collection is
+  empty, the approved Vĩnh Kim location is inserted into MongoDB.
+- `PUT /shop-location`: update the origin or delivery policy (requires
+  `Order:update` permission).
+- `POST /reverse-geocode`: convert `lat/lng` to a readable address
+  (authenticated).
+- `POST /check-area`: check whether coordinates are inside the configured
+  delivery radius.
+- `POST /quote`: calculate a distance-based fee and estimated delivery time.
+
+Default origin:
+
+```text
+Trung tâm Phục vụ Hành chính công xã Vĩnh Kim,
+ấp Vĩnh Thạnh, xã Vĩnh Kim, tỉnh Đồng Tháp
+lat=10.357225, lng=106.244531
+```
+
+Optional environment variables:
+
+```env
+SHOP_LOCATION_NAME=Yarn Shop Vĩnh Kim
+SHOP_ADDRESS=Trung tâm Phục vụ Hành chính công xã Vĩnh Kim, ấp Vĩnh Thạnh, xã Vĩnh Kim, tỉnh Đồng Tháp
+SHOP_COMMUNE_NAME=Xã Vĩnh Kim
+SHOP_PROVINCE_NAME=Tỉnh Đồng Tháp
+SHOP_LAT=10.357225
+SHOP_LNG=106.244531
+SHIPPING_MAX_DISTANCE_KM=100
+SHIPPING_BASE_DISTANCE_KM=5
+SHIPPING_BASE_FEE=15000
+SHIPPING_FEE_PER_KM=2500
+SHIPPING_MIN_FEE=15000
+SHIPPING_MAX_FEE=150000
+SHIPPING_FREE_THRESHOLD=500000
+GEOCODING_API_URL=https://nominatim.openstreetmap.org
+GEOCODING_USER_AGENT=YarnShop/1.0 (shipping-address-service)
+```
+
+The distance quote uses the Haversine formula. Existing GHN endpoints and the
+GHN checkout fee remain available for addresses that provide GHN district and
+ward identifiers.

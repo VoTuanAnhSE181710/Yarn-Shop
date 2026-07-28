@@ -24,6 +24,7 @@ import RefundInvoiceController from "./src/api/controllers/refundInvoice.control
 import NotificationController from "./src/api/controllers/notification.controller.js";
 import MessageController from "./src/api/controllers/message.controller.js";
 import LogController from "./src/api/controllers/log.controller.js";
+import ShippingController from "./src/api/controllers/shipping.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -49,6 +50,8 @@ import RefundInvoiceService from "./src/services/refundInvoice.service.js";
 import NotificationService from "./src/services/notification.service.js";
 import MessageService from "./src/services/message.service.js";
 import LogService from "./src/services/log.service.js";
+import GeocodingService from "./src/services/geocoding.service.js";
+import ShippingService from "./src/services/shipping.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -65,6 +68,7 @@ import SupportDIYRepository from "./src/repositories/supportDIY.repository.js";
 import AddressRepository from "./src/repositories/address.repository.js";
 import MessageRepository from "./src/repositories/message.repository.js";
 import ConversationRepository from "./src/repositories/conversation.repository.js";
+import ShopLocationRepository from "./src/repositories/shopLocation.repository.js";
 
 //3rd party
 import redisClient from "./src/utils/redisClient.js";
@@ -140,6 +144,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     conversationRepository: asClass(ConversationRepository, {
       lifetime: Lifetime.SCOPED,
     }),
+    shopLocationRepository: asClass(ShopLocationRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     //Services
     authService: asClass(AuthService, {
@@ -212,6 +219,12 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     logService: asClass(LogService, {
       lifetime: Lifetime.SCOPED,
     }),
+    geocodingService: asClass(GeocodingService, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    shippingService: asClass(ShippingService, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     // Controllers
     authController: asClass(AuthController, {
@@ -281,6 +294,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     logController: asClass(LogController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    shippingController: asClass(ShippingController, {
       lifetime: Lifetime.SCOPED,
     }),
   });
