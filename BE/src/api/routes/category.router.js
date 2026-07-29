@@ -1,5 +1,6 @@
 import express from 'express';
 import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
+import { cacheMiddleware } from '../middlewares/cache.middleware.js';
 import { Category } from '../../models/Model.js';
 
 const router = express.Router();
@@ -59,6 +60,7 @@ const router = express.Router();
 router.get(
     "/",
     authentication,
+    cacheMiddleware(3600), // Cache for 1 hour
     async (req, res, next) => {
         try {
             const categories = await Category.find({ isActive: true })

@@ -1,8 +1,17 @@
 import express from 'express';
 import { changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema, publicRegisterSchema } from '../../validators/user.validator.js';
 import { authentication, authorizationByRole, checkPermission, validateData, verifyDevice } from '../middlewares/middleware.js';
+import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
+
+const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 10, // Limit each IP to 10 login/register requests per windowMs
+    message: { status: "error", message: "Quá nhiều lần thử đăng nhập/đăng ký. Vui lòng thử lại sau 15 phút." },
+    standardHeaders: true,
+    legacyHeaders: false,
+});
 
 /**
  * @swagger
@@ -37,7 +46,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.post("/login", validateData(loginSchema), async (req, res, next) => {
+router.post("/login", authLimiter, validateData(loginSchema), async (req, res, next) => {
     const authController = req.container.resolve("authController");
 
     await authController.login(req, res, next);
@@ -158,6 +167,7 @@ router.post(
  */
 router.post(
     "/signup",
+    authLimiter,
     validateData(publicRegisterSchema, "body"),
     async (req, res, next) => {
         const authController = req.container.resolve("authController");

@@ -1,4 +1,5 @@
 import express from 'express';
+import { cacheMiddleware } from '../middlewares/cache.middleware.js';
 
 const router = express.Router();
 
@@ -41,6 +42,7 @@ const router = express.Router();
  */
 router.get(
     "/provinces",
+    cacheMiddleware(86400), // Cache for 24 hours
     async (req, res, next) => {
         try {
             const ghnService = req.container.resolve("ghnService");
@@ -93,6 +95,7 @@ router.get(
  */
 router.get(
     "/districts",
+    cacheMiddleware(86400), // Cache for 24 hours
     async (req, res, next) => {
         try {
             const { provinceId } = req.query;
@@ -149,6 +152,7 @@ router.get(
  */
 router.get(
     "/wards",
+    cacheMiddleware(86400), // Cache for 24 hours
     async (req, res, next) => {
         try {
             const { districtId } = req.query;

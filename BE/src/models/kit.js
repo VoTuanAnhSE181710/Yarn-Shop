@@ -27,5 +27,8 @@ const kitSchema = new mongoose.Schema({
     totalRatings: { type: Number, default: 0 }
 }, { timestamps: true });
 
+kitSchema.index({ isActive: 1 });
+kitSchema.index({ createdAt: -1 });
+
 const Kit = mongoose.model("Kit", kitSchema, "kits");
 export default Kit;

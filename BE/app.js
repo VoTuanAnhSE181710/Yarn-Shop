@@ -4,6 +4,7 @@ import cors from "cors";
 import container from "./container.js";
 import { handleError } from "./src/api/middlewares/middleware.js";
 import { swaggerUi, swaggerSpec } from "./src/config/swagger.js";
+import rateLimit from "express-rate-limit";
 import { configDotenv } from "dotenv";
 configDotenv();
 
@@ -32,6 +33,16 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Global Rate Limiter
+const globalLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 500, // Limit each IP to 500 requests per windowMs
+  standardHeaders: true, // Return rate limit info in the `RateLimit-*` headers
+  legacyHeaders: false, // Disable the `X-RateLimit-*` headers
+  message: { status: "error", message: "Quá nhiều yêu cầu từ IP của bạn, vui lòng thử lại sau 15 phút." },
+});
+app.use("/api/", globalLimiter); // Apply to all API routes
 
 app.use(scopePerRequest(container)); //khi nguoi dung call api thi chi cung cap 1 lan
 
