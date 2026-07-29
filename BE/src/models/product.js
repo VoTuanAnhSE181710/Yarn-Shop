@@ -33,6 +33,14 @@ const variantSchema = new mongoose.Schema(
       required: [true, "Variant image is required!"],
       trim: true,
     },
+    // Per-variant ratings
+    ratings: [{
+      _id: false,
+      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+      score: { type: Number, required: true, min: 1, max: 5 }
+    }],
+    averageRating: { type: Number, default: 0 },
+    totalRatings: { type: Number, default: 0 },
   },
   { _id: true },
 );
@@ -69,10 +77,7 @@ const productSchema = new mongoose.Schema(
       type: [variantSchema],
       required: [true, "At least one variant is required!"],
     },
-    ratings: [{
-      userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-      score: { type: Number, required: true, min: 1, max: 5 }
-    }],
+    // Product-level rating = auto-computed average of all variant averageRatings
     averageRating: {
       type: Number,
       default: 0,

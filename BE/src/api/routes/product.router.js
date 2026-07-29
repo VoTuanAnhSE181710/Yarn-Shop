@@ -465,10 +465,13 @@ router.delete(
 
 /**
  * @swagger
- * /products/{id}/rate:
+ * /products/{id}/variants/{variantId}/rate:
  *   post:
- *     summary: Rate a product
- *     description: Rate a product with a score between 1 and 5.
+ *     summary: Rate a product variant
+ *     description: |
+ *       Rate a specific variant of a product with a score between 1 and 5.
+ *       The product's overall averageRating is automatically recalculated
+ *       as the average of all variant averageRatings.
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -478,6 +481,13 @@ router.delete(
  *         required: true
  *         schema:
  *           type: string
+ *         description: Product ID
+ *       - in: path
+ *         name: variantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *         description: Variant ID (_idVariants in product response)
  *     requestBody:
  *       required: true
  *       content:
@@ -492,19 +502,19 @@ router.delete(
  *                 maximum: 5
  *     responses:
  *       200:
- *         description: Product rated successfully
+ *         description: Variant rated successfully. Returns updated product with recalculated averageRating.
  *       400:
  *         description: Bad Request
  *       404:
- *         description: Product not found
+ *         description: Product or Variant not found
  */
 router.post(
-  "/:id/rate",
+  "/:id/variants/:variantId/rate",
   authentication,
   validateData(productIdParamSchema, "params"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
-    await productController.rate(req, res, next);
+    await productController.rateVariant(req, res, next);
   },
 );
 
