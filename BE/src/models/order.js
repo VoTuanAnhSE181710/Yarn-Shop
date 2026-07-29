@@ -47,6 +47,8 @@ const orderSchema = new mongoose.Schema({
         provinceId: { type: Number },
         districtId: { type: Number },
         wardCode: { type: String },
+        lat: { type: Number },
+        lng: { type: Number },
     },
     itemsPrice: {
         type: Number,

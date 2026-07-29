@@ -34,6 +34,10 @@ const router = express.Router();
  *           type: string
  *         isDefault:
  *           type: boolean
+ *         lat:
+ *           type: number
+ *         lng:
+ *           type: number
  *         createdAt:
  *           type: string
  *           format: date-time
@@ -138,6 +142,10 @@ router.get(
  *                 type: string
  *               isDefault:
  *                 type: boolean
+ *               lat:
+ *                 type: number
+ *               lng:
+ *                 type: number
  *     responses:
  *       201:
  *         description: Address created successfully
@@ -192,6 +200,10 @@ router.post(
  *                 type: string
  *               isDefault:
  *                 type: boolean
+ *               lat:
+ *                 type: number
+ *               lng:
+ *                 type: number
  *     responses:
  *       200:
  *         description: Address updated successfully
