@@ -667,7 +667,10 @@ const options = {
         },
         security: []
     },
-    apis: ['./src/api/routes/*.js']
+    apis: [
+        './src/api/routes/*.js',
+        './src/modules/**/*.router.js'
+    ]
 };
 
 const swaggerSpec = swaggerJsdoc(options);

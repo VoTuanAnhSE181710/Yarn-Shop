@@ -56,6 +56,10 @@ const chatSessionSchema = new mongoose.Schema(
       budget: { type: Number, default: null },
       preferredDuration: { type: Number, default: null },
     },
+    agentState: {
+      type: mongoose.Schema.Types.Mixed,
+      default: null,
+    },
     messages: { type: [chatMessageSchema], default: [] },
     handoff: {
       requestedAt: { type: Date, default: null },

@@ -46,3 +46,18 @@ test("GET /api/v1/chatbot/menu exposes guided flows", async () => {
   assert.equal(body.data.flows.shop.submitAction, "SHOP_RECOMMEND");
   assert.equal(body.data.flows.diy.submitAction, "DIY_RECOMMEND");
 });
+
+test("GET /api/v1/ai-agent/health exposes tool agent mode", async () => {
+  const response = await fetch(`${baseUrl}/api/v1/ai-agent/health`);
+  const body = await response.json();
+
+  assert.equal(response.status, 200);
+  assert.equal(body.status, "success");
+  assert.equal(body.data.service, "yarn-shop-ai-agent");
+  assert.ok(
+    ["HYBRID_TOOL_AGENT", "DETERMINISTIC_TOOL_AGENT"].includes(
+      body.data.mode,
+    ),
+  );
+  assert.equal(body.data.confirmationRequiredForOrder, true);
+});

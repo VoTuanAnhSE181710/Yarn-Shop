@@ -26,6 +26,7 @@ import MessageController from "./src/api/controllers/message.controller.js";
 import LogController from "./src/api/controllers/log.controller.js";
 import ShippingController from "./src/api/controllers/shipping.controller.js";
 import ChatbotController from "./src/api/controllers/chatbot.controller.js";
+import AiAgentController from "./src/modules/ai-agent/aiAgent.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -54,6 +55,9 @@ import LogService from "./src/services/log.service.js";
 import GeocodingService from "./src/services/geocoding.service.js";
 import ShippingService from "./src/services/shipping.service.js";
 import ChatbotService from "./src/services/chatbot.service.js";
+import AiAgentService from "./src/modules/ai-agent/aiAgent.service.js";
+import AgentToolRegistry from "./src/modules/ai-agent/tools/agentToolRegistry.js";
+import GeminiPlanner from "./src/modules/ai-agent/providers/geminiPlanner.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -72,6 +76,7 @@ import MessageRepository from "./src/repositories/message.repository.js";
 import ConversationRepository from "./src/repositories/conversation.repository.js";
 import ShopLocationRepository from "./src/repositories/shopLocation.repository.js";
 import ChatbotRepository from "./src/repositories/chatbot.repository.js";
+import AiAgentRepository from "./src/modules/ai-agent/aiAgent.repository.js";
 
 //3rd party
 import redisClient from "./src/utils/redisClient.js";
@@ -151,6 +156,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     chatbotRepository: asClass(ChatbotRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    aiAgentRepository: asClass(AiAgentRepository, {
       lifetime: Lifetime.SCOPED,
     }),
 
@@ -234,6 +242,15 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     chatbotService: asClass(ChatbotService, {
       lifetime: Lifetime.SCOPED,
     }),
+    geminiPlanner: asClass(GeminiPlanner, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    agentToolRegistry: asClass(AgentToolRegistry, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    aiAgentService: asClass(AiAgentService, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     // Controllers
     authController: asClass(AuthController, {
@@ -309,6 +326,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     chatbotController: asClass(ChatbotController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    aiAgentController: asClass(AiAgentController, {
       lifetime: Lifetime.SCOPED,
     }),
   });
