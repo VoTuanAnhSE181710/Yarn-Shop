@@ -40,3 +40,9 @@ export class AuthenticationError extends ApiError {
         super(message, 401);
     }
 }
+
+export class ExternalServiceError extends ApiError {
+    constructor(message = "External service unavailable"){
+        super(message, 502);
+    }
+}

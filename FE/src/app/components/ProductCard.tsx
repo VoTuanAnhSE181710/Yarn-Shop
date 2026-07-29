@@ -1,6 +1,6 @@
 import { Link } from "react-router";
 import { Heart } from "lucide-react";
-import { Product } from "../data/products";
+import type { Product } from "../data/products";
 import { useFavorites } from "../context/FavoritesContext";
 import { motion } from "motion/react";
 

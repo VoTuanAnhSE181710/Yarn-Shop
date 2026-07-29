@@ -192,8 +192,20 @@ const seedData = async () => {
                 category: "yarn",
                 image: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/milk_cotton.jpg",
                 variants: [
-                    { color: "Đỏ", hexCode: "#FF0000", price: 45000, stock: 150 },
-                    { color: "Xanh Dương", hexCode: "#0000FF", price: 45000, stock: 120 }
+                    {
+                        color: "Đỏ",
+                        hexCode: "#FF0000",
+                        price: 45000,
+                        stock: 150,
+                        image: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/milk_cotton.jpg"
+                    },
+                    {
+                        color: "Xanh Dương",
+                        hexCode: "#0000FF",
+                        price: 45000,
+                        stock: 120,
+                        image: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/milk_cotton.jpg"
+                    }
                 ],
                 isActive: true
             },
@@ -203,7 +215,13 @@ const seedData = async () => {
                 category: "hook",
                 image: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/clover_hook.jpg",
                 variants: [
-                    { color: "Vàng", hexCode: "#FFD700", price: 75000, stock: 80 }
+                    {
+                        color: "Vàng",
+                        hexCode: "#FFD700",
+                        price: 75000,
+                        stock: 80,
+                        image: "https://res.cloudinary.com/dkylzuqgl/image/upload/v1/yarn-shop/clover_hook.jpg"
+                    }
                 ],
                 isActive: true
             }
