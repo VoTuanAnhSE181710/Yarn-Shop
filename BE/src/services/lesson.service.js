@@ -14,11 +14,13 @@ class LessonService {
         let linkedProduct = [];
         if (lesson.linkedProduct && Array.isArray(lesson.linkedProduct)) {
             linkedProduct = lesson.linkedProduct.map(item => ({
-                productId: (item.productId || item).toString()
+                productId: (item.productId || item).toString(),
+                variantId: item.variantId ? item.variantId.toString() : undefined
             }));
         } else if (lesson.linkedProducts && Array.isArray(lesson.linkedProducts)) {
             linkedProduct = lesson.linkedProducts.map(item => ({
-                productId: (item.productId || item).toString()
+                productId: (item.productId || item).toString(),
+                variantId: item.variantId ? item.variantId.toString() : undefined
             }));
         }
 

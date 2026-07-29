@@ -16,15 +16,12 @@ const router = express.Router();
  *         productId:
  *           type: string
  *           description: Product ObjectId
+ *         variantId:
+ *           type: string
+ *           description: Variant ObjectId
  *         quantity:
  *           type: integer
  *           minimum: 1
- *         color:
- *           type: string
- *           description: Variant color name
- *         hexCode:
- *           type: string
- *           description: Variant hex color code
  *     ShippingAddress:
  *       type: object
  *       required:
@@ -37,6 +34,12 @@ const router = express.Router();
  *         phone:
  *           type: string
  *         address:
+ *           type: string
+ *         provinceId:
+ *           type: integer
+ *         districtId:
+ *           type: integer
+ *         wardCode:
  *           type: string
  *     CreateOrderRequest:
  *       type: object
@@ -163,9 +166,9 @@ router.post(
  *                 type: array
  *                 items:
  *                   $ref: '#/components/schemas/OrderItem'
- *               addressId:
- *                 type: string
- *                 description: Optional. ObjectId of a specific Address. If not provided, user's default address will be used.
+ *               provinceId:
+ *                 type: integer
+ *                 description: Optional. GHN Province ID
  *               districtId:
  *                 type: integer
  *                 description: Optional. GHN District ID for one-time testing/checkout.
@@ -248,7 +251,7 @@ router.get(
  *         name: status
  *         schema:
  *           type: string
- *           enum: [PENDING, CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED]
+ *           enum: [PENDING, CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED, PROCESSED, REJECTED]
  *         description: Filter by order status
  *       - in: query
  *         name: paymentStatus
@@ -335,7 +338,7 @@ router.get(
  *             properties:
  *               orderStatus:
  *                 type: string
- *                 enum: [CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED]
+ *                 enum: [CONFIRMED, PREPARING, SHIPPING, DELIVERED, CANCELLED, PROCESSED, REJECTED]
  *     responses:
  *       200:
  *         description: Order status updated successfully

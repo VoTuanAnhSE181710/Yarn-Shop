@@ -56,10 +56,11 @@ export default class KitController {
     async deleteKit(req, res, next) {
         try {
             const { id } = req.params;
-            await this.kitService.deleteKit(id);
+            const kit = await this.kitService.deleteKit(id);
             res.status(200).json({
                 status: 'success',
-                message: 'Kit deleted successfully'
+                message: 'Kit deleted successfully',
+                data: { kit }
             });
         } catch (error) {
             next(error);

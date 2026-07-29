@@ -2,8 +2,9 @@ import RefundInvoice from "../models/RefundInvoice.js";
 import { NotFoundError, BadRequestError } from "../error/error.js";
 
 export default class RefundInvoiceService {
-    constructor({ logRepository }) {
+    constructor({ logRepository, notificationService }) {
         this.logRepository = logRepository;
+        this.notificationService = notificationService;
     }
 
     async getAll(query) {
@@ -43,10 +44,20 @@ export default class RefundInvoiceService {
         
         // Update the order status when refund is processed/rejected
         const Order = (await import("../models/order.js")).default;
-        if (status === "PROCESSED") {
-            await Order.findByIdAndUpdate(invoice.orderId, { orderStatus: "CANCELLED", isCancelRequested: false });
-        } else if (status === "REJECTED") {
-            await Order.findByIdAndUpdate(invoice.orderId, { isCancelRequested: false });
+        await Order.findByIdAndUpdate(invoice.orderId, { orderStatus: status, isCancelRequested: false });
+        
+        if (this.notificationService) {
+            const messageStr = status === "PROCESSED" 
+                ? `Yêu cầu hoàn tiền cho đơn hàng của bạn đã được xử lý thành công.` 
+                : `Yêu cầu hoàn tiền cho đơn hàng của bạn đã bị từ chối.`;
+            
+            await this.notificationService.createAndEmitNotification({
+                type: "ORDER",
+                priority: "NORMAL",
+                title: "Cập nhật yêu cầu hoàn tiền",
+                message: messageStr,
+                userId: invoice.userId
+            }).catch(console.error);
         }
         
         if (this.logRepository) {

@@ -29,7 +29,12 @@ export default class KitService {
         let filter = {};
 
         if (level) filter.level = level;
-        if (isActive !== undefined) filter.isActive = isActive === 'true';
+        if (isActive !== undefined) {
+            filter.isActive = isActive === 'true';
+        } else {
+            // Default to only active kits unless specified otherwise
+            filter.isActive = true;
+        }
 
         return this.kitRepository.findAll({
             filter,

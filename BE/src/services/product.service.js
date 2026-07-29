@@ -241,8 +241,8 @@ export default class ProductService {
     return shapeProductForResponse(product);
   }
 
-  async rateProduct(id, userId, score) {
-    const product = await this.#productRepository.findById(id);
+  async rateVariant(productId, variantId, userId, score) {
+    const product = await this.#productRepository.findById(productId);
     if (!product) {
       throw new NotFoundError("Product not found");
     }
@@ -251,19 +251,43 @@ export default class ProductService {
       throw new BadRequestError("Rating score must be between 1 and 5");
     }
 
-    if (!product.ratings) product.ratings = [];
-
-    const existingRatingIndex = product.ratings.findIndex(r => r.userId.toString() === userId.toString());
-
-    if (existingRatingIndex !== -1) {
-      product.ratings[existingRatingIndex].score = score;
-    } else {
-      product.ratings.push({ userId, score });
+    const variantIndex = product.variants.findIndex(
+      v => v._id.toString() === variantId.toString()
+    );
+    if (variantIndex === -1) {
+      throw new NotFoundError("Variant not found");
     }
 
-    const totalScore = product.ratings.reduce((acc, curr) => acc + curr.score, 0);
-    product.averageRating = Number((totalScore / product.ratings.length).toFixed(1));
-    product.totalRatings = product.ratings.length;
+    const variant = product.variants[variantIndex];
+    if (!variant.ratings) variant.ratings = [];
+
+    // Upsert rating for this user
+    const existingIdx = variant.ratings.findIndex(
+      r => r.userId.toString() === userId.toString()
+    );
+    if (existingIdx !== -1) {
+      variant.ratings[existingIdx].score = score;
+    } else {
+      variant.ratings.push({ userId, score });
+    }
+
+    // Recalculate variant averageRating & totalRatings
+    const variantTotal = variant.ratings.reduce((acc, r) => acc + r.score, 0);
+    variant.averageRating = Number((variantTotal / variant.ratings.length).toFixed(1));
+    variant.totalRatings = variant.ratings.length;
+
+    product.variants[variantIndex] = variant;
+
+    // Recalculate product-level averageRating from all variants that have ratings
+    const ratedVariants = product.variants.filter(v => v.totalRatings > 0);
+    if (ratedVariants.length > 0) {
+      const sumAvg = ratedVariants.reduce((acc, v) => acc + v.averageRating, 0);
+      product.averageRating = Number((sumAvg / ratedVariants.length).toFixed(1));
+      product.totalRatings = ratedVariants.reduce((acc, v) => acc + v.totalRatings, 0);
+    } else {
+      product.averageRating = 0;
+      product.totalRatings = 0;
+    }
 
     await product.save();
 

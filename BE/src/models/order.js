@@ -6,6 +6,9 @@ const orderItemSchema = new mongoose.Schema({
         ref: "Product",
         required: true,
     },
+    variantId: {
+        type: mongoose.Schema.Types.ObjectId,
+    },
     name: {
         type: String,
         required: true,
@@ -22,10 +25,6 @@ const orderItemSchema = new mongoose.Schema({
         type: Number,
         required: true,
         min: 1,
-    },
-    variant: {
-        color: { type: String },
-        hexCode: { type: String },
     },
     kitId: {
         type: mongoose.Schema.Types.ObjectId,
@@ -78,7 +77,7 @@ const orderSchema = new mongoose.Schema({
     },
     orderStatus: {
         type: String,
-        enum: ["PENDING", "CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED"],
+        enum: ["PENDING", "CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED", "PROCESSED", "REJECTED"],
         default: "PENDING",
     },
     deliveredAt: { type: Date },

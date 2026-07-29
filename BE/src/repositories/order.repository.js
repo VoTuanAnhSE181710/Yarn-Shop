@@ -1,12 +1,29 @@
 import Order from '../models/order.js';
 
 export default class OrderRepository {
+    _filterVariants(order) {
+        if (!order || !order.items) return order;
+        order.items.forEach(item => {
+            if (item.variantId && item.product && Array.isArray(item.product.variants)) {
+                item.product.variants = item.product.variants.filter(
+                    v => v._id && v._id.toString() === item.variantId.toString()
+                );
+            }
+        });
+        return order;
+    }
+
     async findById(orderId) {
-        return Order.findById(orderId).populate('user', 'username email fullName').populate('items.product');
+        const order = await Order.findById(orderId)
+            .populate('user', 'username email fullName')
+            .populate('items.product')
+            .lean();
+        return this._filterVariants(order);
     }
 
     async create(data) {
-        return Order.create(data);
+        const order = await Order.create(data);
+        return order; // creation doesn't heavily populate usually, but if needed, we return as is
     }
 
     async findAll({ filter = {}, page = 1, limit = 10, sort = { createdAt: -1 } }) {
@@ -20,6 +37,8 @@ export default class OrderRepository {
             .limit(limit)
             .lean();
 
+        orders.forEach(o => this._filterVariants(o));
+
         const total = await Order.countDocuments(filter);
 
         return {
@@ -32,9 +51,11 @@ export default class OrderRepository {
     }
 
     async update(orderId, updateData) {
-        return Order.findByIdAndUpdate(orderId, updateData, { new: true, runValidators: true })
+        const order = await Order.findByIdAndUpdate(orderId, updateData, { new: true, runValidators: true })
             .populate('user', 'username email fullName')
-            .populate('items.product');
+            .populate('items.product')
+            .lean();
+        return this._filterVariants(order);
     }
 
     async delete(orderId) {

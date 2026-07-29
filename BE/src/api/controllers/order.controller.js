@@ -81,26 +81,17 @@ export default class OrderController {
      */
     calculateShippingFee = async (req, res, next) => {
         try {
-            const { items, addressId, districtId, wardCode } = req.body;
-            const userId = req.user.userId || req.user._id;
+            const { items, districtId, wardCode } = req.body;
 
             if (!items || items.length === 0) {
                 return res.status(400).json({ message: "Cart is empty" });
             }
 
-            let address = null;
-            if (districtId && wardCode) {
-                // Use provided district and ward directly (useful for testing or one-time addresses)
-                address = { districtId, wardCode, districtName: "Testing District", wardName: "Testing Ward" };
-            } else if (addressId) {
-                address = await Address.findById(addressId);
-            } else {
-                address = await Address.findOne({ user: userId, isDefault: true });
+            if (!districtId || !wardCode) {
+                return res.status(400).json({ message: 'Vui lòng cung cấp districtId và wardCode hợp lệ.' });
             }
 
-            if (!address) {
-                return res.status(400).json({ message: 'Chưa có địa chỉ giao hàng hợp lệ.' });
-            }
+            const address = { districtId, wardCode, districtName: "Testing District", wardName: "Testing Ward" };
 
             // Calculate items total value
             const { validatedItems, itemsPrice } = await this.orderService.calculateOrderTotal(items);
@@ -178,7 +169,7 @@ export default class OrderController {
                 return res.status(400).json({ message: "Order status is required" });
             }
 
-            const validStatuses = ["CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED"];
+            const validStatuses = ["CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED", "PROCESSED", "REJECTED"];
             if (!validStatuses.includes(orderStatus)) {
                 return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
             }
