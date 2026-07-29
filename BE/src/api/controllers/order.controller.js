@@ -26,32 +26,45 @@ export default class OrderController {
             let { validatedItems, itemsPrice, shippingFee, totalPrice } =
                 await this.orderService.calculateOrderTotal(items || [], kits || []);
 
-            if (shippingAddress.districtId && shippingAddress.wardCode) {
-                let cartWeight = 0;
-                validatedItems.forEach(item => {
-                    cartWeight += (item.weight || 100) * item.quantity;
-                });
-                
+            // 2. Resolve GHN IDs from text address using mapAddressToGHN, then calculate shipping fee
+            let resolvedAddress = { ...shippingAddress };
+            const { provinceName, districtName, wardName } = shippingAddress;
+
+            if (provinceName && districtName && wardName) {
                 try {
-                    const fee = await this.ghnService.calculateShippingFee({
-                        to_district_id: shippingAddress.districtId,
-                        to_ward_code: shippingAddress.wardCode,
-                        weight: cartWeight,
-                        insurance_value: itemsPrice,
-                    });
-                    shippingFee = fee.total;
-                    totalPrice = itemsPrice + shippingFee;
+                    const mapResult = await this.ghnService.mapAddressToGHN({ provinceName, districtName, wardName });
+                    if (mapResult.success) {
+                        resolvedAddress.provinceId = mapResult.provinceId;
+                        resolvedAddress.districtId = mapResult.districtId;
+                        resolvedAddress.wardCode = mapResult.wardCode;
+
+                        let cartWeight = 0;
+                        validatedItems.forEach(item => {
+                            cartWeight += (item.weight || 100) * item.quantity;
+                        });
+
+                        const fee = await this.ghnService.calculateShippingFee({
+                            to_district_id: mapResult.districtId,
+                            to_ward_code: mapResult.wardCode,
+                            weight: cartWeight,
+                            insurance_value: itemsPrice,
+                        });
+                        shippingFee = fee.total;
+                        totalPrice = itemsPrice + shippingFee;
+                    } else {
+                        console.warn("mapAddressToGHN fallback:", mapResult.message);
+                    }
                 } catch (error) {
-                    console.error("Failed to fetch GHN fee, using default:", error.message);
+                    console.error("Failed to resolve GHN address or shipping fee:", error.message);
                 }
             }
 
-            // 2. Create order in DB
+            // 3. Create order in DB
             const order = await this.orderService.createOrder({
                 user: req.user.userId || req.user._id,
                 items: validatedItems,
                 kitsRequest: kits, // pass requested kits to deduct stock
-                shippingAddress,
+                shippingAddress: resolvedAddress,
                 itemsPrice,
                 shippingFee,
                 totalPrice,

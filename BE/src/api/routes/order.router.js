@@ -22,12 +22,17 @@ const router = express.Router();
  *         quantity:
  *           type: integer
  *           minimum: 1
+ *         price:
+ *           type: number
+ *           description: Price (optional, backend always re-validates from DB)
  *     ShippingAddress:
  *       type: object
  *       required:
  *         - fullName
  *         - phone
- *         - address
+ *         - provinceName
+ *         - districtName
+ *         - wardName
  *       properties:
  *         fullName:
  *           type: string
@@ -35,12 +40,20 @@ const router = express.Router();
  *           type: string
  *         address:
  *           type: string
- *         provinceId:
- *           type: integer
- *         districtId:
- *           type: integer
- *         wardCode:
+ *           description: Detail address (street, house number, etc.)
+ *         provinceName:
  *           type: string
+ *           example: "Thành phố Hồ Chí Minh"
+ *         districtName:
+ *           type: string
+ *           example: "Quận 1"
+ *         wardName:
+ *           type: string
+ *           example: "Phường Bến Nghé"
+ *         lat:
+ *           type: number
+ *         lng:
+ *           type: number
  *     CreateOrderRequest:
  *       type: object
  *       required:

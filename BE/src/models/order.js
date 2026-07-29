@@ -43,10 +43,13 @@ const orderSchema = new mongoose.Schema({
     shippingAddress: {
         fullName: { type: String, required: true },
         phone: { type: String, required: true },
-        address: { type: String, required: true },
-        provinceId: { type: Number },
-        districtId: { type: Number },
-        wardCode: { type: String },
+        address: { type: String },                     // Street/detail
+        provinceName: { type: String },
+        districtName: { type: String },
+        wardName: { type: String },
+        provinceId: { type: Number },                  // Resolved by mapAddressToGHN
+        districtId: { type: Number },                  // Resolved by mapAddressToGHN
+        wardCode: { type: String },                    // Resolved by mapAddressToGHN
         lat: { type: Number },
         lng: { type: Number },
     },
