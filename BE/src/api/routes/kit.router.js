@@ -24,6 +24,9 @@ const router = express.Router();
  *           enum: [beginner, intermediate, advanced]
  *         price:
  *           type: number
+ *         stock:
+ *           type: number
+ *           default: 0
  *         products:
  *           type: array
  *           items:
@@ -131,6 +134,8 @@ router.get(
  *                     type: string
  *                     enum: [beginner, intermediate, advanced]
  *                   price:
+ *                     type: number
+ *                   stock:
  *                     type: number
  *                   products:
  *                     type: array
@@ -258,6 +263,8 @@ router.get(
  *                     type: string
  *                     enum: [beginner, intermediate, advanced]
  *                   price:
+ *                     type: number
+ *                   stock:
  *                     type: number
  *                   products:
  *                     type: array

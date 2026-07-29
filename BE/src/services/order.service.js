@@ -40,6 +40,17 @@ export default class OrderService {
             await product.save();
         }
 
+        // Deduct stock from kits if they are provided
+        if (data.kitsRequest && data.kitsRequest.length > 0) {
+            for (const kitEntry of data.kitsRequest) {
+                const kit = await Kit.findById(kitEntry.kitId);
+                if (kit) {
+                    kit.stock = Math.max(0, kit.stock - (kitEntry.quantity || 1));
+                    await kit.save();
+                }
+            }
+        }
+
         if (this.notificationService) {
             await this.notificationService.createAndEmitNotification({
                 type: "ORDER",
@@ -334,8 +345,12 @@ export default class OrderService {
                 const kit = await Kit.findById(kitEntry.kitId).populate("products.productId");
                 if (!kit) throw new NotFoundError(`Kit ${kitEntry.kitId} not found`);
                 if (!kit.isActive) throw new BadRequestError(`Kit "${kit.name}" is no longer available`);
-
+                
                 const kitQty = kitEntry.quantity || 1;
+                if (kit.stock < kitQty) {
+                    throw new BadRequestError(`Insufficient stock for Kit "${kit.name}"`);
+                }
+
                 for (const kitProduct of kit.products) {
                     allItems.push({
                         productId: kitProduct.productId._id,

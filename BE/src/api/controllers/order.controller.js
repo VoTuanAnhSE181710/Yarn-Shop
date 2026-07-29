@@ -50,6 +50,7 @@ export default class OrderController {
             const order = await this.orderService.createOrder({
                 user: req.user.userId || req.user._id,
                 items: validatedItems,
+                kitsRequest: kits, // pass requested kits to deduct stock
                 shippingAddress,
                 itemsPrice,
                 shippingFee,
