@@ -164,4 +164,72 @@ router.get(
     }
 );
 
+/**
+ * @swagger
+ * /ghn/map-address:
+ *   post:
+ *     summary: Map string address to GHN IDs
+ *     description: Takes raw strings (e.g. from Google Maps API) and performs a fuzzy search to find the matching GHN provinceId, districtId, and wardCode.
+ *     tags: [GHN]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [provinceName, districtName, wardName]
+ *             properties:
+ *               provinceName:
+ *                 type: string
+ *                 example: "Thành phố Hồ Chí Minh"
+ *               districtName:
+ *                 type: string
+ *                 example: "Quận 1"
+ *               wardName:
+ *                 type: string
+ *                 example: "Phường Bến Nghé"
+ *     responses:
+ *       200:
+ *         description: Match result
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 status:
+ *                   type: string
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     match:
+ *                       type: object
+ *                       properties:
+ *                         success:
+ *                           type: boolean
+ *                         message:
+ *                           type: string
+ *                         provinceId:
+ *                           type: integer
+ *                         districtId:
+ *                           type: integer
+ *                         wardCode:
+ *                           type: string
+ */
+router.post(
+    "/map-address",
+    async (req, res, next) => {
+        try {
+            const { provinceName, districtName, wardName } = req.body;
+            if (!provinceName || !districtName || !wardName) {
+                return res.status(400).json({ status: "fail", message: "provinceName, districtName, and wardName are required" });
+            }
+            const ghnService = req.container.resolve("ghnService");
+            const match = await ghnService.mapAddressToGHN({ provinceName, districtName, wardName });
+            res.status(200).json({ status: "success", data: { match } });
+        } catch (error) {
+            next(error);
+        }
+    }
+);
+
 export default router;

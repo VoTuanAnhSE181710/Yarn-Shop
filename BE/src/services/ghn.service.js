@@ -7,6 +7,27 @@ const GHN_API_URL = process.env.GHN_API_URL || "https://online-gateway.ghn.vn/sh
 const GHN_API_KEY = process.env.GHN_API_KEY;
 const GHN_SHOP_ID = process.env.GHN_SHOP_ID;
 
+/**
+ * Helper to normalize Vietnamese address string for fuzzy matching
+ */
+function normalizeAddressString(str) {
+    if (!str) return "";
+    let normalized = str.toLowerCase();
+    // Remove vietnamese tones
+    normalized = normalized.normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+    normalized = normalized.replace(/đ/g, "d");
+    
+    // Remove standard prefixes
+    const prefixes = ["thanh pho ", "tinh ", "quan ", "huyen ", "thi xa ", "phuong ", "xa ", "thi tran "];
+    for (const prefix of prefixes) {
+        if (normalized.startsWith(prefix)) {
+            normalized = normalized.substring(prefix.length);
+        }
+    }
+    // Remove extra spaces and punctuation
+    return normalized.replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
+}
+
 class GHNService {
     /**
      * Calculate shipping fee via GHN API
@@ -117,6 +138,65 @@ class GHNService {
         } catch (error) {
             const ghnError = error.response?.data?.message || error.message;
             throw new Error(`Không lấy được danh sách phường/xã từ GHN: ${ghnError}`);
+        }
+    }
+
+    /**
+     * Map raw address strings (from Map APIs) to GHN IDs
+     */
+    async mapAddressToGHN({ provinceName, districtName, wardName }) {
+        try {
+            const normProv = normalizeAddressString(provinceName);
+            const normDist = normalizeAddressString(districtName);
+            const normWard = normalizeAddressString(wardName);
+
+            // 1. Find Province
+            const provinces = await this.getProvinces();
+            const matchedProvince = provinces.find(p => {
+                const pNorm = normalizeAddressString(p.provinceName);
+                return pNorm === normProv || pNorm.includes(normProv) || normProv.includes(pNorm);
+            });
+            if (!matchedProvince) {
+                return { success: false, message: `Could not match province: ${provinceName}` };
+            }
+
+            // 2. Find District
+            const districts = await this.getDistricts(matchedProvince.provinceId);
+            const matchedDistrict = districts.find(d => {
+                const dNorm = normalizeAddressString(d.districtName);
+                return dNorm === normDist || dNorm.includes(normDist) || normDist.includes(dNorm);
+            });
+            if (!matchedDistrict) {
+                return { 
+                    success: false, 
+                    message: `Could not match district: ${districtName} in ${matchedProvince.provinceName}`, 
+                    provinceId: matchedProvince.provinceId 
+                };
+            }
+
+            // 3. Find Ward
+            const wards = await this.getWards(matchedDistrict.districtId);
+            const matchedWard = wards.find(w => {
+                const wNorm = normalizeAddressString(w.wardName);
+                return wNorm === normWard || wNorm.includes(normWard) || normWard.includes(wNorm);
+            });
+            if (!matchedWard) {
+                return { 
+                    success: false, 
+                    message: `Could not match ward: ${wardName} in ${matchedDistrict.districtName}`, 
+                    provinceId: matchedProvince.provinceId, 
+                    districtId: matchedDistrict.districtId 
+                };
+            }
+
+            return {
+                success: true,
+                provinceId: matchedProvince.provinceId,
+                districtId: matchedDistrict.districtId,
+                wardCode: matchedWard.wardCode
+            };
+        } catch (error) {
+            throw new Error(`Mapping failed: ${error.message}`);
         }
     }
 }
