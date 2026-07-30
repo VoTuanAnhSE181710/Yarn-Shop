@@ -135,8 +135,11 @@ class MailService {
 
         const resetPasswordAccessKey = `reset_password_access:${uuid}`;
 
-        const baseUrl = process.env.FRONTEND_URL.replace(/\/+$/, '');
-        const resetPasswordLink = `${baseUrl}/reset-password?uuid=${uuid}`;
+        let baseUrl = process.env.FRONTEND_URL.replace(/\/+$/, '');
+        if (!baseUrl.endsWith('/reset-password')) {
+            baseUrl += '/reset-password';
+        }
+        const resetPasswordLink = `${baseUrl}?uuid=${uuid}`;
 
         const mailOptions = generateForgotPasswordOptions(normalizedEmail, existingUser.fullName, resetPasswordLink)
 
