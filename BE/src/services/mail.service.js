@@ -141,7 +141,7 @@ class MailService {
         }
         const resetPasswordLink = `${baseUrl}?uuid=${uuid}`;
 
-        const mailOptions = generateForgotPasswordOptions(normalizedEmail, existingUser.fullName, resetPasswordLink)
+        const mailOptions = generateForgotPasswordOptions(normalizedEmail, existingUser.fullName, resetPasswordLink, uuid)
 
         await this.#transporter.sendMail({ mailOptions });
 
