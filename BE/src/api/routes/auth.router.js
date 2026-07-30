@@ -303,6 +303,7 @@ router.patch(
  *             required:
  *               - uuid
  *               - newPassword
+ *               - confirmPassword
  *             properties:
  *               uuid:
  *                 type: string
@@ -313,6 +314,11 @@ router.patch(
  *                 type: string
  *                 minLength: 8
  *                 description: New password (minimum 8 characters)
+ *                 example: "newPassword123"
+ *               confirmPassword:
+ *                 type: string
+ *                 minLength: 8
+ *                 description: Confirm new password (must match newPassword)
  *                 example: "newPassword123"
  *     responses:
  *       200:
