@@ -22,9 +22,6 @@ const router = express.Router();
  *         quantity:
  *           type: integer
  *           minimum: 1
- *         price:
- *           type: number
- *           description: Price (optional, backend always re-validates from DB)
  *     ShippingAddress:
  *       type: object
  *       required:
@@ -179,18 +176,29 @@ router.post(
  *                 type: array
  *                 items:
  *                   $ref: '#/components/schemas/OrderItem'
- *               provinceId:
- *                 type: integer
- *                 description: Optional. GHN Province ID
- *               districtId:
- *                 type: integer
- *                 description: Optional. GHN District ID for one-time testing/checkout.
- *               wardCode:
+ *               provinceName:
  *                 type: string
- *                 description: Optional. GHN Ward Code for one-time testing/checkout.
+ *                 description: Name of the province/city
+ *               districtName:
+ *                 type: string
+ *                 description: Name of the district
+ *               wardName:
+ *                 type: string
+ *                 description: Name of the ward
  *     responses:
  *       200:
- *         description: Shipping fee calculated successfully
+ *         description: Checkout preview calculated successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 subtotal:
+ *                   type: number
+ *                 shippingFee:
+ *                   type: number
+ *                 total:
+ *                   type: number
  *       400:
  *         description: Invalid input or address not found
  *       401:

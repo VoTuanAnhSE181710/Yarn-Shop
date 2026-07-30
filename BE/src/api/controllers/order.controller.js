@@ -95,41 +95,53 @@ export default class OrderController {
      */
     calculateShippingFee = async (req, res, next) => {
         try {
-            const { items, districtId, wardCode } = req.body;
+            const { items, provinceName, districtName, wardName } = req.body;
 
             if (!items || items.length === 0) {
                 return res.status(400).json({ message: "Cart is empty" });
             }
 
-            if (!districtId || !wardCode) {
-                return res.status(400).json({ message: 'Vui lòng cung cấp districtId và wardCode hợp lệ.' });
+            if (!provinceName || !districtName || !wardName) {
+                return res.status(400).json({ message: 'Vui lòng cung cấp provinceName, districtName và wardName.' });
             }
 
-            const address = { districtId, wardCode, districtName: "Testing District", wardName: "Testing Ward" };
-
-            // Calculate items total value
+            // 1. Calculate items total value from DB
             const { validatedItems, itemsPrice } = await this.orderService.calculateOrderTotal(items);
             
-            // Calculate total weight (default to 100g per item if no weight field)
-            let cartWeight = 0;
-            validatedItems.forEach(item => {
-                cartWeight += (item.weight || 100) * item.quantity;
-            });
+            // 2. Map text names to GHN IDs
+            const mapResult = await this.ghnService.mapAddressToGHN({ provinceName, districtName, wardName });
+            
+            let shippingFee = 30000; // default fee
+            
+            if (mapResult.success) {
+                // Calculate total weight (default to 100g per item if no weight field)
+                let cartWeight = 0;
+                validatedItems.forEach(item => {
+                    cartWeight += (item.weight || 100) * item.quantity;
+                });
 
-            const fee = await this.ghnService.calculateShippingFee({
-                to_district_id: address.districtId,
-                to_ward_code: address.wardCode,
-                weight: cartWeight,
-                insurance_value: itemsPrice,
-            });
+                const fee = await this.ghnService.calculateShippingFee({
+                    to_district_id: mapResult.districtId,
+                    to_ward_code: mapResult.wardCode,
+                    weight: cartWeight,
+                    insurance_value: itemsPrice,
+                });
+                
+                shippingFee = fee.total;
+            } else {
+                console.warn("mapAddressToGHN failed in preview:", mapResult.message);
+                // We proceed with the default shippingFee if GHN fails or address can't be mapped
+            }
+            
+            // Apply free shipping logic if itemsPrice >= 300000
+            if (itemsPrice >= 300000) {
+                shippingFee = 0;
+            }
 
             return res.status(200).json({
-                shipping_fee: fee.total,
-                service_id: fee.serviceId || null,
-                address: {
-                    district: address.districtName,
-                    ward: address.wardName,
-                },
+                subtotal: itemsPrice,
+                shippingFee: shippingFee,
+                total: itemsPrice + shippingFee
             });
         } catch (error) {
             next(error);
