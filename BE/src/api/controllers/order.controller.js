@@ -50,6 +50,9 @@ export default class OrderController {
                             insurance_value: itemsPrice,
                         });
                         shippingFee = fee.total;
+                        if (itemsPrice >= 300000) {
+                            shippingFee = 0;
+                        }
                         totalPrice = itemsPrice + shippingFee;
                     } else {
                         console.warn("mapAddressToGHN fallback:", mapResult.message);
