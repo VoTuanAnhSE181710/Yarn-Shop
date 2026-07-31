@@ -400,7 +400,7 @@ export default class OrderService {
             });
         }
 
-        const shippingFee = itemsPrice >= 300000 ? 0 : 30000;
+        const shippingFee = 30000;
         const totalPrice = itemsPrice + shippingFee;
 
         return { validatedItems, itemsPrice, shippingFee, totalPrice };

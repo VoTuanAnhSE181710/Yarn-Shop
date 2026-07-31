@@ -28,11 +28,22 @@ export default class OrderController {
 
             // 2. Resolve GHN IDs from text address using mapAddressToGHN, then calculate shipping fee
             let resolvedAddress = { ...shippingAddress };
-            const { provinceName, districtName, wardName } = shippingAddress;
+            let { provinceName: pName, districtName: dName, wardName: wName, lat, lng } = shippingAddress;
 
-            if (provinceName && districtName && wardName) {
+            if (lat !== undefined && lng !== undefined) {
+                const shippingService = req.container.resolve("shippingService");
+                const geocoded = await shippingService.reverseGeocode({ lat, lng });
+                pName = geocoded.province;
+                dName = geocoded.district;
+                wName = geocoded.commune;
+                resolvedAddress.provinceName = pName;
+                resolvedAddress.districtName = dName;
+                resolvedAddress.wardName = wName;
+            }
+
+            if (pName && dName && wName) {
                 try {
-                    const mapResult = await this.ghnService.mapAddressToGHN({ provinceName, districtName, wardName });
+                    const mapResult = await this.ghnService.mapAddressToGHN({ provinceName: pName, districtName: dName, wardName: wName });
                     if (mapResult.success) {
                         resolvedAddress.provinceId = mapResult.provinceId;
                         resolvedAddress.districtId = mapResult.districtId;
@@ -50,9 +61,6 @@ export default class OrderController {
                             insurance_value: itemsPrice,
                         });
                         shippingFee = fee.total;
-                        if (itemsPrice >= 300000) {
-                            shippingFee = 0;
-                        }
                         totalPrice = itemsPrice + shippingFee;
                     } else {
                         console.warn("mapAddressToGHN fallback:", mapResult.message);
@@ -98,21 +106,33 @@ export default class OrderController {
      */
     calculateShippingFee = async (req, res, next) => {
         try {
-            const { items, provinceName, districtName, wardName } = req.body;
+            const { items, provinceName, districtName, wardName, lat, lng } = req.body;
 
             if (!items || items.length === 0) {
                 return res.status(400).json({ message: "Cart is empty" });
             }
 
-            if (!provinceName || !districtName || !wardName) {
-                return res.status(400).json({ message: 'Vui lòng cung cấp provinceName, districtName và wardName.' });
+            let pName = provinceName;
+            let dName = districtName;
+            let wName = wardName;
+
+            if (lat !== undefined && lng !== undefined) {
+                const shippingService = req.container.resolve("shippingService");
+                const geocoded = await shippingService.reverseGeocode({ lat, lng });
+                pName = geocoded.province;
+                dName = geocoded.district;
+                wName = geocoded.commune;
+            }
+
+            if (!pName || !dName || !wName) {
+                return res.status(400).json({ message: 'Vui lòng cung cấp provinceName, districtName, wardName hoặc lat, lng.' });
             }
 
             // 1. Calculate items total value from DB
             const { validatedItems, itemsPrice } = await this.orderService.calculateOrderTotal(items);
             
             // 2. Map text names to GHN IDs
-            const mapResult = await this.ghnService.mapAddressToGHN({ provinceName, districtName, wardName });
+            const mapResult = await this.ghnService.mapAddressToGHN({ provinceName: pName, districtName: dName, wardName: wName });
             
             let shippingFee = 30000; // default fee
             
@@ -136,11 +156,6 @@ export default class OrderController {
                 // We proceed with the default shippingFee if GHN fails or address can't be mapped
             }
             
-            // Apply free shipping logic if itemsPrice >= 300000
-            if (itemsPrice >= 300000) {
-                shippingFee = 0;
-            }
-
             return res.status(200).json({
                 subtotal: itemsPrice,
                 shippingFee: shippingFee,

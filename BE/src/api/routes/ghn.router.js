@@ -181,7 +181,6 @@ router.get(
  *         application/json:
  *           schema:
  *             type: object
- *             required: [provinceName, districtName, wardName]
  *             properties:
  *               provinceName:
  *                 type: string
@@ -192,6 +191,12 @@ router.get(
  *               wardName:
  *                 type: string
  *                 example: "Phường Bến Nghé"
+ *               lat:
+ *                 type: number
+ *                 description: "Optional: Latitude. If provided with lng, system will reverse geocode and ignore names."
+ *               lng:
+ *                 type: number
+ *                 description: "Optional: Longitude."
  *     responses:
  *       200:
  *         description: Match result
@@ -223,12 +228,26 @@ router.post(
     "/map-address",
     async (req, res, next) => {
         try {
-            const { provinceName, districtName, wardName } = req.body;
-            if (!provinceName || !districtName || !wardName) {
-                return res.status(400).json({ status: "fail", message: "provinceName, districtName, and wardName are required" });
+            const { provinceName, districtName, wardName, lat, lng } = req.body;
+            
+            let pName = provinceName;
+            let dName = districtName;
+            let wName = wardName;
+
+            if (lat !== undefined && lng !== undefined) {
+                const shippingService = req.container.resolve("shippingService");
+                const geocoded = await shippingService.reverseGeocode({ lat, lng });
+                pName = geocoded.province;
+                dName = geocoded.district;
+                wName = geocoded.commune;
             }
+
+            if (!pName || !dName || !wName) {
+                return res.status(400).json({ status: "fail", message: "Either (provinceName, districtName, wardName) or (lat, lng) are required to map address" });
+            }
+
             const ghnService = req.container.resolve("ghnService");
-            const match = await ghnService.mapAddressToGHN({ provinceName, districtName, wardName });
+            const match = await ghnService.mapAddressToGHN({ provinceName: pName, districtName: dName, wardName: wName });
             res.status(200).json({ status: "success", data: { match } });
         } catch (error) {
             next(error);
