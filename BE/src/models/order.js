@@ -82,13 +82,14 @@ const orderSchema = new mongoose.Schema({
     },
     orderStatus: {
         type: String,
-        enum: ["PENDING", "CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED", "PROCESSED", "REJECTED"],
+        enum: ["PENDING", "CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED", "PROCESSED", "REJECTED", "OUT_OF_STOCK"],
         default: "PENDING",
     },
     deliveredAt: { type: Date },
     cancelReason: { type: String },
     isCancelRequested: { type: Boolean, default: false },
     cancelRequestedAt: { type: Date, default: null },
+    stockDeducted: { type: Boolean, default: false },
 }, {
     timestamps: true,
 });

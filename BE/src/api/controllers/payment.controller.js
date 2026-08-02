@@ -212,6 +212,12 @@ export const handleVNPayIPN = async (req, res) => {
                     "payment.transactionNo": transactionNo,
                     "payment.paidAt": new Date(),
                 });
+
+                // Deduct stock after successful payment
+                const orderService = req.container.resolve("orderService");
+                if (orderService) {
+                    await orderService.deductStock(orderId);
+                }
                 return res.status(200).json({ RspCode: "00", Message: "Success" });
             } else {
                 console.log(`[VNPay] Payment failed for order: ${orderId}, code: ${rspCode}`);

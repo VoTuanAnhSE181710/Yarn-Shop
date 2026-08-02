@@ -12,43 +12,9 @@ export default class OrderService {
     async createOrder(data) {
         const order = await this.orderRepository.create(data);
 
-        // Deduct stock from product variants for each item
-        for (const item of data.items || []) {
-            const product = await Product.findById(item.product);
-            if (!product) continue;
-
-            if (item.variantId) {
-                // Deduct from the specific variant
-                const variantIndex = product.variants.findIndex(
-                    v => v._id.toString() === item.variantId.toString()
-                );
-                if (variantIndex !== -1) {
-                    product.variants[variantIndex].stock = Math.max(
-                        0,
-                        product.variants[variantIndex].stock - item.quantity
-                    );
-                }
-            } else {
-                // Deduct from first variant if no variantId
-                if (product.variants.length > 0) {
-                    product.variants[0].stock = Math.max(
-                        0,
-                        product.variants[0].stock - item.quantity
-                    );
-                }
-            }
-            await product.save();
-        }
-
-        // Deduct stock from kits if they are provided
-        if (data.kitsRequest && data.kitsRequest.length > 0) {
-            for (const kitEntry of data.kitsRequest) {
-                const kit = await Kit.findById(kitEntry.kitId);
-                if (kit) {
-                    kit.stock = Math.max(0, kit.stock - (kitEntry.quantity || 1));
-                    await kit.save();
-                }
-            }
+        if (data.payment && data.payment.method === "COD") {
+            // Deduct immediately for COD
+            await this.deductStock(order._id);
         }
 
         if (this.notificationService) {
@@ -70,6 +36,69 @@ export default class OrderService {
             });
         }
         return order;
+    }
+
+    async deductStock(orderId) {
+        const order = await this.orderRepository.findById(orderId);
+        if (!order || order.stockDeducted) return;
+
+        // Verify stock first
+        let hasEnoughStock = true;
+        for (const item of order.items || []) {
+            const product = await Product.findById(item.product);
+            if (!product) continue;
+            let variant = item.variantId 
+                ? product.variants.find(v => v._id.toString() === item.variantId.toString())
+                : product.variants[0];
+            if (variant && variant.stock < item.quantity) {
+                hasEnoughStock = false;
+                break;
+            }
+        }
+        for (const kitEntry of order.kitsRequest || []) {
+            const kit = await Kit.findById(kitEntry.kitId);
+            if (kit && kit.stock < (kitEntry.quantity || 1)) {
+                hasEnoughStock = false;
+                break;
+            }
+        }
+
+        if (!hasEnoughStock) {
+            // Flag order as out of stock, do not deduct.
+            await this.orderRepository.update(orderId, { orderStatus: "OUT_OF_STOCK" });
+            if (this.notificationService) {
+                await this.notificationService.createAndEmitNotification({
+                    type: "ORDER",
+                    priority: "HIGH",
+                    title: "Đơn hàng bị thiếu tồn kho",
+                    message: `Đơn hàng ${orderId} đã thanh toán/xác nhận nhưng kho không đủ hàng! Vui lòng hoàn tiền hoặc liên hệ khách.`,
+                    targetRole: "Admin"
+                }).catch(console.error);
+            }
+            return;
+        }
+
+        // Proceed to deduct
+        for (const item of order.items || []) {
+            const product = await Product.findById(item.product);
+            if (!product) continue;
+            let variant = item.variantId 
+                ? product.variants.find(v => v._id.toString() === item.variantId.toString())
+                : product.variants[0];
+            if (variant) {
+                variant.stock -= item.quantity;
+                await product.save();
+            }
+        }
+        for (const kitEntry of order.kitsRequest || []) {
+            const kit = await Kit.findById(kitEntry.kitId);
+            if (kit) {
+                kit.stock -= (kitEntry.quantity || 1);
+                await kit.save();
+            }
+        }
+
+        await this.orderRepository.update(orderId, { stockDeducted: true });
     }
 
     async getOrderById(id) {

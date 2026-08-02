@@ -268,4 +268,72 @@ router.post(
   },
 );
 
+/**
+ * @swagger
+ * /shipping/options:
+ *   post:
+ *     summary: Get all available shipping options (GHN & Local Express)
+ *     description: Returns a combined array of all available shipping methods and their prices.
+ *     tags: [Shipping]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             properties:
+ *               provinceName:
+ *                 type: string
+ *               districtName:
+ *                 type: string
+ *               wardName:
+ *                 type: string
+ *               lat:
+ *                 type: number
+ *               lng:
+ *                 type: number
+ *     responses:
+ *       200:
+ *         description: Shipping options retrieved
+ */
+router.post(
+  "/options",
+  async (req, res, next) => {
+    const controller = req.container.resolve("shippingController");
+    await controller.getShippingOptions(req, res, next);
+  },
+);
+
+/**
+ * @swagger
+ * /shipping/geocode:
+ *   post:
+ *     summary: Convert address string into lat/lng
+ *     description: Uses OpenStreetMap Nominatim.
+ *     tags: [Shipping]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [address]
+ *             properties:
+ *               address:
+ *                 type: string
+ *                 example: "120 Võ Văn Ngân, Thủ Đức"
+ *     responses:
+ *       200:
+ *         description: Coordinates found
+ *       400:
+ *         description: Address not found
+ */
+router.post(
+  "/geocode",
+  async (req, res, next) => {
+    const controller = req.container.resolve("shippingController");
+    await controller.geocodeAddress(req, res, next);
+  },
+);
+
 export default router;

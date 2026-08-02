@@ -67,4 +67,44 @@ export default class GeocodingService {
       );
     }
   }
+
+  async geocode(addressStr) {
+    try {
+      const response = await axios.get(`${GEOCODING_API_URL}/search`, {
+        params: {
+          format: "jsonv2",
+          q: addressStr,
+          addressdetails: 1,
+          "accept-language": "vi",
+        },
+        headers: {
+          "User-Agent": GEOCODING_USER_AGENT,
+          Accept: "application/json",
+        },
+        timeout: 8000,
+      });
+
+      if (!response.data || response.data.length === 0) {
+        throw new BadRequestError("Không tìm thấy tọa độ cho địa chỉ này.");
+      }
+
+      const firstResult = response.data[0];
+      const address = firstResult.address || {};
+      
+      return {
+        displayName: firstResult.display_name,
+        lat: Number(firstResult.lat),
+        lng: Number(firstResult.lon),
+        province: address.state || address.city || null,
+        district: address.county || address.city_district || address.district || null,
+        commune: address.village || address.town || address.suburb || address.quarter || null,
+      };
+    } catch (error) {
+      if (error.statusCode) {
+        throw error;
+      }
+      const message = error.response?.data?.error || error.response?.data?.message || error.message;
+      throw new ExternalServiceError(`Không thể geocode lúc này: ${message}`);
+    }
+  }
 }
