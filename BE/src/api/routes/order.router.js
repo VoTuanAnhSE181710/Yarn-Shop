@@ -27,9 +27,6 @@ const router = express.Router();
  *       required:
  *         - fullName
  *         - phone
- *         - provinceName
- *         - districtName
- *         - wardName
  *       properties:
  *         fullName:
  *           type: string
@@ -185,6 +182,10 @@ router.post(
  *               wardName:
  *                 type: string
  *                 description: Name of the ward
+ *               lat:
+ *                 type: number
+ *               lng:
+ *                 type: number
  *     responses:
  *       200:
  *         description: Checkout preview calculated successfully
