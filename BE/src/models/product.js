@@ -119,7 +119,7 @@ productSchema.index(
  *  - Each variant's `_id` is exposed as `_idVariants` and placed FIRST.
  *  - Each variant's `image` is placed second (right after `_idVariants`).
  */
-function transformProduct(_doc, ret) {
+export function transformProduct(_doc, ret) {
   if (ret && Object.prototype.hasOwnProperty.call(ret, "images")) {
     delete ret.images;
   }
