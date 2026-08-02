@@ -234,12 +234,13 @@ router.post(
             let dName = districtName;
             let wName = wardName;
 
-            if (lat !== undefined && lng !== undefined) {
+            // Only reverse-geocode if any of the required names are missing
+            if (lat !== undefined && lng !== undefined && (!pName || !dName || !wName)) {
                 const shippingService = req.container.resolve("shippingService");
                 const geocoded = await shippingService.reverseGeocode({ lat, lng });
-                pName = geocoded.province;
-                dName = geocoded.district;
-                wName = geocoded.commune;
+                pName = pName || geocoded.province;
+                dName = dName || geocoded.district;
+                wName = wName || geocoded.commune;
             }
 
             if (!pName || !dName || !wName) {

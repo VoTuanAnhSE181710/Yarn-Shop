@@ -73,6 +73,7 @@ import ghnRouter from "./src/api/routes/ghn.router.js";
 import shippingRouter from "./src/api/routes/shipping.router.js";
 import chatbotRouter from "./src/api/routes/chatbot.router.js";
 import aiAgentRouter from "./src/modules/ai-agent/aiAgent.router.js";
+import cartRouter from "./src/api/routes/cart.router.js";
 
 app.get("/", (req, res) => {
   res.send(`Hello World!`);
@@ -116,6 +117,7 @@ app.use(`${url}/messages`, messageRouter);
 app.use(`${url}/ghn`, ghnRouter);
 app.use(`${url}/shipping`, shippingRouter);
 app.use(`${url}/chatbot`, chatbotRouter);
+app.use(`${url}/cart`, cartRouter);
 app.use(`${url}/ai-agent`, aiAgentRouter);
 
 app.use(handleError);

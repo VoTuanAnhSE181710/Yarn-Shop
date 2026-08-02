@@ -112,7 +112,7 @@ const router = express.Router();
  *         name: sort
  *         schema:
  *           type: string
- *           enum: [newest, oldest, name_asc, name_desc]
+ *           enum: [newest, oldest, name_asc, name_desc, popular, price-asc, price-desc]
  *           default: newest
  *       - in: query
  *         name: includeInactive

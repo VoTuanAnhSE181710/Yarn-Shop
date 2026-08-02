@@ -30,12 +30,12 @@ export default class OrderController {
             let resolvedAddress = { ...shippingAddress };
             let { provinceName: pName, districtName: dName, wardName: wName, lat, lng } = shippingAddress;
 
-            if (lat !== undefined && lng !== undefined) {
+            if (lat !== undefined && lng !== undefined && (!pName || !dName || !wName)) {
                 const shippingService = req.container.resolve("shippingService");
                 const geocoded = await shippingService.reverseGeocode({ lat, lng });
-                pName = geocoded.province;
-                dName = geocoded.district;
-                wName = geocoded.commune;
+                pName = pName || geocoded.province;
+                dName = dName || geocoded.district;
+                wName = wName || geocoded.commune;
                 resolvedAddress.provinceName = pName;
                 resolvedAddress.districtName = dName;
                 resolvedAddress.wardName = wName;
@@ -116,12 +116,12 @@ export default class OrderController {
             let dName = districtName;
             let wName = wardName;
 
-            if (lat !== undefined && lng !== undefined) {
+            if (lat !== undefined && lng !== undefined && (!pName || !dName || !wName)) {
                 const shippingService = req.container.resolve("shippingService");
                 const geocoded = await shippingService.reverseGeocode({ lat, lng });
-                pName = geocoded.province;
-                dName = geocoded.district;
-                wName = geocoded.commune;
+                pName = pName || geocoded.province;
+                dName = dName || geocoded.district;
+                wName = wName || geocoded.commune;
             }
 
             if (!pName || !dName || !wName) {

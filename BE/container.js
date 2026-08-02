@@ -7,6 +7,7 @@ import { Role, Permission, User, Message, Conversation, Log } from "./src/models
 import AuthController from "./src/api/controllers/auth.controller.js";
 import UserController from "./src/api/controllers/user.controller.js";
 import PermissionController from "./src/api/controllers/permission.controller.js";
+import CartController from "./src/api/controllers/cart.controller.js";
 import RoleController from "./src/api/controllers/role.controller.js";
 import MailController from "./src/api/controllers/mail.controller.js";
 import VideoController from "./src/api/controllers/video.controller.js";
@@ -45,6 +46,7 @@ import OrderService from "./src/services/order.service.js";
 import ProductService from "./src/services/product.service.js";
 import DIYPostService from "./src/services/diyPost.service.js";
 import OrderReportService from "./src/services/orderReport.service.js";
+import CartService from "./src/services/cart.service.js";
 import SupportDIYService from "./src/services/supportDIY.service.js";
 import AddressService from "./src/services/address.service.js";
 import GHNService from "./src/services/ghn.service.js";
@@ -64,6 +66,7 @@ import RefreshTokenRepository from "./src/repositories/refreshToken.repository.j
 import UserRepository from "./src/repositories/user.repository.js";
 import PermissionRepository from "./src/repositories/permission.repository.js";
 import RoleRepository from "./src/repositories/role.repository.js";
+import CartRepository from "./src/repositories/cart.repository.js";
 import LogRepository from "./src/repositories/log.repository.js";
 import KitRepository from "./src/repositories/kit.repository.js";
 import OrderRepository from "./src/repositories/order.repository.js";
@@ -111,6 +114,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
 
     //Repositories
     refreshTokenRepository: asClass(RefreshTokenRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    cartRepository: asClass(CartRepository, {
       lifetime: Lifetime.SCOPED,
     }),
     userRepository: asClass(UserRepository, {
@@ -163,6 +169,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     }),
 
     //Services
+    cartService: asClass(CartService, {
+      lifetime: Lifetime.SCOPED,
+    }),
     authService: asClass(AuthService, {
       lifetime: Lifetime.SCOPED,
     }),
@@ -253,6 +262,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     }),
 
     // Controllers
+    cartController: asClass(CartController, {
+      lifetime: Lifetime.SCOPED,
+    }),
     authController: asClass(AuthController, {
       lifetime: Lifetime.SCOPED,
     }),

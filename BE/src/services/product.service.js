@@ -157,6 +157,15 @@ export default class ProductService {
       case "name_desc":
         sortOption = { name: -1 };
         break;
+      case "popular":
+        sortOption = { totalRatings: -1 };
+        break;
+      case "price-asc":
+        sortOption = { "variants.price": 1 };
+        break;
+      case "price-desc":
+        sortOption = { "variants.price": -1 };
+        break;
       case "newest":
       default:
         sortOption = { createdAt: -1 };
