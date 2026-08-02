@@ -103,7 +103,6 @@ const productSchema = new mongoose.Schema(
 productSchema.index({ isActive: 1, category: 1 });
 productSchema.index({ "variants.color": 1 });
 productSchema.index({ "variants.price": 1 });
-productSchema.index({ createdAt: -1 });
 
 // Text Index for optimized Search (Phase 6)
 productSchema.index(
