@@ -115,6 +115,19 @@ const router = express.Router();
  *           enum: [newest, oldest, name_asc, name_desc, popular, price-asc, price-desc]
  *           default: newest
  *       - in: query
+ *         name: colors
+ *         schema:
+ *           type: string
+ *         description: Comma-separated list of colors
+ *       - in: query
+ *         name: minPrice
+ *         schema:
+ *           type: number
+ *       - in: query
+ *         name: maxPrice
+ *         schema:
+ *           type: number
+ *       - in: query
  *         name: includeInactive
  *         schema:
  *           type: boolean
@@ -131,6 +144,22 @@ router.get(
     await productController.getAll(req, res, next);
   },
 );
+
+/**
+ * @swagger
+ * /products/facets:
+ *   get:
+ *     summary: Get filtering facets
+ *     description: Retrieve all available categories, unique colors, and min/max prices for filtering sidebar.
+ *     tags: [Products]
+ *     responses:
+ *       200:
+ *         description: Facets retrieved successfully
+ */
+router.get("/facets", async (req, res, next) => {
+  const productController = req.container.resolve("productController");
+  await productController.getFacets(req, res, next);
+});
 
 /**
  * @swagger

@@ -120,6 +120,9 @@ export default class ProductService {
 
   async getProducts({
     category,
+    colors,
+    minPrice,
+    maxPrice,
     tag,
     search,
     page = 1,
@@ -137,13 +140,26 @@ export default class ProductService {
       filter.category = category;
     }
 
+    if (colors) {
+      const colorArray = colors.split(",").map((c) => c.trim());
+      filter["variants.color"] = { $in: colorArray };
+    }
+
+    if (minPrice !== undefined || maxPrice !== undefined) {
+      filter["variants.price"] = {};
+      if (minPrice !== undefined) filter["variants.price"].$gte = Number(minPrice);
+      if (maxPrice !== undefined) filter["variants.price"].$lte = Number(maxPrice);
+    }
+
     if (tag) {
       filter.tags = tag;
     }
 
     if (search) {
-      const regex = new RegExp(search.trim(), "i");
-      filter.$or = [{ name: regex }, { description: regex }, { tags: regex }];
+      // Phase 6: Use MongoDB Text Search instead of Regex
+      filter.$text = { $search: search.trim() };
+      // Note: We don't automatically sort by textScore here to keep it simple,
+      // we'll rely on the default sort logic or user-provided sort.
     }
 
     let sortOption = { createdAt: -1 };
@@ -177,6 +193,7 @@ export default class ProductService {
       page: parseInt(page) || 1,
       limit: parseInt(limit) || 20,
       sort: sortOption,
+      projection: "-description -updatedAt -__v", // Phase 2: Optimize Payload
     });
 
     // `.lean()` in the repository returns plain objects; shape them so the
@@ -184,6 +201,43 @@ export default class ProductService {
     result.products = (result.products || []).map(shapeProductForResponse);
 
     return result;
+  }
+
+  // Phase 5: Facets API
+  async getFacets() {
+    const Product = require("../models/product.js").default;
+    const facets = await Product.aggregate([
+      { $match: { isActive: true } },
+      { $unwind: "$variants" },
+      {
+        $group: {
+          _id: null,
+          categories: { $addToSet: "$category" },
+          colors: { 
+            $addToSet: { 
+              name: "$variants.color", 
+              hexCode: "$variants.hexCode" 
+            } 
+          },
+          minPrice: { $min: "$variants.price" },
+          maxPrice: { $max: "$variants.price" }
+        }
+      },
+      {
+        $project: {
+          _id: 0,
+          categories: 1,
+          colors: 1,
+          minPrice: 1,
+          maxPrice: 1
+        }
+      }
+    ]);
+
+    if (!facets || facets.length === 0) {
+      return { categories: [], colors: [], minPrice: 0, maxPrice: 0 };
+    }
+    return facets[0];
   }
 
   async getProductById(id) {

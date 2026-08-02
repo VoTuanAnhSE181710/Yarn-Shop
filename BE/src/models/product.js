@@ -99,6 +99,18 @@ const productSchema = new mongoose.Schema(
   },
 );
 
+// Indexes for performance (Phase 3 & 6)
+productSchema.index({ isActive: 1, category: 1 });
+productSchema.index({ "variants.color": 1 });
+productSchema.index({ "variants.price": 1 });
+productSchema.index({ createdAt: -1 });
+
+// Text Index for optimized Search (Phase 6)
+productSchema.index(
+  { name: "text", tags: "text" },
+  { weights: { name: 10, tags: 5 }, name: "TextSearchIndex" }
+);
+
 /**
  * Transform the document so that:
  *  - The legacy `images` field (if somehow still present) is dropped.

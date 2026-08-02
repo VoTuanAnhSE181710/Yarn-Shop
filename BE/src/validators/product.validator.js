@@ -123,12 +123,15 @@ const productQuerySchema = Joi.object({
   page: Joi.number().integer().min(1).default(1).optional(),
   limit: Joi.number().integer().min(1).max(100).default(20).optional(),
   sort: Joi.string()
-    .valid("newest", "oldest", "name_asc", "name_desc")
+    .valid("newest", "oldest", "name_asc", "name_desc", "popular", "price-asc", "price-desc")
     .default("newest")
     .optional()
     .messages({
-      "any.only": "Sort must be one of: newest, oldest, name_asc, name_desc",
+      "any.only": "Sort must be one of: newest, oldest, name_asc, name_desc, popular, price-asc, price-desc",
     }),
+  colors: Joi.string().trim().optional(),
+  minPrice: Joi.number().min(0).optional(),
+  maxPrice: Joi.number().min(0).optional(),
   includeInactive: Joi.boolean().optional(),
 });
 

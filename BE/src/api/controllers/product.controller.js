@@ -36,7 +36,7 @@ class ProductController {
    */
   getAll = async (req, res, next) => {
     try {
-      const { category, tag, search, page, limit, sort, includeInactive } =
+      const { category, tag, search, page, limit, sort, includeInactive, colors, minPrice, maxPrice } =
         req.query;
 
       // Only allow `includeInactive` for Admin users
@@ -46,6 +46,9 @@ class ProductController {
 
       const result = await this.#productService.getProducts({
         category,
+        colors,
+        minPrice,
+        maxPrice,
         tag,
         search,
         page: parseInt(page) || 1,
@@ -58,6 +61,15 @@ class ProductController {
         status: "success",
         data: result,
       });
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  getFacets = async (req, res, next) => {
+    try {
+      const facets = await this.#productService.getFacets();
+      res.status(200).json({ status: "success", data: facets });
     } catch (error) {
       next(error);
     }

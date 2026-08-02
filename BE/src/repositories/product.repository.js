@@ -18,10 +18,12 @@ export default class ProductRepository {
     page = 1,
     limit = 20,
     sort = { createdAt: -1 },
+    projection = null,
   } = {}) {
     const skip = (page - 1) * limit;
 
     const products = await Product.find(filter)
+      .select(projection)
       .sort(sort)
       .skip(skip)
       .limit(limit)
