@@ -48,13 +48,17 @@ class UserRepository {
                                         .populate('roleId')
                                         .lean();
         if (!exitstingUser) {
-            return null
+            return null;
         }
 
         return {
             ...exitstingUser,
             userId: exitstingUser._id.toString(),
         }
+    }
+
+    findUsersByEnrolledCourse = async (courseId) => {
+        return User.find({ enrolled: courseId }).select('_id').lean();
     }
 
     createUser = async ({

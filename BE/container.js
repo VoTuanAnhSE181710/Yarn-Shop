@@ -87,6 +87,8 @@ import transporter from "./src/utils/emailTransporter.js";
 import constants from "./src/constants/constants.js";
 import cloudinary from "./src/utils/cloudinary.js";
 
+import CourseProgressRepository from "./src/repositories/courseProgress.repository.js";
+
 const container = createContainer();
 
 export function setupContainer({ io, notificationNamespace, chatNamespace }) {
@@ -147,6 +149,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     supportDIYRepository: asClass(SupportDIYRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    courseProgressRepository: asClass(CourseProgressRepository, {
       lifetime: Lifetime.SCOPED,
     }),
     addressRepository: asClass(AddressRepository, {

@@ -531,6 +531,65 @@ router.delete("/courses/:id/lessons/:lessonId", authentication, checkPermission(
     await courseController.removeLesson(req, res, next);
 });
 
+/**
+ * @swagger
+ * /courses/{id}/progress:
+ *   get:
+ *     summary: Get course progress for a user
+ *     description: Retrieve user progress including completed lessons and completion status.
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Progress retrieved successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/courses/:id/progress", authentication, async (req, res, next) => {
+    const courseController = req.container.resolve("courseController");
+    await courseController.getProgress(req, res, next);
+});
+
+/**
+ * @swagger
+ * /courses/{id}/lessons/{lessonId}/complete:
+ *   post:
+ *     summary: Mark a lesson as complete
+ *     description: Mark a specific lesson inside a course as completed for the authenticated user. Checks for overall course completion.
+ *     tags: [Courses]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         schema:
+ *           type: string
+ *         required: true
+ *       - in: path
+ *         name: lessonId
+ *         schema:
+ *           type: string
+ *         required: true
+ *     responses:
+ *       200:
+ *         description: Lesson marked as complete
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Course or lesson not found
+ */
+router.post("/courses/:id/lessons/:lessonId/complete", authentication, async (req, res, next) => {
+    const courseController = req.container.resolve("courseController");
+    await courseController.completeLesson(req, res, next);
+});
+
 /* ============================================================
  * PUBLIC LESSON ENDPOINTS
  * ============================================================ */

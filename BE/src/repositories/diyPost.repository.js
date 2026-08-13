@@ -2,7 +2,7 @@ import DIYPost from '../models/diyPost.js';
 
 export default class DIYPostRepository {
     async findById(postId) {
-        return DIYPost.findById(postId).lean();
+        return DIYPost.findById(postId).populate('creatorId', 'username fullName avatar').lean();
     }
 
     async create(data) {
@@ -16,6 +16,7 @@ export default class DIYPostRepository {
             .sort({ createdAt: -1 })
             .skip(skip)
             .limit(limit)
+            .populate('creatorId', 'username fullName avatar')
             .lean();
         
         const total = await DIYPost.countDocuments(filter);

@@ -1,4 +1,5 @@
 import { NotFoundError, BadRequestError } from "../error/error.js";
+import Product from "../models/product.js";
 
 /**
  * Shape a product document (Mongoose doc or plain object — including those
@@ -205,7 +206,6 @@ export default class ProductService {
 
   // Phase 5: Facets API
   async getFacets() {
-    const Product = require("../models/product.js").default;
     const facets = await Product.aggregate([
       { $match: { isActive: true } },
       { $unwind: "$variants" },

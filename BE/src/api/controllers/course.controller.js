@@ -204,6 +204,45 @@ class CourseController {
             next(error);
         }
     }
+
+    /**
+     * POST /api/v1/courses/:id/lessons/:lessonId/complete
+     */
+    completeLesson = async (req, res, next) => {
+        try {
+            const { id: courseId, lessonId } = req.params;
+            const { userId } = req.user;
+
+            const progress = await this.#courseService.completeLesson(courseId, lessonId, userId);
+
+            res.status(200).json({
+                status: 'success',
+                message: 'Lesson marked as completed',
+                data: progress
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    /**
+     * GET /api/v1/courses/:id/progress
+     */
+    getProgress = async (req, res, next) => {
+        try {
+            const { id: courseId } = req.params;
+            const { userId } = req.user;
+
+            const progress = await this.#courseService.getCourseProgress(courseId, userId);
+
+            res.status(200).json({
+                status: 'success',
+                data: progress
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
 }
 
 export default CourseController;

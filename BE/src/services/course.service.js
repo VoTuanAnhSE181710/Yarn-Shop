@@ -5,11 +5,15 @@ class CourseService {
     #courseModel
     #userRepository
     #logRepository
+    #courseProgressRepository
+    #notificationService
 
-    constructor({ userRepository, logRepository }) {
+    constructor({ userRepository, logRepository, courseProgressRepository, notificationService }) {
         this.#courseModel = Course;
         this.#userRepository = userRepository;
         this.#logRepository = logRepository;
+        this.#courseProgressRepository = courseProgressRepository;
+        this.#notificationService = notificationService;
     }
 
     #formatCourseResponse = (course) => {
@@ -189,14 +193,43 @@ class CourseService {
             delete updateData.totalDuration;
         }
 
+        const oldTotalLessons = course.totalLessons || 0;
+        let newLessonsAdded = false;
+
         Object.assign(course, updateData);
         await course.save();
 
         if (updateData && updateData.linkedLessons !== undefined) {
             await this.#recalculateCourseStats(id);
+            if (updateData.linkedLessons.length > oldTotalLessons) {
+                newLessonsAdded = true;
+            }
         }
 
         const updatedCourse = await this.#courseModel.findOne({ _id: id, deletedAt: null });
+        
+        // Notify enrolled users if new lessons were added
+        if (newLessonsAdded && this.#courseProgressRepository && this.#notificationService) {
+            await this.#courseProgressRepository.setCourseNewContent(id);
+            
+            // Find all users enrolled in this course to notify them
+            // The course model has enrolledCount but we need to find users who have this course in their 'enrolled' array.
+            const enrolledUsers = await this.#userRepository.findUsersByEnrolledCourse(id);
+            if (enrolledUsers && enrolledUsers.length > 0) {
+                const notifications = enrolledUsers.map(u => ({
+                    userId: u._id,
+                    type: "COURSE_UPDATE",
+                    title: "Cập nhật khóa học",
+                    message: `Khóa học "${updatedCourse.title}" vừa có bài học mới! Hãy vào xem ngay.`,
+                    data: { courseId: id }
+                }));
+                
+                // Assuming notificationService has a method to create many notifications, or we loop
+                for (const notif of notifications) {
+                    await this.#notificationService.createNotification(notif).catch(e => console.error(e));
+                }
+            }
+        }
         
         if (this.#logRepository) {
             await this.#logRepository.saveLog({
@@ -380,6 +413,56 @@ class CourseService {
         await course.save();
 
         return this.#formatCourseResponse(course);
+    }
+
+    /**
+     * Mark a lesson as completed for a user
+     */
+    completeLesson = async (courseId, lessonId, userId) => {
+        const course = await this.#courseModel.findOne({ _id: courseId, deletedAt: null });
+        if (!course) throw new NotFoundError("Course not found");
+
+        const progress = await this.#courseProgressRepository.addCompletedLesson(userId, courseId, lessonId);
+
+        // Check if course is now fully completed
+        const totalCourseLessons = course.totalLessons || 0;
+        const completedCount = progress.completedLessons.length;
+
+        if (completedCount >= totalCourseLessons && !progress.isCompleted) {
+            const updatedProgress = await this.#courseProgressRepository.upsertProgress(userId, courseId, {
+                isCompleted: true,
+                completedAt: new Date()
+            });
+            
+            // Notify user
+            if (this.#notificationService) {
+                await this.#notificationService.createNotification({
+                    userId,
+                    type: "COURSE_UPDATE",
+                    title: "Chúc mừng!",
+                    message: `Bạn đã hoàn thành khóa học: ${course.title}. Bằng chứng nhận của bạn đã được cấp.`,
+                    data: { courseId }
+                });
+            }
+            return updatedProgress;
+        }
+
+        return progress;
+    }
+
+    /**
+     * Get course progress for a user
+     */
+    getCourseProgress = async (courseId, userId) => {
+        const progress = await this.#courseProgressRepository.findProgress(userId, courseId);
+        return progress || {
+            userId,
+            courseId,
+            completedLessons: [],
+            isCompleted: false,
+            completedAt: null,
+            hasNewContent: false
+        };
     }
 }
 
