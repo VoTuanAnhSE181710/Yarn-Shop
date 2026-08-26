@@ -82,6 +82,35 @@ router.post("/google", authLimiter, async (req, res, next) => {
 })
 
 /**
+ * [TEST ONLY] Endpoint để lấy Google Token test BE
+ */
+router.get("/test-google", (req, res) => {
+    res.send(`
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <script src="https://accounts.google.com/gsi/client" async defer></script>
+    </head>
+    <body style="font-family: sans-serif; padding: 50px; text-align: center;">
+      <h2>Test Lấy Google Token (BE Only)</h2>
+      <div id="g_id_onload"
+           data-client_id="${process.env.GOOGLE_CLIENT_ID || '712435227436-6ip40fvm6mqk4m5m2pg3elmholnfak7t.apps.googleusercontent.com'}"
+           data-callback="handleCredentialResponse">
+      </div>
+      <div class="g_id_signin" data-type="standard" style="display: inline-block;"></div>
+      <script>
+        function handleCredentialResponse(response) {
+          console.log("TOKEN CỦA SẾP ĐÂY:");
+          console.log(response.credential);
+          alert("Lấy Token thành công! Sếp bấm F12 mở tab Console để copy chuỗi Token dài ngoằng nhé.");
+        }
+      </script>
+    </body>
+    </html>
+    `);
+});
+
+/**
  * @swagger
  * /auth/register:
  *   post:
