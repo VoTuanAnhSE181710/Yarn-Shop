@@ -1,6 +1,7 @@
 import { ACTIONS, LOGIN_STATUS, MAX_LOGIN_ATTEMPTS, OUTCOMES, TARGET_TYPES } from "../constants/constants.js";
 import { AuthenticationError, AuthorizationError, BadRequestError } from "../error/error.js";
 import User from "../models/user.js";
+import { OAuth2Client } from 'google-auth-library';
 
 class AuthService {
     #userRepository;
@@ -133,6 +134,103 @@ class AuthService {
                 username: existingUser.username,
             }
         }
+    }
+
+    googleLogin = async ({ token, deviceName }) => {
+        const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID);
+        
+        let payload;
+        try {
+            const ticket = await client.verifyIdToken({
+                idToken: token,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+            payload = ticket.getPayload();
+        } catch (error) {
+            throw new AuthenticationError("Invalid Google token");
+        }
+
+        const email = payload.email;
+        let existingUser = await this.#userRepository.findUserByEmail({ email });
+
+        if (existingUser && existingUser.status === LOGIN_STATUS.LOCKED) {
+            existingUser = await this.#userRepository.checkAndUnlockAccount({ userId: existingUser.userId });
+            const timeDiff = new Date(existingUser.lockUntil).getTime() - Date.now();
+            const minsLeft = Math.ceil(timeDiff / (1000 * 60));
+            if (minsLeft > 0) {
+                throw new AuthenticationError(`Please try again after ${minsLeft} minutes!`);
+            }
+        }
+
+        if (existingUser && existingUser.status !== LOGIN_STATUS.ACTIVE) {
+            throw new AuthenticationError("Account is inactive!");
+        }
+
+        if (!existingUser) {
+            const customerRole = await this.#roleRepository.findRoleByName({ roleName: "Customer" });
+            if (!customerRole) throw new BadRequestError("System configuration error: Customer role not found");
+
+            const newUser = new User({
+                email: email,
+                fullName: payload.name || email.split('@')[0],
+                username: email.split('@')[0] + Math.floor(Math.random() * 1000),
+                authProvider: 'google',
+                status: LOGIN_STATUS.ACTIVE,
+                roleId: customerRole._id,
+                subscription: "Freemium",
+                avatar: {
+                    url: payload.picture || null,
+                    publicId: null
+                }
+            });
+
+            await newUser.save();
+            
+            existingUser = await this.#userRepository.findUserByEmail({ email });
+        } else if (existingUser.authProvider !== 'google') {
+            // Update authProvider if they previously logged in via local
+            existingUser.authProvider = 'google';
+            await User.findByIdAndUpdate(existingUser.userId || existingUser._id, { authProvider: 'google' });
+        }
+
+        const { accessToken, refreshToken, deviceId, jti } = this.#tokenService.generateToken({
+            userId: existingUser.userId || existingUser._id,
+            roleId: existingUser.roleId,
+            status: existingUser.status,
+            subscription: existingUser.subscription || "Freemium",
+        });
+
+        await this.#logRepository.saveLog({
+            action: ACTIONS.LOGIN,
+            targetType: TARGET_TYPES.USER,
+            outcome: OUTCOMES.SUCCESS,
+            actorId: existingUser.userId || existingUser._id,
+            details: {
+                username: existingUser.username,
+                email: existingUser.email,
+                jti: jti,
+                provider: 'google'
+            },
+        });
+
+        await this.#tokenService.saveRefreshToken({
+            userId: existingUser.userId || existingUser._id,
+            refreshToken: refreshToken,
+            deviceId: deviceId,
+            deviceName: deviceName
+        });
+
+        return {
+            accessToken,
+            refreshToken,
+            subscription: existingUser.subscription || "Freemium",
+            user: {
+                userId: existingUser.userId || existingUser._id,
+                fullName: existingUser.fullName,
+                email: existingUser.email,
+                username: existingUser.username,
+            }
+        };
     }
 
     logout = async ({

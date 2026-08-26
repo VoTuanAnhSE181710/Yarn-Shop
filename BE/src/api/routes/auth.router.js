@@ -54,6 +54,35 @@ router.post("/login", authLimiter, validateData(loginSchema), async (req, res, n
 
 /**
  * @swagger
+ * /auth/google:
+ *   post:
+ *     summary: Google OAuth Login
+ *     description: Authenticate user using Google OAuth ID token
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *             properties:
+ *               token:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       400:
+ *         description: Bad request - Invalid token
+ */
+router.post("/google", authLimiter, async (req, res, next) => {
+    const authController = req.container.resolve("authController");
+    await authController.googleLogin(req, res, next);
+})
+
+/**
+ * @swagger
  * /auth/register:
  *   post:
  *     summary: Register new user (Admin only - create Staff or Customer accounts)

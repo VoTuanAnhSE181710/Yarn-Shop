@@ -13,15 +13,21 @@ const userSchema = new mongoose.Schema({
         unique: true,
         trim: true,
     },
+    authProvider: {
+        type: String,
+        enum: ["local", "google"],
+        default: "local"
+    },
     password: {
         type: String,
-        required: [true, "Password is required!"],
+        required: function() { return this.authProvider === 'local'; },
         minlength: 6
     },
     phone: {
         type: String,
-        required: true,
+        required: function() { return this.authProvider === 'local'; },
         unique: true,
+        sparse: true,
     },
     fullName: {
         type: String,
@@ -29,16 +35,16 @@ const userSchema = new mongoose.Schema({
     },
     gender: {
         type: String,
-        required: true,
+        required: function() { return this.authProvider === 'local'; },
         enum: ["MALE", "FEMALE"]
     },
     dateOfBirth: {
         type: Date,
-        required: true,
+        required: function() { return this.authProvider === 'local'; },
     },  
     address: {
         type: String,
-        required: true
+        required: function() { return this.authProvider === 'local'; }
     },
     avatar: {
         type: {

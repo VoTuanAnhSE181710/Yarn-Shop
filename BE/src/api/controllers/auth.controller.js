@@ -52,6 +52,32 @@ class AuthController {
         }
     }
 
+    googleLogin = async (req, res, next) => {
+        try {
+            const { token } = req.body;
+            if (!token) return res.status(400).json({ status: "error", message: "Token is required" });
+
+            const deviceName = this.#getUserDeviceName(req, res, next);
+            
+            const { accessToken, refreshToken, subscription, user } = await this.#authService.googleLogin({
+                token,
+                deviceName,
+            });
+
+            res.status(200).json({
+                status: "success",
+                data: {
+                    accessToken,
+                    refreshToken,
+                    subscription,
+                    user,
+                },
+            });
+        } catch (error) {
+            next(error);
+        }
+    }
+
     publicRegister = async (req, res, next) => {
         try {
             const {
