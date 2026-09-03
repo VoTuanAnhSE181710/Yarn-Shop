@@ -22,6 +22,7 @@ export const createCourseSchema = Joi.object({
     isPublished: Joi.boolean().default(false),
     rating: Joi.number().min(0).max(5).optional(),
     enrolledCount: Joi.number().min(0).optional(),
+    price: Joi.number().min(0).default(0),
 });
 
 export const updateCourseSchema = Joi.object({
@@ -38,6 +39,7 @@ export const updateCourseSchema = Joi.object({
     isPublished: Joi.boolean(),
     rating: Joi.number().min(0).max(5).optional(),
     enrolledCount: Joi.number().min(0).optional(),
+    price: Joi.number().min(0).optional(),
 });
 
 export const courseQuerySchema = Joi.object({

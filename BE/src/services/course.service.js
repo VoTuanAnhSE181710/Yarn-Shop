@@ -365,6 +365,17 @@ class CourseService {
             };
         }
 
+        // If course is premium, check if user has purchased it
+        if (course.price > 0) {
+            const purchasedArray = user.purchasedCourses || [];
+            const hasPurchased = purchasedArray.some(id => id.toString() === courseId);
+            if (!hasPurchased) {
+                const error = new Error("Payment required to enroll in this premium course.");
+                error.statusCode = 403;
+                throw error;
+            }
+        }
+
         // Enroll user and increment course count
         await this.#userRepository.enrollCourse({ userId, courseId });
         course.enrolledCount = (course.enrolledCount || 0) + 1;

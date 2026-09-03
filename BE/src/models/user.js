@@ -93,6 +93,10 @@ const userSchema = new mongoose.Schema({
     enrolled: [{
         type: mongoose.Schema.Types.ObjectId,
         ref: "Course"
+    }],
+    purchasedCourses: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Course"
     }]
 })
 

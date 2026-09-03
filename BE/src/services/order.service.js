@@ -45,6 +45,7 @@ export default class OrderService {
         // Verify stock first
         let hasEnoughStock = true;
         for (const item of order.items || []) {
+            if (item.itemType === 'Course') continue;
             const product = await Product.findById(item.product);
             if (!product) continue;
             let variant = item.variantId 
@@ -80,6 +81,7 @@ export default class OrderService {
 
         // Proceed to deduct
         for (const item of order.items || []) {
+            if (item.itemType === 'Course') continue;
             const product = await Product.findById(item.product);
             if (!product) continue;
             let variant = item.variantId 
@@ -99,6 +101,25 @@ export default class OrderService {
         }
 
         await this.orderRepository.update(orderId, { stockDeducted: true });
+    }
+
+    async grantPurchasedCourses(orderId) {
+        const order = await this.orderRepository.findById(orderId);
+        if (!order || !order.user) return;
+        
+        const courseIds = [];
+        for (const item of order.items || []) {
+            if (item.itemType === 'Course' && item.course) {
+                courseIds.push(item.course);
+            }
+        }
+        
+        if (courseIds.length > 0) {
+            const User = (await import("../models/user.js")).default;
+            await User.findByIdAndUpdate(order.user, {
+                $addToSet: { purchasedCourses: { $each: courseIds } }
+            });
+        }
     }
 
     async getOrderById(id) {
@@ -314,6 +335,9 @@ export default class OrderService {
         const order = await this.orderRepository.update(id, update);
         if (!order) {
             throw new NotFoundError("Order not found");
+        }
+        if (paymentStatus === "PAID") {
+            await this.grantPurchasedCourses(id);
         }
         return order;
     }

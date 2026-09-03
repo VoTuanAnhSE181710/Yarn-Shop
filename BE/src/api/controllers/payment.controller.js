@@ -213,10 +213,11 @@ export const handleVNPayIPN = async (req, res) => {
                     "payment.paidAt": new Date(),
                 });
 
-                // Deduct stock after successful payment
+                // Deduct stock and grant courses after successful payment
                 const orderService = req.container.resolve("orderService");
                 if (orderService) {
                     await orderService.deductStock(orderId);
+                    await orderService.grantPurchasedCourses(orderId);
                 }
                 return res.status(200).json({ RspCode: "00", Message: "Success" });
             } else {
