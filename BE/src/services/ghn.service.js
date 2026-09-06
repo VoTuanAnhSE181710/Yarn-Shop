@@ -67,6 +67,71 @@ class GHNService {
     }
 
     /**
+     * Tự động tạo đơn hàng sang hệ thống GHN để Shipper tới lấy
+     */
+    async createShippingOrder(order, weight = 200, length = 10, width = 10, height = 10) {
+        try {
+            // Tính số tiền COD
+            const codAmount = order.payment.method === "COD" ? order.totalPrice : 0;
+            
+            // Xây dựng danh sách item theo format GHN
+            const items = order.items.map(i => ({
+                name: i.name || "Sản phẩm",
+                quantity: i.quantity || 1,
+                price: i.price || 0,
+                weight: 50 // Giả định mỗi món 50 gram
+            }));
+
+            // Nếu đơn không có SP vật lý (chỉ có khóa học)
+            if (items.length === 0) {
+                items.push({ name: "Gói hàng", quantity: 1, price: 0, weight: 100 });
+            }
+
+            const payload = {
+                payment_type_id: 1, // 1: Shop trả phí ship (Vì lúc checkout user đã thanh toán cả ship cho mình rồi)
+                note: `Đơn hàng ${order._id}`,
+                required_note: "CHOXEMHANGKHONGTHU", // Cho phép khách xem hàng
+                to_name: order.shippingAddress.fullName,
+                to_phone: order.shippingAddress.phone,
+                to_address: order.shippingAddress.address || "Địa chỉ mặc định",
+                to_ward_code: order.shippingAddress.wardCode?.toString(),
+                to_district_id: parseInt(order.shippingAddress.districtId),
+                cod_amount: parseInt(codAmount),
+                weight: parseInt(weight),
+                length: parseInt(length),
+                width: parseInt(width),
+                height: parseInt(height),
+                insurance_value: parseInt(order.itemsPrice) || 0,
+                service_type_id: 2,
+                items: items
+            };
+
+            const response = await axios.post(
+                `${GHN_API_URL}/v2/shipping-order/create`,
+                payload,
+                {
+                    headers: {
+                        "Token": GHN_API_KEY,
+                        "ShopId": GHN_SHOP_ID,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            if (response.data && response.data.code === 200) {
+                return {
+                    trackingCode: response.data.data.order_code,
+                    expectedDeliveryTime: response.data.data.expected_delivery_time,
+                };
+            }
+            throw new Error(response.data.message || "Failed to create GHN order");
+        } catch (error) {
+            console.error("GHN Create Order Error:", error.response?.data || error.message);
+            throw new Error(`Lỗi tạo đơn GHN: ${error.response?.data?.message || error.message}`);
+        }
+    }
+
+    /**
      * Get all provinces/cities from GHN master data
      * FE uses this to populate the Province dropdown
      */

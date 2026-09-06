@@ -93,6 +93,8 @@ const orderSchema = new mongoose.Schema({
         enum: ["PENDING", "CONFIRMED", "PREPARING", "SHIPPING", "DELIVERED", "CANCELLED", "PROCESSED", "REJECTED", "OUT_OF_STOCK"],
         default: "PENDING",
     },
+    trackingCode: { type: String, default: null },
+    expectedDeliveryTime: { type: Date, default: null },
     deliveredAt: { type: Date },
     cancelReason: { type: String },
     isCancelRequested: { type: Boolean, default: false },

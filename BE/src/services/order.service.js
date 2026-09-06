@@ -3,10 +3,11 @@ import Kit from "../models/kit.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
 
 export default class OrderService {
-    constructor({ orderRepository, notificationService, logRepository }) {
+    constructor({ orderRepository, notificationService, logRepository, ghnService }) {
         this.orderRepository = orderRepository;
         this.notificationService = notificationService;
         this.logRepository = logRepository;
+        this.ghnService = ghnService;
     }
 
     async createOrder(data) {
@@ -157,6 +158,27 @@ export default class OrderService {
     }
 
     async updateOrderStatus(id, orderStatus, actorId = null) {
+        // If transitioning to SHIPPING, create order on GHN
+        if (orderStatus === "SHIPPING" && this.ghnService) {
+            const currentOrder = await this.orderRepository.findById(id);
+            if (!currentOrder) throw new NotFoundError("Order not found");
+            
+            // Push to GHN if not already pushed
+            if (!currentOrder.trackingCode) {
+                try {
+                    const ghnRes = await this.ghnService.createShippingOrder(currentOrder);
+                    await this.orderRepository.update(id, {
+                        trackingCode: ghnRes.trackingCode,
+                        expectedDeliveryTime: ghnRes.expectedDeliveryTime
+                    });
+                } catch (error) {
+                    console.error("Lỗi tự động đẩy đơn GHN:", error.message);
+                    // Có thể throw luôn hoặc chỉ log tùy yêu cầu. FE có thể bắt lỗi.
+                    throw new BadRequestError(`Không thể tạo đơn GHN: ${error.message}`);
+                }
+            }
+        }
+
         const order = await this.orderRepository.update(id, {
             orderStatus,
             ...(orderStatus === "DELIVERED" ? { deliveredAt: new Date() } : {}),

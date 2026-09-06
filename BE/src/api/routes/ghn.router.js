@@ -256,4 +256,57 @@ router.post(
     }
 );
 
+/**
+ * @swagger
+ * /ghn/webhook:
+ *   post:
+ *     summary: GHN Webhook to update order status
+ *     tags: [GHN]
+ */
+router.post(
+    "/webhook",
+    async (req, res, next) => {
+        try {
+            const payload = req.body;
+            // GHN webhook sends OrderCode and Status
+            const trackingCode = payload.OrderCode;
+            const ghnStatus = payload.Status; 
+            
+            if (!trackingCode || !ghnStatus) return res.status(200).send("OK");
+            
+            const orderRepository = req.container.resolve("orderRepository");
+            const orderService = req.container.resolve("orderService");
+            
+            // Find order by trackingCode
+            const orderList = await orderRepository.findAll({ filter: { trackingCode }, limit: 1 });
+            if (orderList && orderList.data && orderList.data.length > 0) {
+                const order = orderList.data[0];
+                
+                // Map GHN status to our orderStatus
+                let newStatus = null;
+                switch(ghnStatus) {
+                    case "delivered":
+                        newStatus = "DELIVERED";
+                        break;
+                    case "delivery_fail":
+                    case "return":
+                    case "returned":
+                        newStatus = "REJECTED"; // Failed delivery
+                        break;
+                }
+                
+                if (newStatus && newStatus !== order.orderStatus) {
+                    await orderService.updateOrderStatus(order._id, newStatus);
+                }
+            }
+            
+            // Always return 200 to acknowledge webhook
+            res.status(200).send("OK");
+        } catch (error) {
+            console.error("GHN Webhook error:", error);
+            res.status(200).send("OK");
+        }
+    }
+);
+
 export default router;
