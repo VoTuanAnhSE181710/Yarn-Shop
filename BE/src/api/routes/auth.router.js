@@ -427,4 +427,33 @@ router.delete(
     }
 )
 
+/**
+ * @swagger
+ * /auth/google:
+ *   post:
+ *     summary: Login or Register with Google
+ *     description: Verify Google ID token and return access/refresh tokens. Creates account automatically if email is not registered.
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [token]
+ *             properties:
+ *               token:
+ *                 type: string
+ *                 description: Google ID token from Google Identity Services
+ *     responses:
+ *       200:
+ *         description: Login successful
+ *       401:
+ *         description: Invalid Google token
+ */
+router.post("/google", authLimiter, async (req, res, next) => {
+    const authController = req.container.resolve("authController");
+    await authController.googleLogin(req, res, next);
+});
+
 export default router;
