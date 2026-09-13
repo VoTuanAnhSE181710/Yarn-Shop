@@ -43,7 +43,7 @@ export const createPayment = async (req, res) => {
 
         // Verify order belongs to authenticated user
         const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
-        if (orderUserId !== req.user.userId.toString()) {
+        if (orderUserId !== req.user.userId.toString() && req.user.roleName !== "Admin") {
             throw new ForbiddenError("Not authorized to create payment for this order");
         }
 
@@ -130,7 +130,7 @@ export const createVNPayPayment = async (req, res) => {
 
         // Verify order belongs to authenticated user
         const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
-        if (orderUserId !== req.user.userId.toString()) {
+        if (orderUserId !== req.user.userId.toString() && req.user.roleName !== "Admin") {
             throw new ForbiddenError("Not authorized to create payment for this order");
         }
 
