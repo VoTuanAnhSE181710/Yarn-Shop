@@ -11,16 +11,12 @@ const router = express.Router();
  *     PaymentRequest:
  *       type: object
  *       required:
- *         - amount
+ *         - orderId
  *       properties:
- *         amount:
- *           type: number
- *           description: Payment amount (VND)
- *           example: 50000
- *         orderInfo:
+ *         orderId:
  *           type: string
- *           description: Order description
- *           example: "Yarn Shop order payment"
+ *           description: ID of the order to pay
+ *           example: "64f1b2c3e4b0c1a2d3e4f5g6"
  *     PaymentResponse:
  *       type: object
  *       properties:
