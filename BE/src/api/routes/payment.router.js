@@ -46,6 +46,8 @@ const router = express.Router();
  *     summary: Create MoMo Payment Link
  *     description: Create a payment request via MoMo. Returns a URL to redirect the user to the MoMo payment page.
  *     tags: [Payment]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
@@ -73,6 +75,8 @@ router.post('/momo-payment', authentication, checkPermission("Order", "create"),
  *     summary: Create VNPay Payment Link
  *     description: Create a payment request via VNPay. Returns a URL to redirect the user to the VNPay payment page.
  *     tags: [Payment]
+ *     security:
+ *       - bearerAuth: []
  *     requestBody:
  *       required: true
  *       content:
