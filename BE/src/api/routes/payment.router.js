@@ -1,5 +1,5 @@
 import express from 'express';
-import { createPayment, createVNPayPayment, handleVNPayIPN } from '../controllers/payment.controller.js';
+import { createPayment, createVNPayPayment, handleVNPayIPN, handleMomoIPN } from '../controllers/payment.controller.js';
 import { authentication, checkPermission } from '../middlewares/middleware.js';
 
 const router = express.Router();
@@ -168,5 +168,14 @@ router.post('/vnpay-payment', authentication, checkPermission("Order", "create")
  *               $ref: '#/components/schemas/VNPayIPNResponse'
  */
 router.get('/vnpay-ipn', handleVNPayIPN);
+
+/**
+ * @swagger
+ * /payment/momo/ipn:
+ *   post:
+ *     summary: MoMo IPN Webhook
+ *     tags: [Payment]
+ */
+router.post('/momo/ipn', handleMomoIPN);
 
 export default router;

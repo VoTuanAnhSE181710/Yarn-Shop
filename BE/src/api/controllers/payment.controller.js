@@ -59,10 +59,10 @@ export const createPayment = async (req, res) => {
         const momoOrderId = "YARN" + timestamp;
         const requestId = momoOrderId;
         const requestType = "captureWallet";
-        const extraData = "";
+        const extraData = Buffer.from(orderId.toString()).toString('base64');
 
-        const redirectUrl = "http://localhost:3000/order/success";
-        const ipnUrl = "https://webhook.site/test";
+        const redirectUrl = process.env.MOMO_REDIRECT_URL || "https://len-em.vercel.app/order-success";
+        const ipnUrl = process.env.MOMO_IPN_URL || "https://yarn-shop-be.onrender.com/api/v1/payment/momo/ipn";
 
         const rawSignature =
             `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&ipnUrl=${ipnUrl}&orderId=${momoOrderId}&orderInfo=${orderInfo}&partnerCode=${partnerCode}&redirectUrl=${redirectUrl}&requestId=${requestId}&requestType=${requestType}`;
@@ -235,5 +235,82 @@ export const handleVNPayIPN = async (req, res) => {
     } catch (error) {
         console.error("VNPay IPN error:", error);
         return res.status(200).json({ RspCode: "99", Message: "Unknown error" });
+    }
+};
+
+// ─────────────────────────────────────────────
+//  4. MOMO: IPN WEBHOOK - RECEIVE PAYMENT RESULT
+// ─────────────────────────────────────────────
+export const handleMomoIPN = async (req, res) => {
+    try {
+        const payload = req.body;
+        
+        const {
+            partnerCode,
+            orderId,
+            requestId,
+            amount,
+            orderInfo,
+            orderType,
+            transId,
+            resultCode,
+            message,
+            payType,
+            responseTime,
+            extraData,
+            signature
+        } = payload;
+
+        const accessKey = process.env.MOMO_ACCESS_KEY;
+        const secretKey = process.env.MOMO_SECRET_KEY;
+
+        const rawSignature = `accessKey=${accessKey}&amount=${amount}&extraData=${extraData}&message=${message}&orderId=${orderId}&orderInfo=${orderInfo}&orderType=${orderType}&partnerCode=${partnerCode}&payType=${payType}&requestId=${requestId}&responseTime=${responseTime}&resultCode=${resultCode}&transId=${transId}`;
+        
+        const generatedSignature = crypto
+            .createHmac("sha256", secretKey)
+            .update(rawSignature)
+            .digest("hex");
+
+        if (generatedSignature !== signature) {
+            console.error("[MoMo] Invalid signature");
+            return res.status(400).json({ message: "Invalid signature" });
+        }
+
+        // We stored "YARN" + timestamp as MomoOrderId, but how to find the original DB orderId?
+        // Ah, in createPayment, momoOrderId was just randomly generated!
+        // Wait, if orderId is just "YARN...", we cannot find the original Order._id from DB unless we store it somewhere.
+        // Let's modify createPayment to append the DB orderId, OR use extraData to store original order._id!
+        // Actually, orderInfo contains `Yarn Shop order ${orderId}`, but extraData is better.
+        // I will change createPayment to pass orderId in extraData.
+        
+        const dbOrderId = extraData ? Buffer.from(extraData, 'base64').toString('utf-8') : null;
+
+        if (resultCode === 0 && dbOrderId) {
+            console.log(`[MoMo] Payment successful for order: ${dbOrderId}`);
+            await Order.findByIdAndUpdate(dbOrderId, {
+                "payment.status": "PAID",
+                "payment.transactionNo": transId,
+                "payment.paidAt": new Date(),
+            });
+
+            const orderService = req.container.resolve("orderService");
+            if (orderService) {
+                await orderService.deductStock(dbOrderId);
+                await orderService.grantPurchasedCourses(dbOrderId);
+            }
+            return res.status(204).send();
+        } else if (resultCode !== 0 && dbOrderId) {
+            console.log(`[MoMo] Payment failed for order: ${dbOrderId}`);
+            await Order.findByIdAndUpdate(dbOrderId, {
+                "payment.status": "FAILED",
+                "payment.transactionNo": transId,
+            });
+            return res.status(204).send();
+        }
+
+        return res.status(204).send();
+    } catch (error) {
+        console.error("MoMo IPN error:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
     }
 };
