@@ -172,6 +172,17 @@ export default class OrderController {
     getById = async (req, res, next) => {
         try {
             const order = await this.orderService.getOrderById(req.params.id);
+            
+            // Ownership check: customer can only see their own orders
+            // Admin/Staff (who have Order/read permission via roleName check) can see any order
+            const orderUserId = order.user?._id ? order.user._id.toString() : order.user?.toString();
+            const requestUserId = (req.user.userId || req.user._id).toString();
+            const isAdminOrStaff = req.user.roleName === "Admin" || req.user.roleName === "Staff";
+            
+            if (!isAdminOrStaff && orderUserId !== requestUserId) {
+                return res.status(403).json({ message: "Not authorized to view this order" });
+            }
+            
             return res.status(200).json({ message: "Order retrieved successfully", order });
         } catch (error) {
             next(error);

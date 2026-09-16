@@ -372,4 +372,86 @@ router.delete("/:permissionId",
     }
 )
 
+/**
+ * @swagger
+ * /permissions/seed-defaults:
+ *   post:
+ *     summary: Seed 37 default permissions (Admin only)
+ *     description: Insert all standard permissions if they do not already exist. Safe to call multiple times — existing records are skipped.
+ *     tags: [Permissions]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Seed completed
+ */
+router.post("/seed-defaults",
+    authentication,
+    verifyDevice,
+    async (req, res) => {
+        // Bootstrap endpoint: check Admin role directly (không dùng checkPermission vì DB chưa có permission)
+        if (req.user.roleName !== "Admin") {
+            return res.status(403).json({ status: "error", message: "Chỉ Admin mới được seed permissions." });
+        }
+        try {
+            const Permission = (await import("../../models/permission.js")).default;
+
+            const defaults = [
+                { name: "User - Read",          resource: "User",        action: "read",   description: "Xem thông tin người dùng" },
+                { name: "User - Create",        resource: "User",        action: "create", description: "Tạo người dùng mới" },
+                { name: "User - Update",        resource: "User",        action: "update", description: "Cập nhật thông tin người dùng" },
+                { name: "User - Delete",        resource: "User",        action: "delete", description: "Xoá người dùng" },
+                { name: "Order - Read",         resource: "Order",       action: "read",   description: "Xem đơn hàng" },
+                { name: "Order - Create",       resource: "Order",       action: "create", description: "Tạo đơn hàng / thanh toán" },
+                { name: "Order - Update",       resource: "Order",       action: "update", description: "Cập nhật trạng thái đơn hàng" },
+                { name: "Order - Delete",       resource: "Order",       action: "delete", description: "Xoá đơn hàng" },
+                { name: "Product - Read",       resource: "Product",     action: "read",   description: "Xem thống kê sản phẩm" },
+                { name: "Product - Create",     resource: "Product",     action: "create", description: "Tạo sản phẩm mới" },
+                { name: "Product - Update",     resource: "Product",     action: "update", description: "Cập nhật sản phẩm" },
+                { name: "Product - Delete",     resource: "Product",     action: "delete", description: "Xoá sản phẩm" },
+                { name: "Course - Create",      resource: "Course",      action: "create", description: "Tạo khoá học mới" },
+                { name: "Course - Update",      resource: "Course",      action: "update", description: "Cập nhật khoá học" },
+                { name: "Course - Delete",      resource: "Course",      action: "delete", description: "Xoá khoá học" },
+                { name: "Kit - Create",         resource: "Kit",         action: "create", description: "Tạo kit mới" },
+                { name: "Kit - Update",         resource: "Kit",         action: "update", description: "Cập nhật kit" },
+                { name: "Kit - Delete",         resource: "Kit",         action: "delete", description: "Xoá kit" },
+                { name: "DIYPost - Create",     resource: "DIYPost",     action: "create", description: "Tạo bài DIY mới" },
+                { name: "DIYPost - Update",     resource: "DIYPost",     action: "update", description: "Cập nhật bài DIY" },
+                { name: "DIYPost - Delete",     resource: "DIYPost",     action: "delete", description: "Xoá bài DIY" },
+                { name: "SupportDIY - Create",  resource: "SupportDIY",  action: "create", description: "Tạo hỗ trợ DIY mới" },
+                { name: "SupportDIY - Update",  resource: "SupportDIY",  action: "update", description: "Cập nhật hỗ trợ DIY" },
+                { name: "SupportDIY - Delete",  resource: "SupportDIY",  action: "delete", description: "Xoá hỗ trợ DIY" },
+                { name: "Role - Read",          resource: "Role",        action: "read",   description: "Xem vai trò" },
+                { name: "Role - Create",        resource: "Role",        action: "create", description: "Tạo vai trò mới" },
+                { name: "Role - Update",        resource: "Role",        action: "update", description: "Cập nhật vai trò" },
+                { name: "Role - Delete",        resource: "Role",        action: "delete", description: "Xoá vai trò" },
+                { name: "Permission - Read",    resource: "Permission",  action: "read",   description: "Xem quyền hạn" },
+                { name: "Permission - Create",  resource: "Permission",  action: "create", description: "Tạo quyền hạn mới" },
+                { name: "Permission - Update",  resource: "Permission",  action: "update", description: "Cập nhật quyền hạn" },
+                { name: "Permission - Delete",  resource: "Permission",  action: "delete", description: "Xoá quyền hạn" },
+                { name: "OrderReport - Read",   resource: "OrderReport", action: "read",   description: "Xem báo cáo đơn hàng" },
+                { name: "OrderReport - Update", resource: "OrderReport", action: "update", description: "Cập nhật báo cáo đơn hàng" },
+                { name: "OrderReport - Delete", resource: "OrderReport", action: "delete", description: "Xoá báo cáo đơn hàng" },
+                { name: "Log - Read",           resource: "Log",         action: "read",   description: "Xem nhật ký hệ thống" },
+                { name: "Video - Update",       resource: "Video",       action: "update", description: "Admin cập nhật video" },
+                { name: "Video - Delete",       resource: "Video",       action: "delete", description: "Admin xoá video" },
+            ];
+
+            let added = 0, skipped = 0;
+            for (const perm of defaults) {
+                const exists = await Permission.findOne({ name: perm.name });
+                if (exists) { skipped++; } else { await Permission.create(perm); added++; }
+            }
+
+            return res.status(200).json({
+                status: "success",
+                message: `Seed xong! Đã thêm ${added} permission mới, bỏ qua ${skipped} cái đã có.`,
+                data: { added, skipped }
+            });
+        } catch (error) {
+            return res.status(500).json({ status: "error", message: error.message });
+        }
+    }
+)
+
 export default router;
