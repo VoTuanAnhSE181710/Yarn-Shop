@@ -85,6 +85,9 @@ const router = express.Router();
  *       - Public users: only `isActive = true` products are returned.
  *       - Admin users: can pass `includeInactive=true` to include inactive products.
  *     tags: [Products]
+ *     security:
+ *       - bearerAuth: []
+ *       - {}
  *     parameters:
  *       - in: query
  *         name: category
