@@ -51,6 +51,46 @@ export const authentication = (req, res, next) => {
   }
 };
 
+export const optionalAuthentication = (req, res, next) => {
+  try {
+    const requestHeader = req.headers.authorization;
+
+    if (!requestHeader) {
+      return next();
+    }
+
+    // Expect format: "Bearer <token>"
+    const parts = requestHeader.split(" ");
+    if (
+      parts.length !== 2 ||
+      parts[0].toLowerCase() !== "bearer" ||
+      !parts[1]
+    ) {
+      return next();
+    }
+
+    const accessToken = parts[1];
+    const tokenService = req.container.resolve("tokenService");
+
+    let decode;
+    try {
+      decode = tokenService.verifyAccessToken({ token: accessToken });
+    } catch (jwtError) {
+      if (jwtError && jwtError.name === "TokenExpiredError") {
+        throw new AuthenticationError("Access Token is expired!");
+      }
+      throw new AuthenticationError("Access Token is invalid!");
+    }
+
+    if (decode) {
+      req.user = decode;
+    }
+    next();
+  } catch (error) {
+    next(error);
+  }
+};
+
 export const authorizationByRole = (roles) => (req, res, next) => {
   if (!req.user || !roles.includes(req.user.roleName)) {
     return next(new ForbiddenError());

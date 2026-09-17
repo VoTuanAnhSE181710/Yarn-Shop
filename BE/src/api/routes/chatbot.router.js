@@ -9,27 +9,9 @@ import {
   chatbotRecommendationSchema,
   chatbotSessionSchema,
 } from "../../validators/chatbot.validator.js";
-import { validateData } from "../middlewares/middleware.js";
+import { validateData, optionalAuthentication } from "../middlewares/middleware.js";
 
 const router = express.Router();
-
-function optionalAuthentication(req, _res, next) {
-  const authorization = req.headers.authorization;
-  if (!authorization) return next();
-
-  try {
-    const [scheme, token] = authorization.split(" ");
-    if (scheme?.toLowerCase() !== "bearer" || !token) {
-      throw new TokenMissing("Bearer token không hợp lệ");
-    }
-    const tokenService = req.container.resolve("tokenService");
-    req.user = tokenService.verifyAccessToken({ token });
-    return next();
-  } catch (error) {
-    if (error?.statusCode) return next(error);
-    return next(new AuthenticationError("Access Token không hợp lệ"));
-  }
-}
 
 /**
  * @swagger

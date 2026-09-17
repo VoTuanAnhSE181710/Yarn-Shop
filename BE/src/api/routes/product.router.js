@@ -1,6 +1,7 @@
 import express from "express";
 import {
   authentication,
+  optionalAuthentication,
   checkPermission,
   validateData,
 } from "../middlewares/middleware.js";
@@ -138,6 +139,7 @@ const router = express.Router();
  */
 router.get(
   "/",
+  optionalAuthentication,
   validateData(productQuerySchema, "query"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
