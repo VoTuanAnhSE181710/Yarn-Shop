@@ -1,9 +1,10 @@
 import { NotFoundError, BadRequestError } from "../error/error.js";
 
 export default class DIYPostService {
-    constructor({ diyPostRepository, logRepository }) {
+    constructor({ diyPostRepository, logRepository, notificationService }) {
         this.diyPostRepository = diyPostRepository;
         this.logRepository = logRepository;
+        this.notificationService = notificationService;
     }
 
     async getPosts(query) {
@@ -40,6 +41,18 @@ export default class DIYPostService {
                 actorId: data.creatorId,
                 details: { postId: post._id, title: post.title }
             });
+        }
+        if (this.notificationService) {
+            await this.notificationService.createNotification({
+                type: "DIY", priority: "NORMAL", title: "Đã gửi bài viết DIY",
+                message: `Bài viết '${post.title}' của bạn đã được gửi và đang chờ duyệt.`,
+                userId: data.creatorId
+            }).catch(console.error);
+            await this.notificationService.createNotification({
+                type: "DIY", priority: "NORMAL", title: "Bài viết DIY mới",
+                message: `Bài viết '${post.title}' vừa được gửi duyệt.`,
+                targetRole: "Admin"
+            }).catch(console.error);
         }
         return post;
     }
@@ -78,6 +91,13 @@ export default class DIYPostService {
                 actorId,
                 details: { postId: post._id, status }
             });
+        }
+        if (this.notificationService) {
+            await this.notificationService.createNotification({
+                type: "DIY", priority: "NORMAL", title: "Cập nhật bài viết DIY",
+                message: `Bài viết '${post.title}' của bạn đã chuyển sang trạng thái: ${status}.`,
+                userId: post.creatorId
+            }).catch(console.error);
         }
         return post;
     }

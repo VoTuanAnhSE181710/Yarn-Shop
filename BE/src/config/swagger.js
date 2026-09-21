@@ -33,14 +33,6 @@ const options = {
                 description: 'User management endpoints'
             },
             {
-                name: 'Permissions',
-                description: 'Permission management endpoints'
-            },
-            {
-                name: 'Roles',
-                description: 'Role management endpoints'
-            },
-            {
                 name: 'Mail & OTP',
                 description: 'Email sending and OTP verification endpoints'
             },
@@ -205,7 +197,7 @@ const options = {
                 },
                 RegisterRequest: {
                     type: 'object',
-                    required: ['username', 'email', 'password', 'fullName', 'phone', 'address', 'gender', 'dateOfBirth', 'roleId'],
+                    required: ['username', 'email', 'password', 'fullName', 'phone', 'address', 'gender', 'dateOfBirth'],
                     properties: {
                         username: {
                             type: 'string',
@@ -256,7 +248,7 @@ const options = {
                             type: 'string',
                             pattern: '^[0-9a-fA-F]{24}$',
                             example: '65be000000000000000002',
-                            description: 'MongoDB ObjectId of Staff or Customer role'
+                            description: 'Optional MongoDB ObjectId of Staff role. Defaults to Customer role.'
                         }
                     }
                 },

@@ -1,8 +1,9 @@
 import { NotFoundError, BadRequestError } from "../error/error.js";
 
 export default class SupportDIYService {
-    constructor({ supportDIYRepository }) {
+    constructor({ supportDIYRepository, notificationService }) {
         this.supportDIYRepository = supportDIYRepository;
+        this.notificationService = notificationService;
     }
 
     async getPosts(query) {
@@ -30,7 +31,20 @@ export default class SupportDIYService {
     }
 
     async createPost(data) {
-        return this.supportDIYRepository.create(data);
+        const post = await this.supportDIYRepository.create(data);
+        if (this.notificationService) {
+            await this.notificationService.createNotification({
+                type: "SUPPORT", priority: "NORMAL", title: "Đã gửi yêu cầu hỗ trợ DIY",
+                message: `Yêu cầu '${post.title}' của bạn đã được gửi thành công.`,
+                userId: data.creatorId
+            }).catch(console.error);
+            await this.notificationService.createNotification({
+                type: "SUPPORT", priority: "NORMAL", title: "Yêu cầu hỗ trợ DIY mới",
+                message: `Có yêu cầu hỗ trợ DIY mới: '${post.title}'.`,
+                targetRole: "Admin"
+            }).catch(console.error);
+        }
+        return post;
     }
 
     async updatePost(id, data) {
@@ -49,6 +63,13 @@ export default class SupportDIYService {
         const post = await this.supportDIYRepository.update(id, { status });
         if (!post) {
             throw new NotFoundError("Support DIY Post not found");
+        }
+        if (this.notificationService) {
+            await this.notificationService.createNotification({
+                type: "SUPPORT", priority: "NORMAL", title: "Cập nhật yêu cầu hỗ trợ DIY",
+                message: `Yêu cầu '${post.title}' của bạn đã chuyển sang trạng thái: ${status}.`,
+                userId: post.creatorId
+            }).catch(console.error);
         }
         return post;
     }

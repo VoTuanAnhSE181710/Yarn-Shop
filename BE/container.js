@@ -6,9 +6,7 @@ import { Role, Permission, User, Message, Conversation, Log } from "./src/models
 //import Controller
 import AuthController from "./src/api/controllers/auth.controller.js";
 import UserController from "./src/api/controllers/user.controller.js";
-import PermissionController from "./src/api/controllers/permission.controller.js";
 import CartController from "./src/api/controllers/cart.controller.js";
-import RoleController from "./src/api/controllers/role.controller.js";
 import MailController from "./src/api/controllers/mail.controller.js";
 import VideoController from "./src/api/controllers/video.controller.js";
 import KitController from "./src/api/controllers/kit.controller.js";
@@ -34,8 +32,6 @@ import AuthService from "./src/services/auth.service.js";
 import HashService from "./src/services/hash.service.js";
 import TokenService from "./src/services/token.service.js";
 import UserService from "./src/services/user.service.js";
-import PermissionService from "./src/services/permission.service.js";
-import RoleService from "./src/services/role.service.js";
 import MailService from "./src/services/mail.service.js";
 import VideoService from "./src/services/video.service.js";
 import KitService from "./src/services/kit.service.js";
@@ -189,12 +185,6 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     userService: asClass(UserService, {
       lifetime: Lifetime.SCOPED,
     }),
-    permissionService: asClass(PermissionService, {
-      lifetime: Lifetime.SCOPED,
-    }),
-    roleService: asClass(RoleService, {
-      lifetime: Lifetime.SCOPED,
-    }),
     mailService: asClass(MailService, {
       lifetime: Lifetime.SCOPED,
     }),
@@ -275,14 +265,6 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     }),
 
     userController: asClass(UserController, {
-      lifetime: Lifetime.SCOPED,
-    }),
-
-    permissionController: asClass(PermissionController, {
-      lifetime: Lifetime.SCOPED,
-    }),
-
-    roleController: asClass(RoleController, {
       lifetime: Lifetime.SCOPED,
     }),
 

@@ -46,17 +46,21 @@ export default class NotificationService {
         // Emit via socket
         if (this.notifications) {
             if (data.userId) {
-                // Emit to specific user if they are joined in a room by their userId
-                this.notifications.to(data.userId.toString()).emit("new_notification", notification);
+                // Emit to specific user room: user_${userId}
+                this.notifications.to(`user_${data.userId.toString()}`).emit("new_notification", notification);
             } else if (data.targetRole) {
-                // Emit to a role room
-                this.notifications.to(data.targetRole).emit("new_notification", notification);
+                // Emit to a role room: admin or staff
+                this.notifications.to(data.targetRole.toLowerCase()).emit("new_notification", notification);
             } else {
                 this.notifications.emit("new_notification", notification);
             }
         }
         
         return notification;
+    }
+
+    async createNotification(data) {
+        return this.createAndEmitNotification(data);
     }
 
     async deleteNotification(id) {

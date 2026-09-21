@@ -2,8 +2,9 @@ import Order from "../models/order.js";
 import { NotFoundError, ForbiddenError, BadRequestError } from "../error/error.js";
 
 export default class OrderReportService {
-    constructor({ orderReportRepository }) {
+    constructor({ orderReportRepository, notificationService }) {
         this.orderReportRepository = orderReportRepository;
+        this.notificationService = notificationService;
     }
 
     async createReport(data, userId) {
@@ -21,7 +22,7 @@ export default class OrderReportService {
             throw new ForbiddenError("You can only report issues on your own orders");
         }
 
-        return this.orderReportRepository.create({
+        const report = await this.orderReportRepository.create({
             orderId,
             reporterId: userId,
             title,
@@ -29,6 +30,21 @@ export default class OrderReportService {
             images: images || [],
             status: "PENDING",
         });
+
+        if (this.notificationService) {
+            await this.notificationService.createNotification({
+                type: "REPORT", priority: "NORMAL", title: "Đã gửi khiếu nại đơn hàng",
+                message: `Khiếu nại cho đơn hàng #${orderId} của bạn đã được ghi nhận.`,
+                userId: userId
+            }).catch(console.error);
+            await this.notificationService.createNotification({
+                type: "REPORT", priority: "HIGH", title: "Báo cáo khiếu nại mới",
+                message: `Có báo cáo mới cho đơn hàng #${orderId}: ${title}.`,
+                targetRole: "Admin"
+            }).catch(console.error);
+        }
+
+        return report;
     }
 
     async getMyReports(userId, query = {}) {
@@ -134,7 +150,17 @@ export default class OrderReportService {
         const updateData = { status };
         if (adminNote !== undefined) updateData.adminNote = adminNote;
 
-        return this.orderReportRepository.update(reportId, updateData);
+        const updatedReport = await this.orderReportRepository.update(reportId, updateData);
+        
+        if (this.notificationService) {
+            await this.notificationService.createNotification({
+                type: "REPORT", priority: "NORMAL", title: "Cập nhật khiếu nại đơn hàng",
+                message: `Báo cáo khiếu nại cho đơn hàng #${report.orderId} đã được cập nhật: ${status}.`,
+                userId: report.reporterId
+            }).catch(console.error);
+        }
+
+        return updatedReport;
     }
 
     async assignStaff(reportId, staffId) {
@@ -143,7 +169,17 @@ export default class OrderReportService {
             throw new NotFoundError("Report not found");
         }
 
-        return this.orderReportRepository.update(reportId, { assignedStaff: staffId });
+        const updatedReport = await this.orderReportRepository.update(reportId, { assignedStaff: staffId });
+        
+        if (this.notificationService) {
+            await this.notificationService.createNotification({
+                type: "REPORT", priority: "NORMAL", title: "Phân công xử lý khiếu nại",
+                message: `Bạn đã được phân công xử lý khiếu nại #${reportId}.`,
+                userId: staffId
+            }).catch(console.error);
+        }
+
+        return updatedReport;
     }
 
     async updateAdminNote(reportId, adminNote) {

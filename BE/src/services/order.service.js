@@ -19,12 +19,30 @@ export default class OrderService {
         }
 
         if (this.notificationService) {
-            await this.notificationService.createAndEmitNotification({
+            await this.notificationService.createNotification({
                 type: "ORDER",
                 priority: "NORMAL",
                 title: "Đơn hàng mới",
                 message: `Khách hàng vừa đặt đơn hàng mới: ${order._id}`,
                 targetRole: "Admin"
+            }).catch(console.error);
+
+            if (data.payment && data.payment.method === "COD") {
+                await this.notificationService.createNotification({
+                    type: "ORDER",
+                    priority: "NORMAL",
+                    title: "Đơn hàng COD mới cần duyệt",
+                    message: `Có đơn COD mới #${order._id} đang chờ xác nhận.`,
+                    targetRole: "Staff"
+                }).catch(console.error);
+            }
+
+            await this.notificationService.createNotification({
+                type: "ORDER",
+                priority: "NORMAL",
+                title: "Đặt hàng thành công",
+                message: `Đơn hàng #${order._id} của bạn đã được tiếp nhận và đang chờ xử lý.`,
+                userId: data.user
             }).catch(console.error);
         }
         if (this.logRepository) {
@@ -188,11 +206,31 @@ export default class OrderService {
         }
         if (this.notificationService) {
             const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
-            await this.notificationService.createAndEmitNotification({
+            
+            let statusText = orderStatus;
+            let titleText = "Cập nhật trạng thái đơn hàng";
+            let msgText = `Đơn hàng #${order._id} của bạn đã chuyển sang trạng thái ${orderStatus}`;
+
+            if (orderStatus === "SHIPPING") {
+                titleText = "Đơn hàng đang được giao";
+                const deliveryStr = order.expectedDeliveryTime ? ` Dự kiến giao vào: ${new Date(order.expectedDeliveryTime).toLocaleDateString("vi-VN")}.` : "";
+                msgText = `Đơn hàng #${order._id} của bạn đã được bàn giao cho đơn vị vận chuyển.${deliveryStr}`;
+            } else if (orderStatus === "DELIVERED") {
+                titleText = "Giao hàng thành công";
+                msgText = `Đơn hàng #${order._id} đã được giao thành công. Vui lòng xác nhận đã nhận được hàng.`;
+            } else if (orderStatus === "CANCELLED") {
+                titleText = "Đơn hàng đã huỷ";
+                msgText = `Đơn hàng #${order._id} đã bị huỷ.`;
+            } else if (orderStatus === "CONFIRMED") {
+                titleText = "Đơn hàng đã được xác nhận";
+                msgText = `Đơn hàng #${order._id} của bạn đã được xác nhận.`;
+            }
+
+            await this.notificationService.createNotification({
                 type: "ORDER",
                 priority: "NORMAL",
-                title: "Cập nhật trạng thái đơn hàng",
-                message: `Đơn hàng ${order._id} của bạn đã chuyển sang trạng thái ${orderStatus}`,
+                title: titleText,
+                message: msgText,
                 userId: orderUserId
             }).catch(console.error);
         }

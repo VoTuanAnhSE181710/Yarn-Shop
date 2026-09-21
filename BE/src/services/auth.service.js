@@ -167,7 +167,7 @@ class AuthService {
         }
 
         if (!existingUser) {
-            const customerRole = await this.#roleRepository.findRoleByName({ roleName: "Customer" });
+            const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Customer" });
             if (!customerRole) throw new BadRequestError("System configuration error: Customer role not found");
 
             const newUser = new User({
@@ -347,19 +347,25 @@ class AuthService {
             throw new BadRequestError("This user is already exists!")
         }
 
-        const isExistingRole = await this.#roleRepository.findById(roleId);
-
-        if (!isExistingRole) {
-            await this.#logRepository.saveLog({
-                action: ACTIONS.REGISTER,
-                targetType: TARGET_TYPES.USER,
-                outcome: OUTCOMES.FAILED,
-                actorId: userId,
-                details: {
-                    reason: "This role does not exist!"
-                },
-            })
-            throw new BadRequestError("This role does not exist!")
+        let targetRoleId = roleId;
+        if (!targetRoleId) {
+            const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Customer" });
+            if (!customerRole) throw new BadRequestError("System configuration error: Customer role not found");
+            targetRoleId = customerRole._id;
+        } else {
+            const isExistingRole = await this.#roleRepository.findById(targetRoleId);
+            if (!isExistingRole) {
+                await this.#logRepository.saveLog({
+                    action: ACTIONS.REGISTER,
+                    targetType: TARGET_TYPES.USER,
+                    outcome: OUTCOMES.FAILED,
+                    actorId: userId,
+                    details: {
+                        reason: "This role does not exist!"
+                    },
+                })
+                throw new BadRequestError("This role does not exist!")
+            }
         }
 
         const hashedPassword = await this.#hashService.hash({ string: password });
@@ -373,7 +379,7 @@ class AuthService {
             fullName,
             gender,
             dateOfBirth,
-            roleId,
+            roleId: targetRoleId,
             createdBy: userId,
         });
 

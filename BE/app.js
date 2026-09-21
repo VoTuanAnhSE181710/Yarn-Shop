@@ -49,8 +49,6 @@ app.use(scopePerRequest(container)); //khi nguoi dung call api thi chi cung cap 
 //import routes
 import authRouter from "./src/api/routes/auth.router.js";
 import userRouter from "./src/api/routes/user.router.js";
-import permissionRouter from "./src/api/routes/permission.router.js";
-import roleRouter from "./src/api/routes/role.router.js";
 import mailRouter from "./src/api/routes/mail.router.js";
 import logRouter from "./src/api/routes/log.router.js";
 import categoryRouter from "./src/api/routes/category.router.js";
@@ -94,8 +92,6 @@ app.use(
 //use routes
 app.use(`${url}/auth`, authRouter);
 app.use(`${url}/users`, userRouter);
-app.use(`${url}/permissions`, permissionRouter);
-app.use(`${url}/roles`, roleRouter);
 app.use(`${url}/mail`, mailRouter);
 app.use(`${url}/logs`, logRouter);
 app.use(`${url}/categories`, categoryRouter);

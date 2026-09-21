@@ -207,26 +207,47 @@ export const handleVNPayIPN = async (req, res) => {
             if (rspCode === "00") {
                 console.log(`[VNPay] Payment successful for order: ${orderId}`);
                 // Update order payment status to PAID in DB
-                await Order.findByIdAndUpdate(orderId, {
+                const updatedOrder = await Order.findByIdAndUpdate(orderId, {
                     "payment.status": "PAID",
                     "payment.transactionNo": transactionNo,
                     "payment.paidAt": new Date(),
-                });
+                }, { new: true });
 
-                // Deduct stock and grant courses after successful payment
                 const orderService = req.container.resolve("orderService");
                 if (orderService) {
                     await orderService.deductStock(orderId);
                     await orderService.grantPurchasedCourses(orderId);
                 }
+                const notificationService = req.container.resolve("notificationService");
+                if (notificationService && updatedOrder) {
+                    const orderUserId = updatedOrder.user?._id ? updatedOrder.user._id.toString() : updatedOrder.user.toString();
+                    await notificationService.createNotification({
+                        type: "ORDER", priority: "NORMAL", title: "Thanh toán thành công",
+                        message: `Đơn hàng #${orderId} đã thanh toán thành công qua VNPay.`,
+                        userId: orderUserId
+                    }).catch(console.error);
+                    await notificationService.createNotification({
+                        type: "ORDER", priority: "NORMAL", title: "Khách đã thanh toán",
+                        message: `Đơn hàng #${orderId} đã được thanh toán qua VNPay.`,
+                        targetRole: "Admin"
+                    }).catch(console.error);
+                }
                 return res.status(200).json({ RspCode: "00", Message: "Success" });
             } else {
                 console.log(`[VNPay] Payment failed for order: ${orderId}, code: ${rspCode}`);
-                // Update order payment status to FAILED
-                await Order.findByIdAndUpdate(orderId, {
+                const updatedOrder = await Order.findByIdAndUpdate(orderId, {
                     "payment.status": "FAILED",
                     "payment.transactionNo": transactionNo,
-                });
+                }, { new: true });
+                const notificationService = req.container.resolve("notificationService");
+                if (notificationService && updatedOrder) {
+                    const orderUserId = updatedOrder.user?._id ? updatedOrder.user._id.toString() : updatedOrder.user.toString();
+                    await notificationService.createNotification({
+                        type: "ORDER", priority: "NORMAL", title: "Thanh toán thất bại",
+                        message: `Thanh toán VNPay cho đơn hàng #${orderId} không thành công.`,
+                        userId: orderUserId
+                    }).catch(console.error);
+                }
                 return res.status(200).json({ RspCode: "00", Message: "Success" });
             }
         } else {
@@ -287,24 +308,51 @@ export const handleMomoIPN = async (req, res) => {
 
         if (resultCode === 0 && dbOrderId) {
             console.log(`[MoMo] Payment successful for order: ${dbOrderId}`);
-            await Order.findByIdAndUpdate(dbOrderId, {
+            const updatedOrder = await Order.findByIdAndUpdate(dbOrderId, {
                 "payment.status": "PAID",
                 "payment.transactionNo": transId,
                 "payment.paidAt": new Date(),
-            });
+            }, { new: true });
 
             const orderService = req.container.resolve("orderService");
             if (orderService) {
                 await orderService.deductStock(dbOrderId);
                 await orderService.grantPurchasedCourses(dbOrderId);
             }
+            
+            const notificationService = req.container.resolve("notificationService");
+            if (notificationService && updatedOrder) {
+                const orderUserId = updatedOrder.user?._id ? updatedOrder.user._id.toString() : updatedOrder.user.toString();
+                await notificationService.createNotification({
+                    type: "ORDER", priority: "NORMAL", title: "Thanh toán thành công",
+                    message: `Đơn hàng #${dbOrderId} đã thanh toán thành công qua MoMo.`,
+                    userId: orderUserId
+                }).catch(console.error);
+                await notificationService.createNotification({
+                    type: "ORDER", priority: "NORMAL", title: "Khách đã thanh toán",
+                    message: `Đơn hàng #${dbOrderId} đã được thanh toán qua MoMo.`,
+                    targetRole: "Admin"
+                }).catch(console.error);
+            }
+
             return res.status(204).send();
         } else if (resultCode !== 0 && dbOrderId) {
             console.log(`[MoMo] Payment failed for order: ${dbOrderId}`);
-            await Order.findByIdAndUpdate(dbOrderId, {
+            const updatedOrder = await Order.findByIdAndUpdate(dbOrderId, {
                 "payment.status": "FAILED",
                 "payment.transactionNo": transId,
-            });
+            }, { new: true });
+
+            const notificationService = req.container.resolve("notificationService");
+            if (notificationService && updatedOrder) {
+                const orderUserId = updatedOrder.user?._id ? updatedOrder.user._id.toString() : updatedOrder.user.toString();
+                await notificationService.createNotification({
+                    type: "ORDER", priority: "NORMAL", title: "Thanh toán thất bại",
+                    message: `Thanh toán MoMo cho đơn hàng #${dbOrderId} không thành công.`,
+                    userId: orderUserId
+                }).catch(console.error);
+            }
+
             return res.status(204).send();
         }
 
