@@ -23,7 +23,7 @@ export default class OrderService {
                 type: "ORDER",
                 priority: "NORMAL",
                 title: "Đơn hàng mới",
-                message: `Khách hàng vừa đặt đơn hàng mới: ${order._id}`,
+                message: `Khách hàng ${order.shippingAddress.fullName} vừa đặt đơn ${order._id}. Sản phẩm: ${order.items.map(i => i.name).join(', ')}. Tổng tiền: ${order.totalPrice} VND. Phương thức: COD. Ngày đặt: ${new Date(order.createdAt).toLocaleDateString('vi-VN')}`,
                 targetRole: "Admin"
             }).catch(console.error);
 
@@ -32,7 +32,7 @@ export default class OrderService {
                     type: "ORDER",
                     priority: "NORMAL",
                     title: "Đơn hàng COD mới cần duyệt",
-                    message: `Có đơn COD mới #${order._id} đang chờ xác nhận.`,
+                    message: `Có đơn COD mới ${order._id} từ khách ${order.shippingAddress.fullName}. Sản phẩm: ${order.items.map(i => i.name).join(', ')}. Tổng tiền: ${order.totalPrice} VND. Ngày đặt: ${new Date(order.createdAt).toLocaleDateString('vi-VN')}`,
                     targetRole: "Staff"
                 }).catch(console.error);
             }

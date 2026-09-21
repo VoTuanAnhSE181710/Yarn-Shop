@@ -228,7 +228,7 @@ export const handleVNPayIPN = async (req, res) => {
                     }).catch(console.error);
                     await notificationService.createNotification({
                         type: "ORDER", priority: "NORMAL", title: "Khách đã thanh toán",
-                        message: `Đơn hàng #${orderId} đã được thanh toán qua VNPay.`,
+                        message: `Khách hàng ${updatedOrder.shippingAddress.fullName} vừa thanh toán đơn ${orderId}. Sản phẩm: ${updatedOrder.items.map(i => i.name).join(', ')}. Tổng tiền: ${updatedOrder.totalPrice} VND. Phương thức: VNPay. Ngày đặt: ${new Date(updatedOrder.createdAt).toLocaleDateString('vi-VN')}`,
                         targetRole: "Admin"
                     }).catch(console.error);
                 }
@@ -330,7 +330,7 @@ export const handleMomoIPN = async (req, res) => {
                 }).catch(console.error);
                 await notificationService.createNotification({
                     type: "ORDER", priority: "NORMAL", title: "Khách đã thanh toán",
-                    message: `Đơn hàng #${dbOrderId} đã được thanh toán qua MoMo.`,
+                    message: `Khách hàng ${updatedOrder.shippingAddress.fullName} vừa thanh toán đơn ${dbOrderId}. Sản phẩm: ${updatedOrder.items.map(i => i.name).join(', ')}. Tổng tiền: ${updatedOrder.totalPrice} VND. Phương thức: MoMo. Ngày đặt: ${new Date(updatedOrder.createdAt).toLocaleDateString('vi-VN')}`,
                     targetRole: "Admin"
                 }).catch(console.error);
             }
