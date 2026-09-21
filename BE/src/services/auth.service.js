@@ -167,7 +167,7 @@ class AuthService {
         }
 
         if (!existingUser) {
-            const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Customer" });
+            const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Cus" });
             if (!customerRole) throw new BadRequestError("System configuration error: Customer role not found");
 
             const newUser = new User({
@@ -285,11 +285,9 @@ class AuthService {
         }
 
         // Auto-find Customer role
-        const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Customer" });
+        const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Cus" });
 
-        if (!customerRole) {
-            throw new BadRequestError("Customer role not found. Please run seed data first.");
-        }
+        if (!customerRole) throw new BadRequestError("System configuration error: Customer role not found");
 
         const hashedPassword = await this.#hashService.hash({ string: password });
 
@@ -349,7 +347,7 @@ class AuthService {
 
         let targetRoleId = roleId;
         if (!targetRoleId) {
-            const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Customer" });
+            const customerRole = await this.#roleRepository.findByRoleName({ roleName: "Cus" });
             if (!customerRole) throw new BadRequestError("System configuration error: Customer role not found");
             targetRoleId = customerRole._id;
         } else {
