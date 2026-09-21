@@ -11,6 +11,12 @@ export default class OrderService {
     }
 
     async createOrder(data) {
+        if (data.shippingAddress && data.shippingAddress.districtId && data.shippingAddress.wardCode && this.ghnService) {
+            data.expectedDeliveryTime = await this.ghnService.calculateExpectedDeliveryTime({
+                to_district_id: data.shippingAddress.districtId,
+                to_ward_code: data.shippingAddress.wardCode
+            });
+        }
         const order = await this.orderRepository.create(data);
 
         if (data.payment && data.payment.method === "COD") {

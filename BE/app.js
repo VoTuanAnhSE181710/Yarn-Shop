@@ -72,6 +72,7 @@ import shippingRouter from "./src/api/routes/shipping.router.js";
 import chatbotRouter from "./src/api/routes/chatbot.router.js";
 import aiAgentRouter from "./src/modules/ai-agent/aiAgent.router.js";
 import cartRouter from "./src/api/routes/cart.router.js";
+import roleRouter from "./src/api/routes/role.router.js";
 
 app.get("/", (req, res) => {
   res.send(`Hello World!`);

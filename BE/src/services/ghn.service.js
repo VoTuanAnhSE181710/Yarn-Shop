@@ -65,6 +65,39 @@ class GHNService {
             throw new Error(`Không tính được phí vận chuyển. Lỗi từ GHN: ${ghnError}`);
         }
     }
+    
+    /**
+     * Calculate expected delivery time (Lead Time) via GHN API
+     */
+    async calculateExpectedDeliveryTime({ to_district_id, to_ward_code }) {
+        try {
+            const response = await axios.post(
+                `${GHN_API_URL}/v2/shipping-order/leadtime`,
+                {
+                    service_type_id: 2, // Standard delivery
+                    to_district_id: parseInt(to_district_id),
+                    to_ward_code: to_ward_code.toString(),
+                },
+                {
+                    headers: {
+                        "Token": GHN_API_KEY,
+                        "ShopId": GHN_SHOP_ID,
+                        "Content-Type": "application/json"
+                    }
+                }
+            );
+
+            if (response.data && response.data.code === 200) {
+                // leadtime timestamp (unix epoch)
+                const leadtimeEpoch = response.data.data.leadtime;
+                return new Date(leadtimeEpoch * 1000); 
+            }
+            return null;
+        } catch (error) {
+            console.error("GHN LeadTime API Error:", error.response?.data || error.message);
+            return null; // Don't crash if leadtime fails
+        }
+    }
 
     /**
      * Tự động tạo đơn hàng sang hệ thống GHN để Shipper tới lấy
