@@ -1,5 +1,5 @@
 import express from "express";
-import { authentication, checkPermission, verifyDevice } from "../middlewares/middleware.js";
+import { authentication, authorizationByRole, verifyDevice } from "../middlewares/middleware.js";
 
 const router = express.Router();
 
@@ -78,7 +78,7 @@ const router = express.Router();
  *             schema:
  *               $ref: '#/components/schemas/Error'
  */
-router.get("/", authentication, verifyDevice, checkPermission('Log', 'read'), (req, res, next) => {
+router.get("/", authentication, verifyDevice, authorizationByRole(['Admin', 'Staff']), (req, res, next) => {
     req.container.resolve("logController").getLogs(req, res, next);
 });
 
@@ -98,7 +98,7 @@ router.get("/", authentication, verifyDevice, checkPermission('Log', 'read'), (r
 router.get("/statistics",
     authentication,
     verifyDevice,
-    checkPermission('Log', 'read'),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const logController = req.container.resolve("logController");
         await logController.getStatistics(req, res, next);

@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole } from '../middlewares/middleware.js';
 
 const router = express.Router();
 
@@ -146,7 +146,7 @@ const router = express.Router();
 router.post(
     "/",
     authentication,
-    checkPermission("Order", "create"),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.create(req, res, next);
@@ -253,7 +253,7 @@ router.get(
  * @swagger
  * /orders:
  *   get:
- *     summary: Get all orders (Admin/Staff)
+ *     summary: Get all orders
  *     description: Get paginated list of all orders. Requires admin or staff permissions.
  *     tags: [Orders]
  *     security:
@@ -292,7 +292,7 @@ router.get(
 router.get(
     "/",
     authentication,
-    checkPermission("Order", "read"),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.getAll(req, res, next);
@@ -326,7 +326,7 @@ router.get(
 router.get(
     "/:id",
     authentication,
-    checkPermission("Order", "read"),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.getById(req, res, next);
@@ -337,7 +337,7 @@ router.get(
  * @swagger
  * /orders/{id}/status:
  *   patch:
- *     summary: Update order status (Admin/Staff)
+ *     summary: Update order status
  *     description: Update the order workflow status. Admin and Staff can update any order status.
  *     tags: [Orders]
  *     security:
@@ -376,7 +376,7 @@ router.get(
 router.patch(
     "/:id/status",
     authentication,
-    checkPermission("Order", "update"),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.updateStatus(req, res, next);
@@ -433,7 +433,7 @@ router.post(
  * @swagger
  * /orders/{id}/cancel-request:
  *   patch:
- *     summary: Approve or reject a cancel request (Admin/Staff)
+ *     summary: Approve or reject a cancel request
  *     description: Admin reviews a customer cancel request and approves or rejects it.
  *     tags: [Orders]
  *     security:
@@ -472,7 +472,7 @@ router.post(
 router.patch(
     "/:id/cancel-request",
     authentication,
-    checkPermission("Order", "update"),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.handleCancelRequest(req, res, next);

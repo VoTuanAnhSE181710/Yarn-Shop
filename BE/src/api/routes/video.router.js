@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, verifyDevice, checkPermission } from '../middlewares/middleware.js';
+import { authentication, verifyDevice, authorizationByRole } from '../middlewares/middleware.js';
 import { uploadVideo } from '../../utils/multerStorage.js';
 
 const router = express.Router();
@@ -408,7 +408,7 @@ router.delete(
  * /videos/admin-update/{id}:
  *   patch:
  *     summary: Admin update a video
- *     description: Update video details. Requires checkPermission('Video', 'update').
+ *     description: Update video details. Requires authorizationByRole(['Admin']).
  *     tags: [Videos]
  *     security:
  *       - bearerAuth: []
@@ -445,7 +445,7 @@ router.patch(
     "/admin-update/:id",
     authentication,
     verifyDevice,
-    checkPermission('Video', 'update'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const videoController = req.container.resolve("videoController");
         await videoController.adminUpdate(req, res, next);
@@ -457,7 +457,7 @@ router.patch(
  * /videos/admin-delete/{id}:
  *   delete:
  *     summary: Admin delete a video
- *     description: Soft delete a video. Requires checkPermission('Video', 'delete').
+ *     description: Soft delete a video. Requires authorizationByRole(['Admin']).
  *     tags: [Videos]
  *     security:
  *       - bearerAuth: []
@@ -475,7 +475,7 @@ router.delete(
     "/admin-delete/:id",
     authentication,
     verifyDevice,
-    checkPermission('Video', 'delete'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const videoController = req.container.resolve("videoController");
         await videoController.adminDelete(req, res, next);

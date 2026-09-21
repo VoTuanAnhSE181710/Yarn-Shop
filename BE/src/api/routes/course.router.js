@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole, validateData } from '../middlewares/middleware.js';
 import { createCourseSchema, updateCourseSchema, courseQuerySchema, rateCourseSchema } from '../../validators/course.validator.js';
 import { createLessonSchema, updateLessonSchema } from '../../validators/lesson.validator.js';
 import { uploadCourse } from '../../utils/multerStorage.js';
@@ -335,7 +335,7 @@ router.post("/courses/:id/rate", authentication, validateData(rateCourseSchema, 
  *       401:
  *         description: Unauthorized
  */
-router.post("/courses", authentication, checkPermission('Course', 'create'), uploadCourse.single('thumbnail'), (req, res, next) => {
+router.post("/courses", authentication, authorizationByRole(['Admin']), uploadCourse.single('thumbnail'), (req, res, next) => {
     try {
         if (req.body.data) {
             let courseData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
@@ -413,7 +413,7 @@ router.post("/courses", authentication, checkPermission('Course', 'create'), upl
  *       404:
  *         description: Course not found
  */
-router.put("/courses/:id", authentication, checkPermission('Course', 'update'), uploadCourse.single('thumbnail'), (req, res, next) => {
+router.put("/courses/:id", authentication, authorizationByRole(['Admin']), uploadCourse.single('thumbnail'), (req, res, next) => {
     try {
         if (req.body.data) {
             let courseData = typeof req.body.data === 'string' ? JSON.parse(req.body.data) : req.body.data;
@@ -456,7 +456,7 @@ router.put("/courses/:id", authentication, checkPermission('Course', 'update'), 
  *       404:
  *         description: Course not found
  */
-router.delete("/courses/:id", authentication, checkPermission('Course', 'delete'), async (req, res, next) => {
+router.delete("/courses/:id", authentication, authorizationByRole(['Admin']), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.delete(req, res, next);
 });
@@ -491,7 +491,7 @@ router.delete("/courses/:id", authentication, checkPermission('Course', 'delete'
  *       404:
  *         description: Course not found
  */
-router.post("/courses/:id/lessons/:lessonId", authentication, checkPermission('Course', 'update'), async (req, res, next) => {
+router.post("/courses/:id/lessons/:lessonId", authentication, authorizationByRole(['Admin']), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.addLesson(req, res, next);
 });
@@ -526,7 +526,7 @@ router.post("/courses/:id/lessons/:lessonId", authentication, checkPermission('C
  *       404:
  *         description: Course not found
  */
-router.delete("/courses/:id/lessons/:lessonId", authentication, checkPermission('Course', 'update'), async (req, res, next) => {
+router.delete("/courses/:id/lessons/:lessonId", authentication, authorizationByRole(['Admin']), async (req, res, next) => {
     const courseController = req.container.resolve("courseController");
     await courseController.removeLesson(req, res, next);
 });
@@ -648,7 +648,7 @@ router.get("/lessons/:lessonId", async (req, res, next) => {
  *       401:
  *         description: Unauthorized
  */
-router.get("/lessons", authentication, checkPermission('Lesson', 'read'), async (req, res, next) => {
+router.get("/lessons", authentication, authorizationByRole(['Admin', 'Staff']), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.getAll(req, res, next);
 });
@@ -707,7 +707,7 @@ router.get("/lessons", authentication, checkPermission('Lesson', 'read'), async 
  *       401:
  *         description: Unauthorized
  */
-router.post("/lessons", authentication, checkPermission('Lesson', 'create'), validateData(createLessonSchema, "body"), async (req, res, next) => {
+router.post("/lessons", authentication, authorizationByRole(['Admin']), validateData(createLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.create(req, res, next);
 });
@@ -767,7 +767,7 @@ router.post("/lessons", authentication, checkPermission('Lesson', 'create'), val
  *       404:
  *         description: Lesson not found
  */
-router.put("/lessons/:lessonId", authentication, checkPermission('Lesson', 'update'), validateData(updateLessonSchema, "body"), async (req, res, next) => {
+router.put("/lessons/:lessonId", authentication, authorizationByRole(['Admin']), validateData(updateLessonSchema, "body"), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.update(req, res, next);
 });
@@ -795,7 +795,7 @@ router.put("/lessons/:lessonId", authentication, checkPermission('Lesson', 'upda
  *       404:
  *         description: Lesson not found
  */
-router.delete("/lessons/:lessonId", authentication, checkPermission('Lesson', 'delete'), async (req, res, next) => {
+router.delete("/lessons/:lessonId", authentication, authorizationByRole(['Admin']), async (req, res, next) => {
     const lessonController = req.container.resolve("lessonController");
     await lessonController.delete(req, res, next);
 });

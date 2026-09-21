@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole } from '../middlewares/middleware.js';
 import { uploadDIYPost } from '../../utils/multerStorage.js';
 
 const router = express.Router();
@@ -173,7 +173,7 @@ router.get(
 router.post(
     "/",
     authentication,
-    checkPermission('DIYPost', 'create'),
+    authorizationByRole(['Admin']),
     uploadDIYPost.any(),
     (req, res, next) => {
         try {
@@ -305,7 +305,7 @@ router.get(
 router.put(
     "/:id",
     authentication,
-    checkPermission('DIYPost', 'update'),
+    authorizationByRole(['Admin']),
     uploadDIYPost.any(),
     (req, res, next) => {
         try {
@@ -361,7 +361,7 @@ router.put(
 router.delete(
     "/:id",
     authentication,
-    checkPermission('DIYPost', 'delete'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const diyPostController = req.container.resolve("diyPostController");
         await diyPostController.deletePost(req, res, next);
@@ -404,7 +404,7 @@ router.delete(
 router.patch(
     "/:id/status",
     authentication,
-    checkPermission('DIYPost', 'update'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const diyPostController = req.container.resolve("diyPostController");
         await diyPostController.updateStatus(req, res, next);

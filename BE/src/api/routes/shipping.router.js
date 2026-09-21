@@ -1,7 +1,7 @@
 import express from "express";
 import {
   authentication,
-  checkPermission,
+  authorizationByRole,
   validateData,
 } from "../middlewares/middleware.js";
 import {
@@ -103,7 +103,7 @@ router.get("/shop-location", async (req, res, next) => {
  * /shipping/shop-location:
  *   put:
  *     summary: Update the shop origin and delivery policy
- *     description: Staff/Admin only. Set reverseGeocode=true to rebuild the address from lat/lng.
+ *     description: Set reverseGeocode=true to rebuild the address from lat/lng.
  *     tags: [Shipping]
  *     security:
  *       - bearerAuth: []
@@ -162,7 +162,7 @@ router.get("/shop-location", async (req, res, next) => {
 router.put(
   "/shop-location",
   authentication,
-  checkPermission("Order", "update"),
+  authorizationByRole(['Admin']),
   validateData(updateShopLocationSchema),
   async (req, res, next) => {
     const controller = req.container.resolve("shippingController");

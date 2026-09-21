@@ -1,6 +1,6 @@
 import express from 'express';
 import { changePasswordSchema, forgotPasswordSchema, loginSchema, registerSchema, publicRegisterSchema } from '../../validators/user.validator.js';
-import { authentication, authorizationByRole, checkPermission, validateData, verifyDevice } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole, validateData, verifyDevice } from '../middlewares/middleware.js';
 import rateLimit from 'express-rate-limit';
 
 const router = express.Router();
@@ -85,8 +85,8 @@ router.post("/google", authLimiter, async (req, res, next) => {
  * @swagger
  * /auth/register:
  *   post:
- *     summary: Register new user (Admin only - create Staff or Customer accounts)
- *     description: Create a new user account. Only Admin can register new users.
+ *     summary: Create new user
+ *     description: Create a new user account (Staff or Customer). If roleId is not provided, defaults to Customer.
  *     tags: [Authentication]
  *     security:
  *       - bearerAuth: []
@@ -104,13 +104,13 @@ router.post("/google", authLimiter, async (req, res, next) => {
  *       401:
  *         description: Unauthorized
  *       403:
- *         description: Forbidden - Only Admin can register users
+ *         description: Forbidden
  */
 router.post(
     "/register", 
     validateData(registerSchema, "body"),
     authentication,
-    checkPermission('User', 'create'),
+    authorizationByRole(['Admin']),
     verifyDevice,
     async (req, res, next) => {
         const authController = req.container.resolve("authController");

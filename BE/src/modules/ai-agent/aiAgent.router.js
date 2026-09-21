@@ -5,7 +5,7 @@ import {
 } from "../../error/error.js";
 import {
   authentication,
-  checkPermission,
+  authorizationByRole,
   validateData,
 } from "../../api/middlewares/middleware.js";
 import {
@@ -184,7 +184,7 @@ router.post(
 router.post(
   "/confirm",
   authentication,
-  checkPermission("Order", "create"),
+  authorizationByRole(['Admin']),
   validateData(aiAgentConfirmSchema),
   async (req, res, next) => {
     const controller = req.container.resolve("aiAgentController");

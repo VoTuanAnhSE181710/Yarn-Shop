@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole } from '../middlewares/middleware.js';
 import { uploadOrderReport } from '../../utils/multerStorage.js';
 
 const router = express.Router();
@@ -165,7 +165,7 @@ router.get(
  * @swagger
  * /order-reports:
  *   get:
- *     summary: Get all reports (Admin/Staff)
+ *     summary: Get all reports
  *     description: Get paginated list of all reports with search and filter.
  *     tags: [OrderReports]
  *     security:
@@ -206,7 +206,7 @@ router.get(
 router.get(
     "/",
     authentication,
-    checkPermission("OrderReport", "read"),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.getAll(req, res, next);
@@ -354,7 +354,7 @@ router.delete(
  * @swagger
  * /order-reports/{id}/status:
  *   patch:
- *     summary: Update report status (Admin/Staff)
+ *     summary: Update report status
  *     description: Update the status of a report to DONE or CANCELLED.
  *     tags: [OrderReports]
  *     security:
@@ -394,7 +394,7 @@ router.delete(
 router.patch(
     "/:id/status",
     authentication,
-    checkPermission("OrderReport", "update"),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.updateStatus(req, res, next);
@@ -440,7 +440,7 @@ router.patch(
 router.patch(
     "/:id/assign",
     authentication,
-    checkPermission("OrderReport", "update"),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.assignStaff(req, res, next);
@@ -451,7 +451,7 @@ router.patch(
  * @swagger
  * /order-reports/{id}/note:
  *   patch:
- *     summary: Update admin note (Admin/Staff)
+ *     summary: Update admin note
  *     description: Add or update the admin note on a report.
  *     tags: [OrderReports]
  *     security:
@@ -486,7 +486,7 @@ router.patch(
 router.patch(
     "/:id/note",
     authentication,
-    checkPermission("OrderReport", "update"),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.updateAdminNote(req, res, next);
@@ -521,7 +521,7 @@ router.patch(
 router.delete(
     "/:id/admin",
     authentication,
-    checkPermission("OrderReport", "delete"),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.adminDelete(req, res, next);

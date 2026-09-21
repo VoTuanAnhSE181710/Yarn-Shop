@@ -2,7 +2,7 @@ import express from "express";
 import {
   authentication,
   optionalAuthentication,
-  checkPermission,
+  authorizationByRole,
   validateData,
 } from "../middlewares/middleware.js";
 import {
@@ -135,7 +135,7 @@ const router = express.Router();
  *         name: includeInactive
  *         schema:
  *           type: boolean
- *         description: Admin only. Include inactive (soft-deleted) products.
+ *         description: Include inactive (soft-deleted) products.
  *     responses:
  *       200:
  *         description: Products retrieved successfully
@@ -171,7 +171,7 @@ router.get("/facets", async (req, res, next) => {
  * /products:
  *   post:
  *     summary: Create a new product
- *     description: Create a product with at least one variant. Admin only.
+ *     description: Create a product with at least one variant.
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -254,7 +254,7 @@ router.get("/facets", async (req, res, next) => {
 router.post(
   "/",
   authentication,
-  checkPermission('Product', 'create'),
+  authorizationByRole(['Admin']),
   uploadProduct.any(),
   (req, res, next) => {
     try {
@@ -330,7 +330,7 @@ router.get(
  * /products/{id}:
  *   put:
  *     summary: Update product
- *     description: Update any field of a product. At least one field must be provided. Admin only.
+ *     description: Update any field of a product. At least one field must be provided.
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -389,7 +389,7 @@ router.get(
 router.put(
   "/:id",
   authentication,
-  checkPermission('Product', 'update'),
+  authorizationByRole(['Admin']),
   validateData(productIdParamSchema, "params"),
   uploadProduct.any(),
   (req, res, next) => {
@@ -430,7 +430,7 @@ router.put(
  * /products/{id}:
  *   patch:
  *     summary: Restore a soft-deleted product
- *     description: Set product `isActive` back to true. Admin only.
+ *     description: Set product `isActive` back to true.
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -453,7 +453,7 @@ router.put(
 router.patch(
   "/:id",
   authentication,
-  checkPermission('Product', 'update'),
+  authorizationByRole(['Admin']),
   validateData(productIdParamSchema, "params"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");
@@ -466,7 +466,7 @@ router.patch(
  * /products/{id}:
  *   delete:
  *     summary: Soft delete product
- *     description: Set product `isActive` to false. Admin only.
+ *     description: Set product `isActive` to false.
  *     tags: [Products]
  *     security:
  *       - bearerAuth: []
@@ -489,7 +489,7 @@ router.patch(
 router.delete(
   "/:id",
   authentication,
-  checkPermission('Product', 'delete'),
+  authorizationByRole(['Admin']),
   validateData(productIdParamSchema, "params"),
   async (req, res, next) => {
     const productController = req.container.resolve("productController");

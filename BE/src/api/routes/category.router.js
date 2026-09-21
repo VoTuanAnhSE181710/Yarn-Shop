@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission, validateData } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole, validateData } from '../middlewares/middleware.js';
 import { cacheMiddleware } from '../middlewares/cache.middleware.js';
 import { Category } from '../../models/Model.js';
 
@@ -81,7 +81,7 @@ router.get(
  * @swagger
  * /categories:
  *   post:
- *     summary: Create a category (Admin only)
+ *     summary: Create a category
  *     tags: [Categories]
  *     security:
  *       - bearerAuth: []
@@ -110,7 +110,7 @@ router.get(
 router.post(
     "/",
     authentication,
-    checkPermission('Category', 'create'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         try {
             const { name, slug, description } = req.body;
@@ -135,7 +135,7 @@ router.post(
  * @swagger
  * /categories/{id}:
  *   patch:
- *     summary: Update a category (Admin only)
+ *     summary: Update a category
  *     tags: [Categories]
  *     security:
  *       - bearerAuth: []
@@ -166,7 +166,7 @@ router.post(
 router.patch(
     "/:id",
     authentication,
-    checkPermission('Category', 'update'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         try {
             const { id } = req.params;
@@ -198,7 +198,7 @@ router.patch(
  * @swagger
  * /categories/{id}:
  *   delete:
- *     summary: Delete a category (Admin only)
+ *     summary: Delete a category
  *     tags: [Categories]
  *     security:
  *       - bearerAuth: []
@@ -215,7 +215,7 @@ router.patch(
 router.delete(
     "/:id",
     authentication,
-    checkPermission('Category', 'delete'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         try {
             const { id } = req.params;

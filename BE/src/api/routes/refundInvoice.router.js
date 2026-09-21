@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole } from '../middlewares/middleware.js';
 
 const router = express.Router();
 
@@ -34,7 +34,7 @@ const router = express.Router();
 router.get(
     "/",
     authentication,
-    checkPermission('Order', 'read'), // Use Order permission for now
+    authorizationByRole(['Admin', 'Staff']), // Use Order permission for now
     async (req, res, next) => {
         const refundInvoiceController = req.container.resolve("refundInvoiceController");
         await refundInvoiceController.getAll(req, res, next);
@@ -74,7 +74,7 @@ router.get(
 router.patch(
     "/:id/process",
     authentication,
-    checkPermission('Order', 'update'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const refundInvoiceController = req.container.resolve("refundInvoiceController");
         await refundInvoiceController.processRefund(req, res, next);

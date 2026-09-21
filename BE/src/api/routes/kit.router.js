@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole } from '../middlewares/middleware.js';
 import { uploadKit } from '../../utils/multerStorage.js';
 
 const router = express.Router();
@@ -166,7 +166,7 @@ router.get(
 router.post(
     "/",
     authentication,
-    checkPermission('Kit', 'create'),
+    authorizationByRole(['Admin']),
     uploadKit.single('thumbnail'),
     (req, res, next) => {
         try {
@@ -297,7 +297,7 @@ router.get(
 router.put(
     "/:id",
     authentication,
-    checkPermission('Kit', 'update'),
+    authorizationByRole(['Admin']),
     uploadKit.single('thumbnail'),
     (req, res, next) => {
         try {
@@ -349,7 +349,7 @@ router.put(
 router.delete(
     "/:id",
     authentication,
-    checkPermission('Kit', 'delete'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const kitController = req.container.resolve("kitController");
         await kitController.deleteKit(req, res, next);

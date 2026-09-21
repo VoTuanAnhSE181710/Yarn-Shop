@@ -163,35 +163,3 @@ export const verifyDevice = async (req, res, next) => {
   }
 };
 
-export const checkPermission = (resource, action) => async (req, res, next) => {
-  try {
-    const user = req.user;
-
-    if (!user || !user.roleId) {
-      throw new ForbiddenError("User does not have a valid role.");
-    }
-
-    //populate role voi permission
-    const role = await Role.findById(user.roleId).populate("permission");
-
-    if (!role) {
-      throw new ForbiddenError("User's role not found.");
-    }
-
-    //check neu role co permission nay
-    // "manage" action grants access to all CRUD operations
-    const hasPermission = role.permission.some(
-      (permission) =>
-        permission.resource === resource &&
-        (permission.action === action || permission.action === "manage"),
-    );
-    if (!hasPermission) {
-      throw new ForbiddenError(
-        "User does not have permission to perform this action.",
-      );
-    }
-    next();
-  } catch (error) {
-    next(error);
-  }
-};

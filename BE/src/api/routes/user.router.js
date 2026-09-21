@@ -1,5 +1,5 @@
 import express from 'express';
-import { authentication, checkPermission, validateData, verifyDevice } from '../middlewares/middleware.js';
+import { authentication, authorizationByRole, validateData, verifyDevice } from '../middlewares/middleware.js';
 import { updateUserSchema, updateStatusSchema, getAllUserSchema, changeRoleSchema, adminUpdateUserSchema } from '../../validators/user.validator.js';
 import { uploadAvatar } from '../../utils/multerStorage.js';
 
@@ -253,7 +253,7 @@ router.patch(
     validateData(adminUpdateUserSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'update'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.adminUpdate(req, res, next);
@@ -264,7 +264,7 @@ router.patch(
  * @swagger
  * /users/update-status/{queryUserId}:
  *   patch:
- *     summary: Update user status (Admin only)
+ *     summary: Update user status
  *     description: Update user account status (ACTIVE, INACTIVE, or LOCKED). Only Admin role can perform this action. Can update any user's status.
  *     tags: [Users]
  *     security:
@@ -320,7 +320,7 @@ router.patch(
     validateData(updateStatusSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'update'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
 
@@ -451,7 +451,7 @@ router.get(
     validateData(getAllUserSchema, "query"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'read'),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController")
 
@@ -563,7 +563,7 @@ router.get(
 router.get("/statistics",
     authentication,
     verifyDevice,
-    checkPermission('User', 'read'),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.getStatistics(req, res, next);
@@ -574,7 +574,7 @@ router.get("/statistics",
  * @swagger
  * /users/{queryUserId}:
  *   get:
- *     summary: Get user by ID (Admin only)
+ *     summary: Get user by ID
  *     description: Retrieve detailed information of a specific user by their MongoDB ObjectId. Only Admin can access this endpoint.
  *     tags: [Users]
  *     security:
@@ -672,7 +672,7 @@ router.get(
     "/:queryUserId",
     authentication,
     verifyDevice,
-    checkPermission('User', 'read'),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
 
@@ -684,7 +684,7 @@ router.get(
  * @swagger
  * /users/{queryUserId}:
  *   delete:
- *     summary: Soft delete a user (Admin only)
+ *     summary: Soft delete a user
  *     description: Soft delete a user by setting their status to INACTIVE. Only Admin can perform this action. Admin cannot delete their own account. The deletion is logged with timestamp, admin ID, and reason.
  *     tags: [Users]
  *     security:
@@ -775,7 +775,7 @@ router.get(
  * @swagger
  * /users/{queryUserId}/role:
  *   patch:
- *     summary: Change user role (Admin only)
+ *     summary: Change user role
  *     description: Change the role of a user. Only Admin can change user roles. Admin cannot change their own role.
  *     tags: [Users]
  *     security:
@@ -831,7 +831,7 @@ router.patch(
     validateData(changeRoleSchema, "body"),
     authentication,
     verifyDevice,
-    checkPermission('User', 'update'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.changeRole(req, res, next);
@@ -842,7 +842,7 @@ router.delete(
     "/:queryUserId",
     authentication,
     verifyDevice,
-    checkPermission('User', 'delete'),
+    authorizationByRole(['Admin']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.softDelete(req, res, next);
