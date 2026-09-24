@@ -449,7 +449,7 @@ class CourseService {
             if (this.#notificationService) {
                 await this.#notificationService.createNotification({
                     userId,
-                    type: "COURSE_UPDATE",
+                    type: "COURSE",
                     title: "Chúc mừng!",
                     message: `Bạn đã hoàn thành khóa học: ${course.title}. Bằng chứng nhận của bạn đã được cấp.`,
                     data: { courseId }

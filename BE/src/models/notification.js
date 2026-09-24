@@ -3,7 +3,7 @@ import mongoose from "mongoose";
 const NotificationSchema = mongoose.Schema({
     type: {
         type: String,
-        enum: ["ORDER", "SYSTEM", "PROMOTION", "DIY", "SUPPORT", "REPORT"],
+        enum: ["ORDER", "SYSTEM", "PROMOTION", "DIY", "SUPPORT", "REPORT", "COURSE"],
         required: true,
     },
     priority: {
