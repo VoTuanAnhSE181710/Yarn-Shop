@@ -173,7 +173,7 @@ router.get(
 router.post(
     "/",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Cus']),
     uploadSupportDIY.any(),
     (req, res, next) => {
         try {
@@ -305,7 +305,7 @@ router.get(
 router.put(
     "/:id",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Cus']),
     uploadSupportDIY.any(),
     (req, res, next) => {
         try {
@@ -361,7 +361,7 @@ router.put(
 router.delete(
     "/:id",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Cus']),
     async (req, res, next) => {
         const supportDIYController = req.container.resolve("supportDIYController");
         await supportDIYController.deletePost(req, res, next);
@@ -404,7 +404,7 @@ router.delete(
 router.patch(
     "/:id/status",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff', 'Cus']),
     async (req, res, next) => {
         const supportDIYController = req.container.resolve("supportDIYController");
         await supportDIYController.updateStatus(req, res, next);

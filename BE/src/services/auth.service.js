@@ -147,7 +147,8 @@ class AuthService {
             });
             payload = ticket.getPayload();
         } catch (error) {
-            throw new AuthenticationError("Invalid Google token");
+            console.error('Google Auth Error:', error);
+            throw new AuthenticationError("Invalid Google token: " + error.message);
         }
 
         const email = payload.email;

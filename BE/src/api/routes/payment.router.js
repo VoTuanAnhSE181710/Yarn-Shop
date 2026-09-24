@@ -62,7 +62,7 @@ const router = express.Router();
  *       500:
  *         description: Internal server error
  */
-router.post('/momo-payment', authentication, authorizationByRole(['Admin']), createPayment);
+router.post('/momo-payment', authentication, authorizationByRole(['Admin', 'Cus']), createPayment);
 
 /**
  * @swagger
@@ -91,7 +91,7 @@ router.post('/momo-payment', authentication, authorizationByRole(['Admin']), cre
  *       500:
  *         description: Internal server error
  */
-router.post('/vnpay-payment', authentication, authorizationByRole(['Admin']), createVNPayPayment);
+router.post('/vnpay-payment', authentication, authorizationByRole(['Admin', 'Cus']), createVNPayPayment);
 
 /**
  * @swagger

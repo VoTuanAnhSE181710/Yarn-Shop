@@ -394,7 +394,7 @@ router.delete(
 router.patch(
     "/:id/status",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.updateStatus(req, res, next);
@@ -486,7 +486,7 @@ router.patch(
 router.patch(
     "/:id/note",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const controller = req.container.resolve("orderReportController");
         await controller.updateAdminNote(req, res, next);

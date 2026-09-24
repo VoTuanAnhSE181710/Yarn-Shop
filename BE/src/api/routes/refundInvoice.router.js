@@ -74,7 +74,7 @@ router.get(
 router.patch(
     "/:id/process",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const refundInvoiceController = req.container.resolve("refundInvoiceController");
         await refundInvoiceController.processRefund(req, res, next);

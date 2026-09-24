@@ -146,7 +146,7 @@ const router = express.Router();
 router.post(
     "/",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Cus']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.create(req, res, next);
@@ -326,7 +326,7 @@ router.get(
 router.get(
     "/:id",
     authentication,
-    authorizationByRole(['Admin', 'Staff']),
+    authorizationByRole(['Admin', 'Staff', 'Cus']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.getById(req, res, next);
@@ -376,7 +376,7 @@ router.get(
 router.patch(
     "/:id/status",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.updateStatus(req, res, next);
@@ -472,7 +472,7 @@ router.post(
 router.patch(
     "/:id/cancel-request",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.handleCancelRequest(req, res, next);

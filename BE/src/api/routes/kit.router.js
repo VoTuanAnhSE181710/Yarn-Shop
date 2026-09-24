@@ -166,7 +166,7 @@ router.get(
 router.post(
     "/",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     uploadKit.single('thumbnail'),
     (req, res, next) => {
         try {
@@ -297,7 +297,7 @@ router.get(
 router.put(
     "/:id",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     uploadKit.single('thumbnail'),
     (req, res, next) => {
         try {
@@ -349,7 +349,7 @@ router.put(
 router.delete(
     "/:id",
     authentication,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const kitController = req.container.resolve("kitController");
         await kitController.deleteKit(req, res, next);

@@ -253,7 +253,7 @@ router.patch(
     validateData(adminUpdateUserSchema, "body"),
     authentication,
     verifyDevice,
-    authorizationByRole(['Admin']),
+    authorizationByRole(['Admin', 'Staff']),
     async (req, res, next) => {
         const userController = req.container.resolve("userController");
         await userController.adminUpdate(req, res, next);
