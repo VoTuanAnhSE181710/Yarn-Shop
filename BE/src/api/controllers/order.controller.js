@@ -1,4 +1,5 @@
 import { generateVNPayUrl } from "../../utils/vnpayHelper.js";
+import { generateMomoUrl } from "../../utils/momoHelper.js";
 import Address from "../../models/address.js";
 
 export default class OrderController {
@@ -85,10 +86,12 @@ export default class OrderController {
                 },
             });
 
-            // 3. If VNPay, generate payment URL
+            // 3. Generate payment URL
             let payUrl = null;
             if (paymentMethod === "VNPAY" || !paymentMethod) {
                 payUrl = generateVNPayUrl(order._id.toString(), totalPrice, req);
+            } else if (paymentMethod === "MOMO") {
+                payUrl = await generateMomoUrl(order._id.toString(), totalPrice);
             }
 
             return res.status(201).json({
@@ -275,9 +278,11 @@ export default class OrderController {
             const order = await this.orderService.retryPayment(req.params.id, userId);
 
             let payUrl = null;
-            // Generate new VNPay URL if payment method is VNPAY (or default)
+            // Generate new URL depending on payment method
             if (!order.payment.method || order.payment.method === "VNPAY") {
                 payUrl = generateVNPayUrl(order._id.toString(), order.totalPrice, req);
+            } else if (order.payment.method === "MOMO") {
+                payUrl = await generateMomoUrl(order._id.toString(), order.totalPrice);
             }
 
             return res.status(200).json({
