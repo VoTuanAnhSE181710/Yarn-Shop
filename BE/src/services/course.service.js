@@ -40,7 +40,9 @@ class CourseService {
             linkedLessons: course.linkedLessons || [],
             tags: course.tags || [],
             linkedCombo,
+            linkedProduct: (course.linkedProduct || []).map(item => item && item._id ? item : { _id: item.toString(), ...item }),
             creatorId: course.creatorId ? course.creatorId.toString() : null,
+            price: course.price || 0,
             totalDuration: course.totalDuration || 0,
             totalLessons: course.totalLessons || 0,
             averageRating: course.averageRating || 0,
@@ -218,7 +220,7 @@ class CourseService {
             if (enrolledUsers && enrolledUsers.length > 0) {
                 const notifications = enrolledUsers.map(u => ({
                     userId: u._id,
-                    type: "COURSE_UPDATE",
+                    type: "COURSE",
                     title: "Cập nhật khóa học",
                     message: `Khóa học "${updatedCourse.title}" vừa có bài học mới! Hãy vào xem ngay.`,
                     data: { courseId: id }

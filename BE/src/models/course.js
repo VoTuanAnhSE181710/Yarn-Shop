@@ -30,6 +30,10 @@ const courseSchema = new mongoose.Schema({
         type: mongoose.Schema.Types.ObjectId,
         ref: "Kit",
     }],
+    linkedProduct: [{
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Product",
+    }],
     creatorId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
