@@ -135,7 +135,9 @@ export default class OrderController {
             const { validatedItems, itemsPrice } = await this.orderService.calculateOrderTotal(items);
             
             // 2. Map text names to GHN IDs
+            console.log(`[ShippingFee] Mapping address → GHN: province="${pName}" district="${dName}" ward="${wName}"`);
             const mapResult = await this.ghnService.mapAddressToGHN({ provinceName: pName, districtName: dName, wardName: wName });
+            console.log(`[ShippingFee] mapAddressToGHN result:`, JSON.stringify(mapResult));
             
             let shippingFee = 30000; // default fee
             
@@ -145,6 +147,7 @@ export default class OrderController {
                 validatedItems.forEach(item => {
                     cartWeight += (item.weight || 100) * item.quantity;
                 });
+                console.log(`[ShippingFee] districtId=${mapResult.districtId} wardCode=${mapResult.wardCode} weight=${cartWeight}g insurance=${itemsPrice}`);
 
                 const fee = await this.ghnService.calculateShippingFee({
                     to_district_id: mapResult.districtId,
@@ -152,10 +155,10 @@ export default class OrderController {
                     weight: cartWeight,
                     insurance_value: itemsPrice,
                 });
-                
+                console.log(`[ShippingFee] GHN fee result:`, JSON.stringify(fee));
                 shippingFee = fee.total;
             } else {
-                console.warn("mapAddressToGHN failed in preview:", mapResult.message);
+                console.warn(`[ShippingFee] mapAddressToGHN FAILED → using default 30k. Reason: ${mapResult.message}`);
                 // We proceed with the default shippingFee if GHN fails or address can't be mapped
             }
             
