@@ -139,7 +139,7 @@ export default class OrderController {
             const mapResult = await this.ghnService.mapAddressToGHN({ provinceName: pName, districtName: dName, wardName: wName });
             console.log(`[ShippingFee] mapAddressToGHN result:`, JSON.stringify(mapResult));
             
-            let shippingFee = 30000; // default fee
+            let shippingFee = 30000; // default fallback fee
             
             if (mapResult.success) {
                 // Calculate total weight (default to 100g per item if no weight field)
@@ -149,17 +149,36 @@ export default class OrderController {
                 });
                 console.log(`[ShippingFee] districtId=${mapResult.districtId} wardCode=${mapResult.wardCode} weight=${cartWeight}g insurance=${itemsPrice}`);
 
-                const fee = await this.ghnService.calculateShippingFee({
-                    to_district_id: mapResult.districtId,
-                    to_ward_code: mapResult.wardCode,
-                    weight: cartWeight,
-                    insurance_value: itemsPrice,
-                });
-                console.log(`[ShippingFee] GHN fee result:`, JSON.stringify(fee));
-                shippingFee = fee.total;
-            } else {
-                console.warn(`[ShippingFee] mapAddressToGHN FAILED → using default 30k. Reason: ${mapResult.message}`);
-                // We proceed with the default shippingFee if GHN fails or address can't be mapped
+                try {
+                    const fee = await this.ghnService.calculateShippingFee({
+                        to_district_id: mapResult.districtId,
+                        to_ward_code: mapResult.wardCode,
+                        weight: cartWeight,
+                        insurance_value: itemsPrice,
+                    });
+                    console.log(`[ShippingFee] GHN fee result:`, JSON.stringify(fee));
+                    shippingFee = fee.total;
+                } catch (ghnErr) {
+                    console.warn(`[ShippingFee] GHN calculateShippingFee FAILED → falling back. Reason: ${ghnErr.message}`);
+                    mapResult.success = false; // Trigger fallback
+                }
+            }
+            
+            if (!mapResult.success) {
+                console.warn(`[ShippingFee] mapAddressToGHN FAILED or GHN API failed → using fallback. Reason: ${mapResult.message}`);
+                
+                // Fallback to distance-based calculation if lat/lng is available
+                if (lat !== undefined && lng !== undefined) {
+                    const shippingService = req.container.resolve("shippingService");
+                    const quote = await shippingService.calculateQuote({ lat, lng, orderValue: itemsPrice });
+                    
+                    if (quote.shippingFee !== null) {
+                        console.log(`[ShippingFee] Fallback to distance-based fee: ${quote.shippingFee} (distance: ${quote.distanceKm}km)`);
+                        shippingFee = quote.shippingFee;
+                    } else {
+                        console.warn(`[ShippingFee] Distance-based fallback returned null (out of bounds: ${quote.distanceKm}km). Using default 30k.`);
+                    }
+                }
             }
             
             return res.status(200).json({
