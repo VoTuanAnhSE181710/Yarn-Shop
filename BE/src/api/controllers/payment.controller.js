@@ -362,3 +362,125 @@ export const handleMomoIPN = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error" });
     }
 };
+
+// ─────────────────────────────────────────────
+//  5. SEPAY: CREATE PAYMENT LINK (VietQR)
+// ─────────────────────────────────────────────
+export const createSePayPayment = async (req, res) => {
+    try {
+        const { orderId } = req.body;
+        if (!orderId) throw new BadRequestError("Missing orderId");
+
+        const order = await Order.findById(orderId);
+        if (!order) throw new NotFoundError("Order not found");
+
+        const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
+        if (orderUserId !== req.user.userId.toString() && req.user.roleName !== "Admin") {
+            throw new ForbiddenError("Not authorized to create payment for this order");
+        }
+
+        const amount = order.totalPrice;
+        // In SePay, the content must uniquely identify the order.
+        const content = `YARN${orderId.toString().slice(-6).toUpperCase()}`;
+
+        // Save this content to the order so we can verify it in the IPN
+        await Order.findByIdAndUpdate(orderId, {
+            "payment.transactionNo": content // Use transactionNo to temporarily store the expected transfer content
+        });
+
+        const bankAcc = process.env.SEPAY_ACCOUNT || "0123456789";
+        const bankName = process.env.SEPAY_BANK || "MBBank";
+        const payUrl = `https://qr.sepay.vn/img?acc=${bankAcc}&bank=${bankName}&amount=${amount}&des=${content}`;
+        
+        return res.status(200).json({
+            message: "SePay QR link created successfully",
+            payUrl: payUrl
+        });
+    } catch (error) {
+        console.error("SePay create payment error:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};
+
+// ─────────────────────────────────────────────
+//  6. SEPAY: IPN WEBHOOK
+// ─────────────────────────────────────────────
+export const handleSePayIPN = async (req, res) => {
+    try {
+        // Verify API Key forgivingly (accept it in Authorization header with or without 'Apikey ')
+        const authHeader = req.headers['authorization'] || req.headers['x-api-key'] || req.headers['apikey'];
+        const apiKey = process.env.SEPAY_API_KEY;
+        
+        if (!apiKey || !authHeader || !authHeader.includes(apiKey)) {
+            console.error("[SePay] Unauthorized webhook call");
+            return res.status(401).json({ message: "Unauthorized" });
+        }
+
+        const data = req.body;
+        console.log("[SePay] Received webhook:", data);
+
+        if (!data || !data.content) {
+            console.log("[SePay] Ignored transaction: No content provided");
+            return res.status(200).json({ message: "Ignored: No content" });
+        }
+
+        // Extract order ID from content. We expect "YARN" + 6 chars
+        const match = data.content.match(/YARN([A-Z0-9]{6})/i);
+        if (!match) {
+            console.log("[SePay] Ignored transaction: No valid order content found");
+            return res.status(200).json({ message: "Ignored" });
+        }
+
+        const expectedContent = `YARN${match[1].toUpperCase()}`;
+        
+        // Find order with this expected content (stored in transactionNo)
+        const order = await Order.findOne({ 
+            "payment.transactionNo": expectedContent,
+            "payment.status": "PENDING"
+        });
+
+        if (!order) {
+            console.log(`[SePay] Order not found or already paid for content: ${expectedContent}`);
+            return res.status(200).json({ message: "Order not found or already paid" });
+        }
+
+        // Verify amount
+        if (data.transferAmount < order.totalPrice) {
+            console.log(`[SePay] Insufficient amount. Expected ${order.totalPrice}, got ${data.transferAmount}`);
+            return res.status(200).json({ message: "Insufficient amount" });
+        }
+
+        console.log(`[SePay] Payment successful for order: ${order._id}`);
+        const updatedOrder = await Order.findByIdAndUpdate(order._id, {
+            "payment.status": "PAID",
+            "payment.transactionNo": data.referenceCode || data.id,
+            "payment.paidAt": new Date(),
+        }, { new: true });
+
+        const orderService = req.container.resolve("orderService");
+        if (orderService) {
+            await orderService.deductStock(order._id);
+            await orderService.grantPurchasedCourses(order._id);
+        }
+
+        const notificationService = req.container.resolve("notificationService");
+        if (notificationService && updatedOrder) {
+            const orderUserId = updatedOrder.user?._id ? updatedOrder.user._id.toString() : updatedOrder.user.toString();
+            await notificationService.createNotification({
+                type: "ORDER", priority: "NORMAL", title: "Thanh toán thành công",
+                message: `Đơn hàng #${order._id} đã thanh toán thành công qua SePay (Chuyển khoản).`,
+                userId: orderUserId
+            }).catch(console.error);
+            await notificationService.createNotification({
+                type: "ORDER", priority: "NORMAL", title: "Khách đã thanh toán",
+                message: `Khách hàng ${updatedOrder.shippingAddress.fullName} vừa thanh toán đơn ${order._id}. Tổng tiền: ${updatedOrder.totalPrice} VND. Phương thức: Chuyển khoản (SePay).`,
+                targetRole: "Admin"
+            }).catch(console.error);
+        }
+
+        return res.status(200).json({ success: true });
+    } catch (error) {
+        console.error("SePay IPN error:", error);
+        return res.status(500).json({ message: "Internal Server Error" });
+    }
+};

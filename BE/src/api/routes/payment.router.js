@@ -1,5 +1,5 @@
 import express from 'express';
-import { createPayment, createVNPayPayment, handleVNPayIPN, handleMomoIPN } from '../controllers/payment.controller.js';
+import { createPayment, createVNPayPayment, handleVNPayIPN, handleMomoIPN, createSePayPayment, handleSePayIPN } from '../controllers/payment.controller.js';
 import { authentication, authorizationByRole } from '../middlewares/middleware.js';
 
 const router = express.Router();
@@ -177,5 +177,39 @@ router.get('/vnpay-ipn', handleVNPayIPN);
  *     tags: [Payment]
  */
 router.post('/momo/ipn', handleMomoIPN);
+
+/**
+ * @swagger
+ * /payment/sepay-payment:
+ *   post:
+ *     summary: Create SePay VietQR Payment Link
+ *     description: Create a payment request via SePay. Returns a QR code image URL for the user to scan.
+ *     tags: [Payment]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             $ref: '#/components/schemas/PaymentRequest'
+ *     responses:
+ *       200:
+ *         description: SePay payment link created successfully
+ *       400:
+ *         description: Invalid amount
+ *       500:
+ *         description: Internal server error
+ */
+router.post('/sepay-payment', authentication, authorizationByRole(['Admin', 'Cus']), createSePayPayment);
+
+/**
+ * @swagger
+ * /payment/sepay/ipn:
+ *   post:
+ *     summary: SePay IPN Webhook
+ *     tags: [Payment]
+ */
+router.post('/sepay/ipn', handleSePayIPN);
 
 export default router;
