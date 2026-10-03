@@ -1,5 +1,6 @@
 import { generateVNPayUrl } from "../../utils/vnpayHelper.js";
 import { generateMomoUrl } from "../../utils/momoHelper.js";
+import { generateSePayUrl } from "../../utils/sepayHelper.js";
 import Address from "../../models/address.js";
 
 export default class OrderController {
@@ -305,6 +306,8 @@ export default class OrderController {
                 payUrl = generateVNPayUrl(order._id.toString(), order.totalPrice, req);
             } else if (order.payment.method === "MOMO") {
                 payUrl = await generateMomoUrl(order._id.toString(), order.totalPrice);
+            } else if (order.payment.method === "SEPAY") {
+                payUrl = generateSePayUrl(order._id.toString(), order.totalPrice);
             }
 
             return res.status(200).json({

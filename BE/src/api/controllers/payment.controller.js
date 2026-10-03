@@ -3,6 +3,7 @@ import qs from 'qs';
 import moment from 'moment';
 import { verifyVNPaySignature } from '../../utils/vnpayHelper.js';
 import Order from '../../models/order.js';
+import { generateSePayUrl, buildSePayContent } from '../../utils/sepayHelper.js';
 import { ForbiddenError, BadRequestError, NotFoundError } from '../../error/error.js';
 
 // ─────────────────────────────────────────────
@@ -381,24 +382,32 @@ export const createSePayPayment = async (req, res) => {
 
         const amount = order.totalPrice;
         // In SePay, the content must uniquely identify the order.
-        const content = `YARN${orderId.toString().slice(-6).toUpperCase()}`;
+        const content = buildSePayContent(orderId);
+
+        // Build the QR link first: if SePay env vars are missing this throws before we touch the DB
+        const payUrl = generateSePayUrl(orderId, amount);
 
         // Save this content to the order so we can verify it in the IPN
         await Order.findByIdAndUpdate(orderId, {
             "payment.transactionNo": content // Use transactionNo to temporarily store the expected transfer content
         });
 
-        const bankAcc = process.env.SEPAY_ACCOUNT || "0123456789";
-        const bankName = process.env.SEPAY_BANK || "MBBank";
-        const payUrl = `https://qr.sepay.vn/img?acc=${bankAcc}&bank=${bankName}&amount=${amount}&des=${content}`;
-        
         return res.status(200).json({
             message: "SePay QR link created successfully",
             payUrl: payUrl
         });
     } catch (error) {
-        console.error("SePay create payment error:", error);
-        return res.status(500).json({ message: "Internal Server Error" });
+        // Bad orderId format (e.g. not a valid ObjectId) is a client error, not a server error
+        if (error.name === "CastError") {
+            error = new BadRequestError(`Invalid orderId: ${req.body?.orderId}`);
+        }
+        // ApiError (400/403/404...) carries its own statusCode; anything else is unexpected -> 500
+        const statusCode = error.statusCode || 500;
+        // Full details always go to the server log
+        console.error(`[SePay] createSePayPayment failed (orderId=${req.body?.orderId}, user=${req.user?.userId}, status=${statusCode}):`, error);
+        // In production, hide internal details of unexpected (5xx) errors from the client
+        const hideDetails = statusCode >= 500 && process.env.NODE_ENV === "production";
+        return res.status(statusCode).json({ message: hideDetails ? "Internal server error" : (error.message || "Internal server error") });
     }
 };
 

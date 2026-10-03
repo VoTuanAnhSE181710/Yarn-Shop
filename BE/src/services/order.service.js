@@ -1,6 +1,7 @@
 import Product from "../models/product.js";
 import Kit from "../models/kit.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
+import { buildSePayContent } from "../utils/sepayHelper.js";
 
 export default class OrderService {
     constructor({ orderRepository, notificationService, logRepository, ghnService }) {
@@ -430,13 +431,19 @@ export default class OrderService {
             throw new BadRequestError("Order is already paid");
         }
 
-        const updatedOrder = await this.orderRepository.update(id, {
+        const retryUpdate = {
             orderStatus: "PENDING",
             "payment.status": "PENDING",
             isCancelRequested: false,
             cancelReason: null,
             cancelRequestedAt: null,
-        });
+        };
+        // SePay webhook matches the order by the expected transfer content stored in transactionNo
+        if (order.payment && order.payment.method === "SEPAY") {
+            retryUpdate["payment.transactionNo"] = buildSePayContent(id);
+        }
+
+        const updatedOrder = await this.orderRepository.update(id, retryUpdate);
 
         if (this.logRepository) {
             await this.logRepository.saveLog({

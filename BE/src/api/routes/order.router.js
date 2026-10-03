@@ -62,7 +62,7 @@ const router = express.Router();
  *           $ref: '#/components/schemas/ShippingAddress'
  *         paymentMethod:
  *           type: string
- *           enum: [COD, VNPAY]
+ *           enum: [COD, VNPAY, MOMO, SEPAY]
  *           default: VNPAY
  *     Order:
  *       type: object
