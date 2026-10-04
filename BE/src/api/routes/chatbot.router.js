@@ -8,6 +8,7 @@ import {
   chatbotMessageSchema,
   chatbotRecommendationSchema,
   chatbotSessionSchema,
+  productChatSchema,
 } from "../../validators/chatbot.validator.js";
 import { validateData, optionalAuthentication } from "../middlewares/middleware.js";
 
@@ -136,6 +137,15 @@ router.post(
   async (req, res, next) => {
     const controller = req.container.resolve("chatbotController");
     await controller.message(req, res, next);
+  },
+);
+
+router.post(
+  "/chat",
+  validateData(productChatSchema),
+  async (req, res, next) => {
+    const controller = req.container.resolve("chatbotController");
+    await controller.productChat(req, res, next);
   },
 );
 

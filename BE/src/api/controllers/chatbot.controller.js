@@ -1,8 +1,10 @@
 class ChatbotController {
   #chatbotService;
+  #productChatService;
 
-  constructor({ chatbotService }) {
+  constructor({ chatbotService, productChatService }) {
     this.#chatbotService = chatbotService;
+    this.#productChatService = productChatService;
   }
 
   health = async (_req, res, next) => {
@@ -90,6 +92,15 @@ class ChatbotController {
         userId: req.user?.userId || null,
       });
       res.status(202).json(result);
+    } catch (error) {
+      next(error);
+    }
+  };
+
+  productChat = async (req, res, next) => {
+    try {
+      const result = await this.#productChatService.sendMessage(req.body);
+      res.status(200).json(result);
     } catch (error) {
       next(error);
     }

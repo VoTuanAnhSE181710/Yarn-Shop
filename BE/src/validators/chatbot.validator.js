@@ -11,6 +11,17 @@ export const chatbotSessionSchema = Joi.object({
   sessionId: sessionId.optional(),
 }).unknown(false);
 
+export const productChatSchema = Joi.object({
+  conversationId: sessionId.optional(),
+  message: Joi.string().trim().min(1).max(2000).required(),
+  contextProductIds: Joi.array()
+    .items(
+      Joi.string().pattern(/^[a-f\d]{24}$/i),
+    )
+    .max(10)
+    .default([]),
+}).unknown(false);
+
 export const chatbotMessageSchema = Joi.object({
   sessionId: sessionId.optional(),
   message: Joi.string().allow("").max(2000).default(""),

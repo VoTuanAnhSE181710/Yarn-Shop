@@ -30,6 +30,7 @@ enabling the contact and handoff features in production.
 | GET | `/api/v1/chatbot/menu` | Get menu and select-flow definitions |
 | POST | `/api/v1/chatbot/sessions` | Start a chat session |
 | POST | `/api/v1/chatbot/messages` | Send a guided action or free text |
+| POST | `/api/v1/chatbot/chat` | Product-grounded natural-language chat |
 | POST | `/api/v1/chatbot/recommendations/learn` | Query courses and videos |
 | POST | `/api/v1/chatbot/recommendations/shop` | Rank in-stock products |
 | POST | `/api/v1/chatbot/recommendations/diy` | Query kits and DIY posts |
@@ -104,3 +105,26 @@ node --test test/chatbot.service.test.js
 
 The tests use an in-memory fake repository and do not need MongoDB, Redis, or a
 Gemini key.
+
+## Product chat
+
+`POST /api/v1/chatbot/chat` accepts a natural-language `message`, an optional
+`conversationId`, and up to ten `contextProductIds` from the previous reply.
+Product search, category, and price filters use the existing `ProductService`;
+follow-up questions reload the referenced product by ID before returning its
+current price and stock. Gemini is optional and uses `GEMINI_API_KEY` and
+`GEMINI_MODEL` on the backend only. When it is not configured, the service uses
+a bounded deterministic Vietnamese query parser.
+
+The frontend calls this API at the `VITE_API_BASE_URL` origin (default
+`http://localhost:3000/api/v1`). For example:
+
+```http
+POST http://localhost:3000/api/v1/chatbot/chat
+Content-Type: application/json
+
+{
+  "conversationId": "chat-session-001",
+  "message": "Kể tôi 10 sản phẩm"
+}
+```

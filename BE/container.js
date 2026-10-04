@@ -53,6 +53,7 @@ import LogService from "./src/services/log.service.js";
 import GeocodingService from "./src/services/geocoding.service.js";
 import ShippingService from "./src/services/shipping.service.js";
 import ChatbotService from "./src/services/chatbot.service.js";
+import ProductChatService from "./src/services/productChat.service.js";
 import AiAgentService from "./src/modules/ai-agent/aiAgent.service.js";
 import AgentToolRegistry from "./src/modules/ai-agent/tools/agentToolRegistry.js";
 import GeminiPlanner from "./src/modules/ai-agent/providers/geminiPlanner.js";
@@ -244,6 +245,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     chatbotService: asClass(ChatbotService, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    productChatService: asClass(ProductChatService, {
       lifetime: Lifetime.SCOPED,
     }),
     geminiPlanner: asClass(GeminiPlanner, {
