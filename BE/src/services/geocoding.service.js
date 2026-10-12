@@ -5,10 +5,18 @@ import {
 } from "../config/shipping.js";
 import { BadRequestError, ExternalServiceError } from "../error/error.js";
 
+// Nominatim công cộng hay trả 429 với IP dùng chung của các host cloud (Render...).
+// Cache kết quả theo toạ độ (làm tròn ~11m) và thử lại 1 lần khi bị 429.
+const REVERSE_CACHE_TTL_MS = 24 * 60 * 60 * 1000;
+const REVERSE_CACHE_MAX = 500;
+const reverseCache = new Map();
+
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export default class GeocodingService {
-  async reverseGeocode({ lat, lng }) {
-    try {
-      const response = await axios.get(`${GEOCODING_API_URL}/reverse`, {
+  async requestNominatimReverse({ lat, lng }) {
+    const call = () =>
+      axios.get(`${GEOCODING_API_URL}/reverse`, {
         params: {
           format: "jsonv2",
           lat,
@@ -23,6 +31,28 @@ export default class GeocodingService {
         timeout: 8000,
       });
 
+    try {
+      return await call();
+    } catch (error) {
+      if (error.response?.status === 429) {
+        console.warn("[Geocoding] Nominatim 429, retrying once...");
+        await sleep(1500);
+        return call();
+      }
+      throw error;
+    }
+  }
+
+  async reverseGeocode({ lat, lng }) {
+    const cacheKey = `${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`;
+    const cached = reverseCache.get(cacheKey);
+    if (cached && cached.expiresAt > Date.now()) {
+      return cached.value;
+    }
+
+    try {
+      const response = await this.requestNominatimReverse({ lat, lng });
+
       if (!response.data?.display_name) {
         throw new BadRequestError(
           "Không tìm thấy địa chỉ tương ứng với tọa độ này.",
@@ -30,7 +60,7 @@ export default class GeocodingService {
       }
 
       const address = response.data.address || {};
-      return {
+      const result = {
         displayName: response.data.display_name,
         houseNumber: address.house_number || null,
         road:
@@ -53,6 +83,15 @@ export default class GeocodingService {
         lat: Number(response.data.lat),
         lng: Number(response.data.lon),
       };
+
+      if (reverseCache.size >= REVERSE_CACHE_MAX) {
+        reverseCache.delete(reverseCache.keys().next().value);
+      }
+      reverseCache.set(cacheKey, {
+        value: result,
+        expiresAt: Date.now() + REVERSE_CACHE_TTL_MS,
+      });
+      return result;
     } catch (error) {
       if (error.statusCode) {
         throw error;

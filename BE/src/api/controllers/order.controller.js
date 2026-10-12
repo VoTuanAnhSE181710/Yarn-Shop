@@ -33,14 +33,23 @@ export default class OrderController {
             let { provinceName: pName, districtName: dName, wardName: wName, lat, lng } = shippingAddress;
 
             if (lat !== undefined && lng !== undefined && (!pName || !dName || !wName)) {
-                const shippingService = req.container.resolve("shippingService");
-                const geocoded = await shippingService.reverseGeocode({ lat, lng });
-                pName = pName || geocoded.province;
-                dName = dName || geocoded.district;
-                wName = wName || geocoded.commune;
-                resolvedAddress.provinceName = pName;
-                resolvedAddress.districtName = dName;
-                resolvedAddress.wardName = wName;
+                try {
+                    const shippingService = req.container.resolve("shippingService");
+                    const geocoded = await shippingService.reverseGeocode({ lat, lng });
+                    pName = pName || geocoded.province;
+                    dName = dName || geocoded.district;
+                    wName = wName || geocoded.commune;
+                    resolvedAddress.provinceName = pName;
+                    resolvedAddress.districtName = dName;
+                    resolvedAddress.wardName = wName;
+                } catch (geoError) {
+                    // Không để lỗi tra địa chỉ (vd Nominatim 429) làm hỏng việc đặt hàng
+                    console.warn("[Order] Reverse geocode failed, continuing without GHN mapping:", geoError.message);
+                }
+            }
+
+            if (!pName || !dName || !wName) {
+                console.warn(`[Order] Missing address names, skip GHN mapping (province="${pName}" district="${dName}" ward="${wName}")`);
             }
 
             if (pName && dName && wName) {
