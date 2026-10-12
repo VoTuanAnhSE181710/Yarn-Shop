@@ -240,6 +240,32 @@ class GHNService {
     }
 
     /**
+     * Tìm xã/phường theo tên (khớp chính xác sau khi chuẩn hoá) trong tất cả quận/huyện của một tỉnh.
+     * Dùng khi tên quận/huyện từ Map không khớp GHN.
+     * @returns {{districtId:number, wardCode:string}|null}
+     */
+    async findWardAcrossDistricts(districts, candidateNames) {
+        const targets = candidateNames.map(normalizeAddressString).filter(Boolean);
+        if (!targets.length) return null;
+
+        const results = await Promise.all(districts.map(async (d) => {
+            try {
+                const wards = await this.getWards(d.districtId);
+                const w = wards.find(x => targets.includes(normalizeAddressString(x.wardName)));
+                return w ? { districtId: d.districtId, wardCode: w.wardCode } : null;
+            } catch (err) {
+                return null;
+            }
+        }));
+
+        const matches = results.filter(Boolean);
+        if (matches.length > 1) {
+            console.warn(`[GHN] Ward "${candidateNames.join(" / ")}" matches ${matches.length} districts, using the first one`);
+        }
+        return matches[0] || null;
+    }
+
+    /**
      * Map raw address strings (from Map APIs) to GHN IDs
      */
     async mapAddressToGHN({ provinceName, districtName, wardName }) {
@@ -265,6 +291,17 @@ class GHNService {
                 return dNorm === normDist || dNorm.includes(normDist) || normDist.includes(dNorm);
             });
             if (!matchedDistrict) {
+                // Map/Nominatim thường trả tên xã/phường vào chỗ "quận/huyện" (địa chỉ 2 cấp sau 2025),
+                // nên thử tìm xã/phường đó trong tất cả quận/huyện của tỉnh.
+                const found = await this.findWardAcrossDistricts(districts, [wardName, districtName]);
+                if (found) {
+                    return {
+                        success: true,
+                        provinceId: matchedProvince.provinceId,
+                        districtId: found.districtId,
+                        wardCode: found.wardCode
+                    };
+                }
                 return { 
                     success: false, 
                     message: `Could not match district: ${districtName} in ${matchedProvince.provinceName}`, 
@@ -279,6 +316,15 @@ class GHNService {
                 return wNorm === normWard || wNorm.includes(normWard) || normWard.includes(wNorm);
             });
             if (!matchedWard) {
+                const found = await this.findWardAcrossDistricts(districts, [wardName]);
+                if (found) {
+                    return {
+                        success: true,
+                        provinceId: matchedProvince.provinceId,
+                        districtId: found.districtId,
+                        wardCode: found.wardCode
+                    };
+                }
                 return { 
                     success: false, 
                     message: `Could not match ward: ${wardName} in ${matchedDistrict.districtName}`, 
