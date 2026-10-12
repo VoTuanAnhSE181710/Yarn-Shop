@@ -28,6 +28,45 @@ function normalizeAddressString(str) {
     return normalized.replace(/[^a-z0-9 ]/g, "").replace(/\s+/g, " ").trim();
 }
 
+// Sau sáp nhập tỉnh 2025, Map (OSM) trả tên tỉnh MỚI nhưng GHN vẫn dùng tỉnh CŨ.
+// key: tên tỉnh mới (đã chuẩn hoá) -> các tỉnh cũ (đã chuẩn hoá) được gộp vào.
+const MERGED_PROVINCES = {
+    "tuyen quang": ["ha giang"],
+    "lao cai": ["yen bai"],
+    "thai nguyen": ["bac kan"],
+    "phu tho": ["vinh phuc", "hoa binh"],
+    "bac ninh": ["bac giang"],
+    "hung yen": ["thai binh"],
+    "hai phong": ["hai duong"],
+    "ninh binh": ["ha nam", "nam dinh"],
+    "quang tri": ["quang binh"],
+    "da nang": ["quang nam"],
+    "quang ngai": ["kon tum"],
+    "gia lai": ["binh dinh"],
+    "khanh hoa": ["ninh thuan"],
+    "lam dong": ["dak nong", "binh thuan"],
+    "dak lak": ["phu yen"],
+    "ho chi minh": ["binh duong", "ba ria vung tau"],
+    "dong nai": ["binh phuoc"],
+    "tay ninh": ["long an"],
+    "can tho": ["soc trang", "hau giang"],
+    "vinh long": ["ben tre", "tra vinh"],
+    "dong thap": ["tien giang"],
+    "ca mau": ["bac lieu"],
+    "an giang": ["kien giang"],
+};
+
+// Cache dữ liệu danh mục GHN (ít thay đổi) để tránh gọi lặp lại khi khớp địa chỉ.
+const MASTER_CACHE_TTL_MS = 60 * 60 * 1000;
+const masterCache = new Map();
+async function cachedMaster(key, loader) {
+    const hit = masterCache.get(key);
+    if (hit && hit.expiresAt > Date.now()) return hit.value;
+    const value = await loader();
+    masterCache.set(key, { value, expiresAt: Date.now() + MASTER_CACHE_TTL_MS });
+    return value;
+}
+
 class GHNService {
     /**
      * Calculate shipping fee via GHN API
@@ -250,7 +289,7 @@ class GHNService {
 
         const results = await Promise.all(districts.map(async (d) => {
             try {
-                const wards = await this.getWards(d.districtId);
+                const wards = await cachedMaster(`wards:${d.districtId}`, () => this.getWards(d.districtId));
                 const w = wards.find(x => targets.includes(normalizeAddressString(x.wardName)));
                 return w ? { districtId: d.districtId, wardCode: w.wardCode } : null;
             } catch (err) {
@@ -266,16 +305,68 @@ class GHNService {
     }
 
     /**
+     * Khớp quận/huyện + xã/phường trong MỘT tỉnh của GHN.
+     */
+    async matchWithinProvince(province, { districtName, wardName }) {
+        const normDist = normalizeAddressString(districtName);
+        const normWard = normalizeAddressString(wardName);
+
+        const districts = await cachedMaster(`districts:${province.provinceId}`, () => this.getDistricts(province.provinceId));
+        const matchedDistrict = districts.find(d => {
+            const dNorm = normalizeAddressString(d.districtName);
+            return dNorm === normDist || dNorm.includes(normDist) || normDist.includes(dNorm);
+        });
+
+        if (!matchedDistrict) {
+            // Map/Nominatim thường trả tên xã/phường vào chỗ "quận/huyện" (địa chỉ 2 cấp sau 2025),
+            // nên thử tìm xã/phường đó trong tất cả quận/huyện của tỉnh.
+            const found = await this.findWardAcrossDistricts(districts, [wardName, districtName]);
+            if (found) {
+                return { success: true, provinceId: province.provinceId, districtId: found.districtId, wardCode: found.wardCode };
+            }
+            return {
+                success: false,
+                message: `Could not match district: ${districtName} in ${province.provinceName}`,
+                provinceId: province.provinceId
+            };
+        }
+
+        const wards = await cachedMaster(`wards:${matchedDistrict.districtId}`, () => this.getWards(matchedDistrict.districtId));
+        const matchedWard = wards.find(w => {
+            const wNorm = normalizeAddressString(w.wardName);
+            return wNorm === normWard || wNorm.includes(normWard) || normWard.includes(wNorm);
+        });
+
+        if (!matchedWard) {
+            const found = await this.findWardAcrossDistricts(districts, [wardName]);
+            if (found) {
+                return { success: true, provinceId: province.provinceId, districtId: found.districtId, wardCode: found.wardCode };
+            }
+            return {
+                success: false,
+                message: `Could not match ward: ${wardName} in ${matchedDistrict.districtName}`,
+                provinceId: province.provinceId,
+                districtId: matchedDistrict.districtId
+            };
+        }
+
+        return {
+            success: true,
+            provinceId: province.provinceId,
+            districtId: matchedDistrict.districtId,
+            wardCode: matchedWard.wardCode
+        };
+    }
+
+    /**
      * Map raw address strings (from Map APIs) to GHN IDs
      */
     async mapAddressToGHN({ provinceName, districtName, wardName }) {
         try {
             const normProv = normalizeAddressString(provinceName);
-            const normDist = normalizeAddressString(districtName);
-            const normWard = normalizeAddressString(wardName);
 
             // 1. Find Province
-            const provinces = await this.getProvinces();
+            const provinces = await cachedMaster("provinces", () => this.getProvinces());
             const matchedProvince = provinces.find(p => {
                 const pNorm = normalizeAddressString(p.provinceName);
                 return pNorm === normProv || pNorm.includes(normProv) || normProv.includes(pNorm);
@@ -284,61 +375,22 @@ class GHNService {
                 return { success: false, message: `Could not match province: ${provinceName}` };
             }
 
-            // 2. Find District
-            const districts = await this.getDistricts(matchedProvince.provinceId);
-            const matchedDistrict = districts.find(d => {
-                const dNorm = normalizeAddressString(d.districtName);
-                return dNorm === normDist || dNorm.includes(normDist) || normDist.includes(dNorm);
-            });
-            if (!matchedDistrict) {
-                // Map/Nominatim thường trả tên xã/phường vào chỗ "quận/huyện" (địa chỉ 2 cấp sau 2025),
-                // nên thử tìm xã/phường đó trong tất cả quận/huyện của tỉnh.
-                const found = await this.findWardAcrossDistricts(districts, [wardName, districtName]);
-                if (found) {
-                    return {
-                        success: true,
-                        provinceId: matchedProvince.provinceId,
-                        districtId: found.districtId,
-                        wardCode: found.wardCode
-                    };
-                }
-                return { 
-                    success: false, 
-                    message: `Could not match district: ${districtName} in ${matchedProvince.provinceName}`, 
-                    provinceId: matchedProvince.provinceId 
-                };
+            // 2. Tỉnh khớp tên trước, rồi tới các tỉnh cũ đã sáp nhập vào nó (GHN vẫn dùng tỉnh cũ)
+            const candidates = [matchedProvince];
+            const matchedNorm = normalizeAddressString(matchedProvince.provinceName);
+            for (const oldName of MERGED_PROVINCES[matchedNorm] || []) {
+                const old = provinces.find(p => normalizeAddressString(p.provinceName) === oldName);
+                if (old && old.provinceId !== matchedProvince.provinceId) candidates.push(old);
             }
 
-            // 3. Find Ward
-            const wards = await this.getWards(matchedDistrict.districtId);
-            const matchedWard = wards.find(w => {
-                const wNorm = normalizeAddressString(w.wardName);
-                return wNorm === normWard || wNorm.includes(normWard) || normWard.includes(wNorm);
-            });
-            if (!matchedWard) {
-                const found = await this.findWardAcrossDistricts(districts, [wardName]);
-                if (found) {
-                    return {
-                        success: true,
-                        provinceId: matchedProvince.provinceId,
-                        districtId: found.districtId,
-                        wardCode: found.wardCode
-                    };
-                }
-                return { 
-                    success: false, 
-                    message: `Could not match ward: ${wardName} in ${matchedDistrict.districtName}`, 
-                    provinceId: matchedProvince.provinceId, 
-                    districtId: matchedDistrict.districtId 
-                };
+            // 3. Find District + Ward trong từng tỉnh ứng viên
+            let firstFailure = null;
+            for (const province of candidates) {
+                const result = await this.matchWithinProvince(province, { districtName, wardName });
+                if (result.success) return result;
+                firstFailure = firstFailure || result;
             }
-
-            return {
-                success: true,
-                provinceId: matchedProvince.provinceId,
-                districtId: matchedDistrict.districtId,
-                wardCode: matchedWard.wardCode
-            };
+            return firstFailure;
         } catch (error) {
             throw new Error(`Mapping failed: ${error.message}`);
         }
