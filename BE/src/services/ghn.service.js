@@ -283,14 +283,21 @@ class GHNService {
      * Dùng khi tên quận/huyện từ Map không khớp GHN.
      * @returns {{districtId:number, wardCode:string}|null}
      */
-    async findWardAcrossDistricts(districts, candidateNames) {
+    async findWardAcrossDistricts(districts, candidateNames, { allowPrefix = false } = {}) {
         const targets = candidateNames.map(normalizeAddressString).filter(Boolean);
         if (!targets.length) return null;
+
+        // allowPrefix: phường/xã mới sau sáp nhập thường gộp từ nhiều phường cũ
+        // (vd "Phước Long" <- "Phước Long A" + "Phước Long B"), nên chấp nhận tên GHN bắt đầu bằng tên đó.
+        const isMatch = (wardName) => {
+            const n = normalizeAddressString(wardName);
+            return targets.some(t => n === t || (allowPrefix && n.startsWith(t + " ")));
+        };
 
         const results = await Promise.all(districts.map(async (d) => {
             try {
                 const wards = await cachedMaster(`wards:${d.districtId}`, () => this.getWards(d.districtId));
-                const w = wards.find(x => targets.includes(normalizeAddressString(x.wardName)));
+                const w = wards.find(x => isMatch(x.wardName));
                 return w ? { districtId: d.districtId, wardCode: w.wardCode } : null;
             } catch (err) {
                 return null;
@@ -389,6 +396,15 @@ class GHNService {
                 const result = await this.matchWithinProvince(province, { districtName, wardName });
                 if (result.success) return result;
                 firstFailure = firstFailure || result;
+            }
+
+            // 4. Lượt 2: không có tên khớp chính xác ở đâu -> chấp nhận phường cũ có tên bắt đầu bằng tên phường mới
+            for (const province of candidates) {
+                const districts = await cachedMaster(`districts:${province.provinceId}`, () => this.getDistricts(province.provinceId));
+                const found = await this.findWardAcrossDistricts(districts, [wardName], { allowPrefix: true });
+                if (found) {
+                    return { success: true, provinceId: province.provinceId, districtId: found.districtId, wardCode: found.wardCode };
+                }
             }
             return firstFailure;
         } catch (error) {
