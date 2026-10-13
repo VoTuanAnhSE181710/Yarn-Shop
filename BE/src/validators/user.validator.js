@@ -3,6 +3,19 @@ import JoiDate from '@joi/date'
 import mongoose from "mongoose";
 const Joi = JoiBase.extend(JoiDate);
 
+// Structured address from the profile form (GHN dropdowns or map picker).
+// Names are required; GHN IDs and coordinates are optional. null clears it.
+const addressLocationSchema = Joi.object({
+    provinceId: Joi.number().integer().allow(null).optional(),
+    provinceName: Joi.string().trim().required(),
+    districtId: Joi.number().integer().allow(null).optional(),
+    districtName: Joi.string().trim().required(),
+    wardCode: Joi.string().trim().allow(null).optional(),
+    wardName: Joi.string().trim().required(),
+    lat: Joi.number().min(-90).max(90).allow(null).optional(),
+    lng: Joi.number().min(-180).max(180).allow(null).optional(),
+}).and('lat', 'lng').allow(null);
+
 const loginSchema = Joi.object({
     username: Joi.string()
                 .optional(),
@@ -65,6 +78,7 @@ const updateUserSchema = Joi.object({
         email: Joi.string().email().optional(),
         fullName: Joi.string().min(3).optional(),
         address: Joi.string().optional(),
+        addressLocation: addressLocationSchema.optional(),
         phone: Joi.string().pattern(/^0[0-9]{9}$/).optional(),
         gender: Joi.string().valid('MALE', 'FEMALE').messages({
             'any.only': 'Gender must be either MALE or FEMALE.'
@@ -173,6 +187,7 @@ const adminUpdateUserSchema = Joi.object({
         email: Joi.string().email().optional(),
         fullName: Joi.string().min(3).optional(),
         address: Joi.string().optional(),
+        addressLocation: addressLocationSchema.optional(),
         phone: Joi.string().pattern(/^0[0-9]{9}$/).optional(),
         gender: Joi.string().valid('MALE', 'FEMALE').messages({
             'any.only': 'Gender must be either MALE or FEMALE.'

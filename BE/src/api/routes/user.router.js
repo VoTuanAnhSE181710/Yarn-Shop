@@ -10,7 +10,7 @@ const router = express.Router();
  * /users/{queryUserId}:
  *   patch:
  *     summary: Update user data (self only)
- *     description: Update user information such as email, fullName, phone, address, gender, and date of birth. Users can only update their own data. The queryUserId in the path must match the authenticated user's ID.
+ *     description: Update user information such as email, fullName, phone, address, addressLocation (province/district/ward + map lat/lng), gender, and date of birth. Users can only update their own data. The queryUserId in the path must match the authenticated user's ID.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -188,7 +188,7 @@ router.patch(
  *     summary: Admin/Staff update user data
  *     description: |
  *       Admin or Staff can update any user's data except role and status (those have dedicated endpoints).
- *       Updatable fields: username, email, fullName, phone, address, gender, dateOfBirth, subscription.
+ *       Updatable fields: username, email, fullName, phone, address, addressLocation, gender, dateOfBirth, subscription.
  *     tags: [Users]
  *     security:
  *       - bearerAuth: []
@@ -227,6 +227,8 @@ router.patch(
  *                   address:
  *                     type: string
  *                     example: '123 Main St'
+ *                   addressLocation:
+ *                     $ref: '#/components/schemas/AddressLocation'
  *                   gender:
  *                     type: string
  *                     enum: [MALE, FEMALE]

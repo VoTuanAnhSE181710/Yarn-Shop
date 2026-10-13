@@ -46,6 +46,22 @@ const userSchema = new mongoose.Schema({
         type: String,
         required: function() { return this.authProvider === 'local'; }
     },
+    // Structured address picked from GHN dropdowns or the map picker.
+    // `address` above stays the street/detail line (số nhà, tên đường).
+    addressLocation: {
+        type: {
+            provinceId: { type: Number, default: null },
+            provinceName: { type: String, default: null },
+            districtId: { type: Number, default: null },
+            districtName: { type: String, default: null },
+            wardCode: { type: String, default: null },
+            wardName: { type: String, default: null },
+            lat: { type: Number, default: null },
+            lng: { type: Number, default: null },
+        },
+        default: null,
+        _id: false,
+    },
     avatar: {
         type: {
             url: { type: String, default: null },

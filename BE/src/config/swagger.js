@@ -72,6 +72,22 @@ const options = {
                         }
                     }
                 },
+                AddressLocation: {
+                    type: 'object',
+                    nullable: true,
+                    description: 'Structured address from GHN dropdowns or map picker. Send null to clear.',
+                    required: ['provinceName', 'districtName', 'wardName'],
+                    properties: {
+                        provinceId: { type: 'number', nullable: true, example: 202 },
+                        provinceName: { type: 'string', example: 'Hồ Chí Minh' },
+                        districtId: { type: 'number', nullable: true, example: 1442 },
+                        districtName: { type: 'string', example: 'Quận 1' },
+                        wardCode: { type: 'string', nullable: true, example: '20109' },
+                        wardName: { type: 'string', example: 'Phường Bến Nghé' },
+                        lat: { type: 'number', nullable: true, example: 10.7769 },
+                        lng: { type: 'number', nullable: true, example: 106.7009 }
+                    }
+                },
                 User: {
                     type: 'object',
                     properties: {
@@ -99,6 +115,9 @@ const options = {
                         address: {
                             type: 'string',
                             example: '123 Street'
+                        },
+                        addressLocation: {
+                            $ref: '#/components/schemas/AddressLocation'
                         },
                         gender: {
                             type: 'string',
@@ -317,6 +336,9 @@ const options = {
                                 address: {
                                     type: 'string',
                                     example: '456 New Street'
+                                },
+                                addressLocation: {
+                                    $ref: '#/components/schemas/AddressLocation'
                                 },
                                 phone: {
                                     type: 'string',
