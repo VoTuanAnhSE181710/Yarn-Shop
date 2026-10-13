@@ -194,11 +194,13 @@ class AuthService {
             await User.findByIdAndUpdate(existingUser.userId || existingUser._id, { authProvider: 'google' });
         }
 
+        // Token phải có roleName/roleId/fullName giống đăng nhập thường,
+        // nếu không authorizationByRole sẽ trả 403 cho tài khoản Google.
         const { accessToken, refreshToken, deviceId, jti } = this.#tokenService.generateToken({
             userId: existingUser.userId || existingUser._id,
-            roleId: existingUser.roleId,
-            status: existingUser.status,
-            subscription: existingUser.subscription || "Freemium",
+            fullName: existingUser.fullName,
+            roleName: existingUser.roleId.roleName,
+            roleId: existingUser.roleId._id,
         });
 
         await this.#logRepository.saveLog({
