@@ -2,6 +2,7 @@ import { generateVNPayUrl } from "../../utils/vnpayHelper.js";
 import { generateMomoUrl } from "../../utils/momoHelper.js";
 import { generateSePayUrl } from "../../utils/sepayHelper.js";
 import Address from "../../models/address.js";
+import User from "../../models/user.js";
 
 export default class OrderController {
     constructor({ orderService, ghnService }) {
@@ -10,17 +11,58 @@ export default class OrderController {
     }
 
     /**
+     * Địa chỉ giao hàng của đơn: dữ liệu FE gửi lên được ưu tiên, phần còn thiếu lấy từ hồ sơ người dùng.
+     * - Không gửi shippingAddress -> dùng toàn bộ địa chỉ trong hồ sơ (họ tên, SĐT, địa chỉ chi tiết, tỉnh/huyện/xã, toạ độ).
+     * - Có gửi vị trí (tên tỉnh/huyện/xã hoặc lat/lng) -> giữ đúng vị trí đó, chỉ bổ sung họ tên, SĐT,
+     *   địa chỉ chi tiết còn trống (không trộn vị trí của hồ sơ với vị trí khác).
+     */
+    resolveShippingAddress = async (userId, input) => {
+        const CONTACT_KEYS = ["fullName", "phone", "address"];
+        const LOCATION_KEYS = ["provinceName", "districtName", "wardName", "provinceId", "districtId", "wardCode", "lat", "lng"];
+        const given = (v) => v !== undefined && v !== null && v !== "";
+        const pick = (obj, keys) =>
+            Object.fromEntries(keys.filter((k) => given(obj?.[k])).map((k) => [k, obj[k]]));
+
+        const profile = await User.findById(userId)
+            .select("fullName phone address addressLocation")
+            .lean();
+        const hasInputLocation = LOCATION_KEYS.some((k) => given(input?.[k]));
+
+        return {
+            ...pick(profile, CONTACT_KEYS),
+            ...(hasInputLocation ? {} : pick(profile?.addressLocation, LOCATION_KEYS)),
+            ...pick(input, [...CONTACT_KEYS, ...LOCATION_KEYS]),
+        };
+    };
+
+    /**
      * Create order and optionally generate VNPay payment URL
      */
     create = async (req, res, next) => {
         try {
-            const { items, kits, shippingAddress, paymentMethod } = req.body;
+            const { items, kits, paymentMethod } = req.body;
 
             if ((!items || items.length === 0) && (!kits || kits.length === 0)) {
                 return res.status(400).json({ message: "Cart is empty" });
             }
-            if (!shippingAddress) {
-                return res.status(400).json({ message: "Shipping address is required" });
+
+            // Địa chỉ: lấy từ FE gửi lên, phần thiếu (hoặc toàn bộ nếu không gửi) lấy từ hồ sơ người dùng
+            const shippingAddress = await this.resolveShippingAddress(
+                req.user.userId || req.user._id,
+                req.body.shippingAddress,
+            );
+            if (!shippingAddress.fullName || !shippingAddress.phone) {
+                return res.status(400).json({
+                    message: "Thiếu họ tên hoặc số điện thoại người nhận. Vui lòng cập nhật hồ sơ hoặc nhập thông tin giao hàng.",
+                });
+            }
+            const hasLocation =
+                (shippingAddress.provinceName && shippingAddress.districtName && shippingAddress.wardName) ||
+                (shippingAddress.lat !== undefined && shippingAddress.lng !== undefined);
+            if (!req.body.shippingAddress && !hasLocation) {
+                return res.status(400).json({
+                    message: "Hồ sơ chưa có địa chỉ giao hàng. Vui lòng cập nhật địa chỉ trong hồ sơ hoặc nhập địa chỉ giao hàng.",
+                });
             }
 
             // 1. Calculate total from DB (secure, prevents price manipulation)
@@ -119,10 +161,16 @@ export default class OrderController {
      */
     calculateShippingFee = async (req, res, next) => {
         try {
-            const { items, provinceName, districtName, wardName, lat, lng } = req.body;
+            let { items, provinceName, districtName, wardName, lat, lng } = req.body;
 
             if (!items || items.length === 0) {
                 return res.status(400).json({ message: "Cart is empty" });
+            }
+
+            // Không gửi địa chỉ -> tính phí theo địa chỉ trong hồ sơ người dùng
+            if (!provinceName && !districtName && !wardName && lat === undefined && lng === undefined) {
+                const profileAddress = await this.resolveShippingAddress(req.user.userId || req.user._id, {});
+                ({ provinceName, districtName, wardName, lat, lng } = profileAddress);
             }
 
             let pName = provinceName;

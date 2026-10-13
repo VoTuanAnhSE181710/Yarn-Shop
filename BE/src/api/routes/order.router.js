@@ -52,13 +52,13 @@ const router = express.Router();
  *       type: object
  *       required:
  *         - items
- *         - shippingAddress
  *       properties:
  *         items:
  *           type: array
  *           items:
  *             $ref: '#/components/schemas/OrderItem'
  *         shippingAddress:
+ *           description: Optional. If omitted, the address saved in the user profile is used; any missing contact fields are filled from the profile.
  *           $ref: '#/components/schemas/ShippingAddress'
  *         paymentMethod:
  *           type: string
