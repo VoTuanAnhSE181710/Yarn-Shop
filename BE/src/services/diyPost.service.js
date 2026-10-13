@@ -1,10 +1,11 @@
 import { NotFoundError, BadRequestError } from "../error/error.js";
 
 export default class DIYPostService {
-    constructor({ diyPostRepository, logRepository, notificationService }) {
+    constructor({ diyPostRepository, logRepository, notificationService, membershipService }) {
         this.diyPostRepository = diyPostRepository;
         this.logRepository = logRepository;
         this.notificationService = notificationService;
+        this.membershipService = membershipService;
     }
 
     async getPosts(query) {
@@ -82,6 +83,11 @@ export default class DIYPostService {
         const post = await this.diyPostRepository.update(id, { status });
         if (!post) {
             throw new NotFoundError("DIY Post not found");
+        }
+        // Approved DIY post -> membership points + coin (once per post)
+        if (status === "Done" && post.creatorId && this.membershipService) {
+            await this.membershipService.rewardDiyPost(post.creatorId, post)
+                .catch((error) => console.error("[Membership] rewardDiyPost failed:", error.message));
         }
         if (this.logRepository) {
             await this.logRepository.saveLog({

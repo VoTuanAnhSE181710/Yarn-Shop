@@ -7,13 +7,15 @@ class CourseService {
     #logRepository
     #courseProgressRepository
     #notificationService
+    #membershipService
 
-    constructor({ userRepository, logRepository, courseProgressRepository, notificationService }) {
+    constructor({ userRepository, logRepository, courseProgressRepository, notificationService, membershipService }) {
         this.#courseModel = Course;
         this.#userRepository = userRepository;
         this.#logRepository = logRepository;
         this.#courseProgressRepository = courseProgressRepository;
         this.#notificationService = notificationService;
+        this.#membershipService = membershipService;
     }
 
     #formatCourseResponse = (course) => {
@@ -446,6 +448,11 @@ class CourseService {
                 isCompleted: true,
                 completedAt: new Date()
             });
+
+            if (this.#membershipService) {
+                await this.#membershipService.rewardCourseComplete(userId, course)
+                    .catch((error) => console.error("[Membership] rewardCourseComplete failed:", error.message));
+            }
             
             // Notify user
             if (this.#notificationService) {

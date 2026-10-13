@@ -26,6 +26,7 @@ import LogController from "./src/api/controllers/log.controller.js";
 import ShippingController from "./src/api/controllers/shipping.controller.js";
 import ChatbotController from "./src/api/controllers/chatbot.controller.js";
 import AiAgentController from "./src/modules/ai-agent/aiAgent.controller.js";
+import MembershipController from "./src/api/controllers/membership.controller.js";
 
 //import Service
 import AuthService from "./src/services/auth.service.js";
@@ -57,6 +58,7 @@ import ProductChatService from "./src/services/productChat.service.js";
 import AiAgentService from "./src/modules/ai-agent/aiAgent.service.js";
 import AgentToolRegistry from "./src/modules/ai-agent/tools/agentToolRegistry.js";
 import GeminiPlanner from "./src/modules/ai-agent/providers/geminiPlanner.js";
+import MembershipService from "./src/services/membership.service.js";
 
 //import Repositories
 import RefreshTokenRepository from "./src/repositories/refreshToken.repository.js";
@@ -77,6 +79,7 @@ import ConversationRepository from "./src/repositories/conversation.repository.j
 import ShopLocationRepository from "./src/repositories/shopLocation.repository.js";
 import ChatbotRepository from "./src/repositories/chatbot.repository.js";
 import AiAgentRepository from "./src/modules/ai-agent/aiAgent.repository.js";
+import MembershipRepository from "./src/repositories/membership.repository.js";
 
 //3rd party
 import redisClient from "./src/utils/redisClient.js";
@@ -169,6 +172,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     aiAgentRepository: asClass(AiAgentRepository, {
       lifetime: Lifetime.SCOPED,
     }),
+    membershipRepository: asClass(MembershipRepository, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     //Services
     cartService: asClass(CartService, {
@@ -259,6 +265,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
     aiAgentService: asClass(AiAgentService, {
       lifetime: Lifetime.SCOPED,
     }),
+    membershipService: asClass(MembershipService, {
+      lifetime: Lifetime.SCOPED,
+    }),
 
     // Controllers
     cartController: asClass(CartController, {
@@ -332,6 +341,9 @@ export function setupContainer({ io, notificationNamespace, chatNamespace }) {
       lifetime: Lifetime.SCOPED,
     }),
     aiAgentController: asClass(AiAgentController, {
+      lifetime: Lifetime.SCOPED,
+    }),
+    membershipController: asClass(MembershipController, {
       lifetime: Lifetime.SCOPED,
     }),
   });

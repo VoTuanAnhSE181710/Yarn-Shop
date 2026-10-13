@@ -64,6 +64,12 @@ const router = express.Router();
  *           type: string
  *           enum: [COD, VNPAY, MOMO, SEPAY]
  *           default: VNPAY
+ *         coinUsed:
+ *           type: integer
+ *           minimum: 1
+ *           description: |
+ *             Membership coin to redeem (1 coin = 1₫). Requires itemsPrice >= 100.000₫,
+ *             at most 20% of itemsPrice and enough balance. Refunded if the order is cancelled/rejected.
  *     Order:
  *       type: object
  *       properties:
@@ -80,6 +86,9 @@ const router = express.Router();
  *         shippingFee:
  *           type: number
  *         totalPrice:
+ *           type: number
+ *           description: itemsPrice + shippingFee - coinUsed
+ *         coinUsed:
  *           type: number
  *         payment:
  *           type: object

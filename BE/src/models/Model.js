@@ -18,5 +18,8 @@ import Conversation from "./conversation.js";
 import Log from "./log.js";
 import ShopLocation from "./shopLocation.js";
 import ChatSession from "./chatSession.js";
+import Membership from "./membership.js";
+import MembershipHistory from "./membershipHistory.js";
+import CoinTransaction from "./coinTransaction.js";
 
-export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order, OrderReport, SupportDIY, Address, Message, Conversation, Log, ShopLocation, ChatSession };
+export { User, Role, RefreshToken, Permission, Category, Video, Product, Course, Lesson, Kit, DIYPost, Order, OrderReport, SupportDIY, Address, Message, Conversation, Log, ShopLocation, ChatSession, Membership, MembershipHistory, CoinTransaction };

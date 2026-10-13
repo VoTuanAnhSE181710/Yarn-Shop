@@ -3,11 +3,13 @@ import { generateMomoUrl } from "../../utils/momoHelper.js";
 import { generateSePayUrl } from "../../utils/sepayHelper.js";
 import Address from "../../models/address.js";
 import User from "../../models/user.js";
+import mongoose from "mongoose";
 
 export default class OrderController {
-    constructor({ orderService, ghnService }) {
+    constructor({ orderService, ghnService, membershipService }) {
         this.orderService = orderService;
         this.ghnService = ghnService;
+        this.membershipService = membershipService;
     }
 
     /**
@@ -123,20 +125,44 @@ export default class OrderController {
                 }
             }
 
-            // 3. Create order in DB
-            const order = await this.orderService.createOrder({
-                user: req.user.userId || req.user._id,
-                items: validatedItems,
-                kitsRequest: kits, // pass requested kits to deduct stock
-                shippingAddress: resolvedAddress,
-                itemsPrice,
-                shippingFee,
-                totalPrice,
-                payment: {
-                    method: paymentMethod || "VNPAY",
-                    status: "PENDING",
-                },
-            });
+            // 2b. Membership coin (FE CoinUsage): 1 coin = 1₫, checked against COIN_RULES + balance
+            const userId = req.user.userId || req.user._id;
+            const coinUsed = Number(req.body.coinUsed) || 0;
+            if (coinUsed > 0) {
+                const coinDiscount = await this.membershipService.validateCoinUsage(userId, coinUsed, itemsPrice);
+                totalPrice = Math.max(0, totalPrice - coinDiscount);
+            }
+
+            // 3. Create order in DB (id generated up front so the coin transaction can reference it)
+            const orderId = new mongoose.Types.ObjectId();
+            if (coinUsed > 0) {
+                await this.membershipService.redeemCoinsForOrder(userId, orderId, coinUsed);
+            }
+            let order;
+            try {
+                order = await this.orderService.createOrder({
+                    _id: orderId,
+                    user: userId,
+                    items: validatedItems,
+                    kitsRequest: kits, // pass requested kits to deduct stock
+                    shippingAddress: resolvedAddress,
+                    itemsPrice,
+                    shippingFee,
+                    totalPrice,
+                    coinUsed,
+                    payment: {
+                        method: paymentMethod || "VNPAY",
+                        status: "PENDING",
+                    },
+                });
+            } catch (error) {
+                if (coinUsed > 0) {
+                    await this.membershipService
+                        .addCoins(userId, coinUsed, "Hoàn coin do tạo đơn hàng thất bại")
+                        .catch(console.error);
+                }
+                throw error;
+            }
 
             // 3. Generate payment URL
             let payUrl = null;

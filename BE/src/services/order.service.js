@@ -4,11 +4,22 @@ import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.j
 import { buildSePayContent } from "../utils/sepayHelper.js";
 
 export default class OrderService {
-    constructor({ orderRepository, notificationService, logRepository, ghnService }) {
+    constructor({ orderRepository, notificationService, logRepository, ghnService, membershipService }) {
         this.orderRepository = orderRepository;
         this.notificationService = notificationService;
         this.logRepository = logRepository;
         this.ghnService = ghnService;
+        this.membershipService = membershipService;
+    }
+
+    // Membership must never break the order flow — log and continue.
+    async #syncMembership(action, order) {
+        if (!this.membershipService || !order) return;
+        try {
+            await this.membershipService[action](order);
+        } catch (error) {
+            console.error(`[Membership] ${action} failed for order ${order._id}:`, error.message);
+        }
     }
 
     async createOrder(data) {
@@ -19,6 +30,9 @@ export default class OrderService {
             });
         }
         const order = await this.orderRepository.create(data);
+
+        // Points to be earned show up as "pending" until the order is delivered
+        await this.#syncMembership("recordPendingPurchase", order);
 
         if (data.payment && data.payment.method === "COD") {
             // Deduct immediately for COD
@@ -211,6 +225,11 @@ export default class OrderService {
         if (!order) {
             throw new NotFoundError("Order not found");
         }
+        if (orderStatus === "DELIVERED") {
+            await this.#syncMembership("completePurchase", order);
+        } else if (orderStatus === "CANCELLED" || orderStatus === "REJECTED") {
+            await this.#syncMembership("cancelPurchase", order);
+        }
         if (this.notificationService) {
             const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
             
@@ -335,10 +354,11 @@ export default class OrderService {
 
         if (decision === "APPROVED") {
             // Cancel the order
-            await this.orderRepository.update(id, {
+            const cancelledOrder = await this.orderRepository.update(id, {
                 orderStatus: "CANCELLED",
                 isCancelRequested: false,
             });
+            await this.#syncMembership("cancelPurchase", cancelledOrder);
 
             if (this.notificationService) {
                 await this.notificationService.createAndEmitNotification({
@@ -429,6 +449,11 @@ export default class OrderService {
         
         if (order.payment && order.payment.status === "PAID") {
             throw new BadRequestError("Order is already paid");
+        }
+
+        // Re-spend coin refunded when the order was cancelled; blocks the retry if the balance is short
+        if (order.orderStatus === "CANCELLED" && this.membershipService) {
+            await this.membershipService.reopenPurchase(order);
         }
 
         const retryUpdate = {

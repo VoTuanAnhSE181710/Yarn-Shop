@@ -47,6 +47,10 @@ const options = {
             {
                 name: 'Lessons',
                 description: 'Lesson management and course-lesson linkages (Public & Admin)'
+            },
+            {
+                name: 'Membership',
+                description: 'Membership points, rank and coin (earned on delivered orders, DIY posts, course completion)'
             }
         ],
         components: {

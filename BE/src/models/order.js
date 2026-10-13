@@ -74,6 +74,17 @@ const orderSchema = new mongoose.Schema({
         type: Number,
         required: true,
     },
+    // Membership coin redeemed on this order (1 coin = 1₫, already subtracted from totalPrice)
+    coinUsed: {
+        type: Number,
+        default: 0,
+        min: 0,
+    },
+    // true once coinUsed has been returned to the user (cancel/reject); reset on retry payment
+    coinRefunded: {
+        type: Boolean,
+        default: false,
+    },
     payment: {
         method: {
             type: String,
