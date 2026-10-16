@@ -107,6 +107,7 @@ const orderSchema = new mongoose.Schema({
     trackingCode: { type: String, default: null },
     expectedDeliveryTime: { type: Date, default: null },
     deliveredAt: { type: Date },
+    deliveredBy: { type: String, enum: ["customer", "admin", "staff", "system"] },
     cancelReason: { type: String },
     isCancelRequested: { type: Boolean, default: false },
     cancelRequestedAt: { type: Date, default: null },

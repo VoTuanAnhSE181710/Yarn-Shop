@@ -48,12 +48,25 @@ export default class OrderController {
                 return res.status(400).json({ message: "Cart is empty" });
             }
 
+            // Checked before any stock / coin / order data is touched
+            this.orderService.assertNoCodCourse(items, paymentMethod);
+
+            // Course-only orders are digital: no shipping address, GHN lookup or shipping fee
+            const digitalOnly = (items || []).length > 0
+                && items.every(i => i?.itemType === "Course")
+                && !(kits && kits.length);
+
             // Địa chỉ: lấy từ FE gửi lên, phần thiếu (hoặc toàn bộ nếu không gửi) lấy từ hồ sơ người dùng
             const shippingAddress = await this.resolveShippingAddress(
                 req.user.userId || req.user._id,
                 req.body.shippingAddress,
             );
-            if (!shippingAddress.fullName || !shippingAddress.phone) {
+            if (digitalOnly) {
+                // Order schema still requires contact fields
+                shippingAddress.fullName = shippingAddress.fullName || "Course Purchase";
+                shippingAddress.phone = shippingAddress.phone || "N/A";
+            }
+            if (!digitalOnly && (!shippingAddress.fullName || !shippingAddress.phone)) {
                 return res.status(400).json({
                     message: "Thiếu họ tên hoặc số điện thoại người nhận. Vui lòng cập nhật hồ sơ hoặc nhập thông tin giao hàng.",
                 });
@@ -61,7 +74,7 @@ export default class OrderController {
             const hasLocation =
                 (shippingAddress.provinceName && shippingAddress.districtName && shippingAddress.wardName) ||
                 (shippingAddress.lat !== undefined && shippingAddress.lng !== undefined);
-            if (!req.body.shippingAddress && !hasLocation) {
+            if (!digitalOnly && !req.body.shippingAddress && !hasLocation) {
                 return res.status(400).json({
                     message: "Hồ sơ chưa có địa chỉ giao hàng. Vui lòng cập nhật địa chỉ trong hồ sơ hoặc nhập địa chỉ giao hàng.",
                 });
@@ -76,7 +89,7 @@ export default class OrderController {
             let resolvedAddress = { ...shippingAddress };
             let { provinceName: pName, districtName: dName, wardName: wName, lat, lng } = shippingAddress;
 
-            if (lat !== undefined && lng !== undefined && (!pName || !dName || !wName)) {
+            if (!digitalOnly && lat !== undefined && lng !== undefined && (!pName || !dName || !wName)) {
                 try {
                     const shippingService = req.container.resolve("shippingService");
                     const geocoded = await shippingService.reverseGeocode({ lat, lng });
@@ -96,7 +109,7 @@ export default class OrderController {
                 console.warn(`[Order] Missing address names, skip GHN mapping (province="${pName}" district="${dName}" ward="${wName}")`);
             }
 
-            if (pName && dName && wName) {
+            if (!digitalOnly && pName && dName && wName) {
                 try {
                     const mapResult = await this.ghnService.mapAddressToGHN({ provinceName: pName, districtName: dName, wardName: wName });
                     if (mapResult.success) {
@@ -324,7 +337,7 @@ export default class OrderController {
     };
 
     /**
-     * Update order status (admin/staff only)
+     * Update order status (admin/staff; customers may only confirm receipt of their own SHIPPING order)
      */
     updateStatus = async (req, res, next) => {
         try {
@@ -338,7 +351,11 @@ export default class OrderController {
                 return res.status(400).json({ message: `Invalid status. Must be one of: ${validStatuses.join(", ")}` });
             }
 
-            const order = await this.orderService.updateOrderStatus(req.params.id, orderStatus);
+            // Only orderStatus is read from the body; the service enforces what a customer may do
+            const order = await this.orderService.updateOrderStatus(req.params.id, orderStatus, {
+                id: req.user.userId || req.user._id,
+                role: req.user.roleName,
+            });
             return res.status(200).json({ message: "Order status updated successfully", order });
         } catch (error) {
             next(error);

@@ -385,7 +385,7 @@ router.get(
 router.patch(
     "/:id/status",
     authentication,
-    authorizationByRole(['Admin', 'Staff']),
+    authorizationByRole(['Admin', 'Staff', 'Cus']),
     async (req, res, next) => {
         const orderController = req.container.resolve("orderController");
         await orderController.updateStatus(req, res, next);

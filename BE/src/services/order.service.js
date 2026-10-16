@@ -1,10 +1,12 @@
 import Product from "../models/product.js";
 import Kit from "../models/kit.js";
 import Order from "../models/order.js";
+import Course from "../models/course.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
 import { buildSePayContent } from "../utils/sepayHelper.js";
 
 // OUT_OF_STOCK orders never had stock deducted but must stay cancellable
+const DELIVERED_BY_ROLE = { Cus: "customer", Admin: "admin", Staff: "staff" };
 const CANCELLABLE_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_OF_STOCK"];
 
 export default class OrderService {
@@ -26,7 +28,16 @@ export default class OrderService {
         }
     }
 
+    // Courses must be prepaid online: reject COD for any order containing a course item
+    assertNoCodCourse(items, paymentMethod) {
+        const method = String(paymentMethod || "").toUpperCase();
+        if ((method === "COD" || method === "CASH") && (items || []).some(i => i?.itemType === "Course")) {
+            throw new BadRequestError("Đơn có khóa học phải thanh toán trước, không hỗ trợ COD");
+        }
+    }
+
     async createOrder(data) {
+        this.assertNoCodCourse(data.items, data.payment?.method);
         if (data.shippingAddress && data.shippingAddress.districtId && data.shippingAddress.wardCode && this.ghnService) {
             data.expectedDeliveryTime = await this.ghnService.calculateExpectedDeliveryTime({
                 to_district_id: data.shippingAddress.districtId,
@@ -232,7 +243,29 @@ export default class OrderService {
         });
     }
 
-    async updateOrderStatus(id, orderStatus, actorId = null) {
+    /**
+     * @param {{ id: string, role: string } | null} actor - null means a system caller (e.g. GHN webhook)
+     */
+    async updateOrderStatus(id, orderStatus, actor = null) {
+        const actorId = actor?.id ?? null;
+        const deliveredBy = DELIVERED_BY_ROLE[actor?.role] ?? "system";
+
+        // Customers may only confirm receipt of their own order while it is SHIPPING
+        if (actor?.role === "Cus") {
+            const own = await this.orderRepository.findById(id);
+            if (!own) throw new NotFoundError("Order not found");
+            const ownerId = own.user?._id ? own.user._id.toString() : own.user.toString();
+            if (ownerId !== String(actorId)) {
+                throw new ForbiddenError("Bạn không có quyền cập nhật đơn hàng này");
+            }
+            if (orderStatus !== "DELIVERED") {
+                throw new ForbiddenError("Bạn chỉ có thể xác nhận đã nhận hàng");
+            }
+            if (own.orderStatus !== "SHIPPING") {
+                throw new BadRequestError("Chỉ xác nhận nhận hàng khi đơn đang được giao");
+            }
+        }
+
         if (orderStatus === "CANCELLED") {
             const current = await this.orderRepository.findById(id);
             if (!current) throw new NotFoundError("Order not found");
@@ -271,14 +304,11 @@ export default class OrderService {
 
         const order = await this.orderRepository.update(id, {
             orderStatus,
-            ...(orderStatus === "DELIVERED" ? { deliveredAt: new Date() } : {}),
+            ...(orderStatus === "DELIVERED" ? { deliveredAt: new Date(), deliveredBy } : {}),
             ...(codPaidOnDelivery ? { "payment.status": "PAID", "payment.paidAt": new Date() } : {}),
         });
         if (!order) {
             throw new NotFoundError("Order not found");
-        }
-        if (codPaidOnDelivery) {
-            await this.grantPurchasedCourses(id);
         }
         if (orderStatus === "DELIVERED") {
             await this.#syncMembership("completePurchase", order);
@@ -545,7 +575,8 @@ export default class OrderService {
      * Optionally accepts kits: [{kitId, quantity}] to expand kit products into items.
      */
     async calculateOrderTotal(items, kits = []) {
-        let allItems = [...(items || [])];
+        const courseItems = (items || []).filter(i => i?.itemType === "Course");
+        let allItems = (items || []).filter(i => i?.itemType !== "Course");
 
         // Expand kit items into product items
         if (kits && kits.length > 0) {
@@ -571,6 +602,25 @@ export default class OrderService {
 
         let itemsPrice = 0;
         const validatedItems = [];
+
+        // Digital course lines: price comes from the DB, quantity is always 1
+        for (const item of courseItems) {
+            const course = item.course
+                ? await Course.findOne({ _id: item.course, deletedAt: null })
+                : null;
+            if (!course) throw new NotFoundError(`Course ${item.course} not found`);
+            if (!course.isPublished) throw new BadRequestError(`Course "${course.title}" is not available`);
+
+            itemsPrice += course.price || 0;
+            validatedItems.push({
+                itemType: "Course",
+                course: course._id,
+                name: course.title,
+                image: course.thumbnail || "",
+                price: course.price || 0,
+                quantity: 1,
+            });
+        }
 
         for (const item of allItems) {
             const product = await Product.findById(item.productId);
@@ -608,7 +658,8 @@ export default class OrderService {
             });
         }
 
-        const shippingFee = 30000;
+        // Nothing physical to ship (courses only) -> no shipping fee
+        const shippingFee = validatedItems.every(i => i.itemType === "Course") ? 0 : 30000;
         const totalPrice = itemsPrice + shippingFee;
 
         return { validatedItems, itemsPrice, shippingFee, totalPrice };
