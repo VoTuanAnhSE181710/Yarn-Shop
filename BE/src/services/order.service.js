@@ -262,12 +262,23 @@ export default class OrderService {
             }
         }
 
+        // COD is collected on delivery, so payment status is derived here, never taken from the client
+        let codPaidOnDelivery = false;
+        if (orderStatus === "DELIVERED") {
+            const current = await this.orderRepository.findById(id);
+            codPaidOnDelivery = !!current && current.payment?.method === "COD" && current.payment?.status !== "PAID";
+        }
+
         const order = await this.orderRepository.update(id, {
             orderStatus,
             ...(orderStatus === "DELIVERED" ? { deliveredAt: new Date() } : {}),
+            ...(codPaidOnDelivery ? { "payment.status": "PAID", "payment.paidAt": new Date() } : {}),
         });
         if (!order) {
             throw new NotFoundError("Order not found");
+        }
+        if (codPaidOnDelivery) {
+            await this.grantPurchasedCourses(id);
         }
         if (orderStatus === "DELIVERED") {
             await this.#syncMembership("completePurchase", order);
