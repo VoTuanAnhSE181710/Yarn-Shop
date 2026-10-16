@@ -9,6 +9,16 @@ const linkedProductSchema = new mongoose.Schema({
     variantId: {
         type: mongoose.Schema.Types.ObjectId,
     },
+    timestamp: {
+        type: Number, // seconds into the video when the product appears
+        min: 0,
+        default: 0,
+    },
+    note: {
+        type: String, // e.g. "Switch to 3.5mm hook"
+        trim: true,
+        default: "",
+    },
 }, { _id: false });
 
 const linkedComboSchema = new mongoose.Schema({

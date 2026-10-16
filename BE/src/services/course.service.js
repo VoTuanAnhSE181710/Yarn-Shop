@@ -159,7 +159,13 @@ class CourseService {
      */
     getCourseById = async (id) => {
         const course = await this.#courseModel.findOne({ _id: id, deletedAt: null })
-            .populate("linkedLessons")
+            .populate({
+                path: "linkedLessons",
+                populate: {
+                    path: "linkedProduct.productId",
+                    select: "name image category variants averageRating totalRatings isActive",
+                },
+            })
             .select("-__v -deletedAt")
             .lean();
 

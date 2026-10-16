@@ -1,5 +1,13 @@
 import Joi from "joi";
 
+const linkedTimestamp = Joi.number().min(0).default(0).messages({
+    "number.base": "Timestamp must be a number",
+    "number.min": "Timestamp must not be negative",
+});
+const linkedNote = Joi.string().trim().allow("").max(500).default("").messages({
+    "string.max": "Note must not exceed 500 characters",
+});
+
 export const createLessonSchema = Joi.object({
     title: Joi.string().required().trim().min(1).max(200).messages({
         "string.empty": "Lesson title is required",
@@ -24,6 +32,9 @@ export const createLessonSchema = Joi.object({
             "string.hex": "Product ID must be a valid ObjectId",
             "any.required": "Product ID is required",
         }),
+        variantId: Joi.string().hex().length(24).optional(),
+        timestamp: linkedTimestamp,
+        note: linkedNote,
     })).optional(),
     linkedCombo: Joi.array().items(Joi.object({
         comboId: Joi.string().hex().length(24).required().messages({
@@ -44,6 +55,9 @@ export const updateLessonSchema = Joi.object({
     duration: Joi.number().min(0),
     linkedProduct: Joi.array().items(Joi.object({
         productId: Joi.string().hex().length(24).required(),
+        variantId: Joi.string().hex().length(24).optional(),
+        timestamp: linkedTimestamp,
+        note: linkedNote,
     })).optional(),
     linkedCombo: Joi.array().items(Joi.object({
         comboId: Joi.string().hex().length(24).required(),

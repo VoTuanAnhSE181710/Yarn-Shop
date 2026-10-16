@@ -1,5 +1,10 @@
 import { Lesson, Course } from "../models/Model.js";
-import { NotFoundError } from "../error/error.js";
+import { NotFoundError, BadRequestError } from "../error/error.js";
+
+const PRODUCT_POPULATE = {
+    path: "linkedProduct.productId",
+    select: "name image category variants averageRating totalRatings isActive",
+};
 
 class LessonService {
     #lessonModel
@@ -11,18 +16,19 @@ class LessonService {
     #formatLessonResponse = (lesson) => {
         if (!lesson) return null;
 
-        let linkedProduct = [];
-        if (lesson.linkedProduct && Array.isArray(lesson.linkedProduct)) {
-            linkedProduct = lesson.linkedProduct.map(item => ({
-                productId: (item.productId || item).toString(),
-                variantId: item.variantId ? item.variantId.toString() : undefined
-            }));
-        } else if (lesson.linkedProducts && Array.isArray(lesson.linkedProducts)) {
-            linkedProduct = lesson.linkedProducts.map(item => ({
-                productId: (item.productId || item).toString(),
-                variantId: item.variantId ? item.variantId.toString() : undefined
-            }));
-        }
+        const rawProducts = Array.isArray(lesson.linkedProduct) ? lesson.linkedProduct
+            : Array.isArray(lesson.linkedProducts) ? lesson.linkedProducts : [];
+        const linkedProduct = rawProducts.map(item => {
+            const ref = item.productId || item;
+            // populated product is a document/object with its own _id; otherwise a bare ObjectId
+            const productId = ref && ref._id ? (ref.toObject ? ref.toObject() : ref) : ref.toString();
+            return {
+                productId,
+                variantId: item.variantId ? item.variantId.toString() : undefined,
+                timestamp: item.timestamp || 0,
+                note: item.note || ""
+            };
+        });
 
         let linkedCombo = [];
         if (lesson.linkedCombo && Array.isArray(lesson.linkedCombo)) {
@@ -52,6 +58,21 @@ class LessonService {
     }
 
     /**
+     * Ensure each linked product timestamp (seconds) fits within the lesson duration (minutes).
+     * Skipped when duration is 0/unknown.
+     */
+    #validateTimestamps = (linkedProduct, duration) => {
+        if (!Array.isArray(linkedProduct) || !duration) return;
+        const maxSeconds = duration * 60;
+        for (const item of linkedProduct) {
+            const ts = item.timestamp || 0;
+            if (ts < 0 || ts > maxSeconds) {
+                throw new BadRequestError(`Timestamp ${ts}s must be between 0 and lesson duration (${maxSeconds}s)`);
+            }
+        }
+    }
+
+    /**
      * Create a standalone lesson
      * @param {Object} data
      * @param {string} data.title
@@ -63,7 +84,9 @@ class LessonService {
      * @param {boolean} data.isPreview
      */
     createLesson = async (data) => {
+        this.#validateTimestamps(data.linkedProduct, data.duration);
         const lesson = await this.#lessonModel.create(data);
+        await lesson.populate(PRODUCT_POPULATE);
         return this.#formatLessonResponse(lesson);
     }
 
@@ -75,6 +98,7 @@ class LessonService {
         const lessons = await this.#lessonModel.find(filter)
             .sort({ order: 1 })
             .select("-__v")
+            .populate(PRODUCT_POPULATE)
             .lean();
         return lessons.map(lesson => this.#formatLessonResponse(lesson));
     }
@@ -84,7 +108,10 @@ class LessonService {
      * @param {string} lessonId
      */
     getLessonById = async (lessonId) => {
-        const lesson = await this.#lessonModel.findById(lessonId).select("-__v").lean();
+        const lesson = await this.#lessonModel.findById(lessonId)
+            .select("-__v")
+            .populate(PRODUCT_POPULATE)
+            .lean();
 
         if (!lesson) {
             throw new NotFoundError("Lesson not found");
@@ -107,8 +134,14 @@ class LessonService {
 
         const durationChanged = updateData.duration !== undefined && updateData.duration !== lesson.duration;
 
+        this.#validateTimestamps(
+            updateData.linkedProduct ?? lesson.linkedProduct,
+            updateData.duration ?? lesson.duration
+        );
+
         Object.assign(lesson, updateData);
         await lesson.save();
+        await lesson.populate(PRODUCT_POPULATE);
 
         if (durationChanged) {
             const courses = await Course.find({ linkedLessons: lessonId });
