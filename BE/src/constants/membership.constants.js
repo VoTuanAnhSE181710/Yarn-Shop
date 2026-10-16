@@ -24,8 +24,8 @@ export const COIN_RULES = {
 // Points & bonuses (amounts taken from FE mock data)
 export const POINT_RULES = {
     vndPerPoint: 1000,             // 507.000₫ order -> 507 points
-    registrationPoints: 1000,      // "Thưởng đăng ký tài khoản"
-    registrationCoins: 1000,       // "Thưởng đăng ký tài khoản mới"
+    registrationPoints: 500,      // "Thưởng đăng ký tài khoản"
+    registrationCoins: 500,       // "Thưởng đăng ký tài khoản mới"
     diyPostPoints: 500,            // "Đăng bài DIY"
     diyPostCoins: 500,             // "Thưởng đăng video DIY"
     courseCompletePoints: 200,     // FE has no amount yet — BE default
