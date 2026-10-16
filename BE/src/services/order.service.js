@@ -1,7 +1,11 @@
 import Product from "../models/product.js";
 import Kit from "../models/kit.js";
+import Order from "../models/order.js";
 import { NotFoundError, BadRequestError, ForbiddenError } from "../error/error.js";
 import { buildSePayContent } from "../utils/sepayHelper.js";
+
+// OUT_OF_STOCK orders never had stock deducted but must stay cancellable
+const CANCELLABLE_STATUSES = ["PENDING", "CONFIRMED", "PREPARING", "OUT_OF_STOCK"];
 
 export default class OrderService {
     constructor({ orderRepository, notificationService, logRepository, ghnService, membershipService }) {
@@ -143,6 +147,38 @@ export default class OrderService {
         await this.orderRepository.update(orderId, { stockDeducted: true });
     }
 
+    /**
+     * Give back the stock taken by deductStock. No-op if nothing was deducted.
+     * The stockDeducted flag is claimed atomically so a double cancel can't restore twice,
+     * and resetting it lets a later retry-payment deduct again.
+     */
+    async restoreStock(orderId) {
+        const order = await Order.findOneAndUpdate(
+            { _id: orderId, stockDeducted: true },
+            { stockDeducted: false },
+            { new: false }
+        );
+        if (!order) return;
+
+        for (const item of order.items || []) {
+            if (item.itemType === 'Course') continue;
+            const product = await Product.findById(item.product);
+            if (!product) continue;
+            const variant = item.variantId
+                ? product.variants.find(v => v._id.toString() === item.variantId.toString())
+                : product.variants[0];
+            if (variant) {
+                await Product.updateOne(
+                    { _id: product._id, "variants._id": variant._id },
+                    { $inc: { "variants.$.stock": item.quantity } }
+                );
+            }
+        }
+        for (const kitEntry of order.kitsRequest || []) {
+            await Kit.updateOne({ _id: kitEntry.kitId }, { $inc: { stock: kitEntry.quantity || 1 } });
+        }
+    }
+
     async grantPurchasedCourses(orderId) {
         const order = await this.orderRepository.findById(orderId);
         if (!order || !order.user) return;
@@ -197,6 +233,14 @@ export default class OrderService {
     }
 
     async updateOrderStatus(id, orderStatus, actorId = null) {
+        if (orderStatus === "CANCELLED") {
+            const current = await this.orderRepository.findById(id);
+            if (!current) throw new NotFoundError("Order not found");
+            if (!CANCELLABLE_STATUSES.includes(current.orderStatus)) {
+                throw new BadRequestError(`Cannot cancel an order in ${current.orderStatus} status`);
+            }
+        }
+
         // If transitioning to SHIPPING, create order on GHN
         if (orderStatus === "SHIPPING" && this.ghnService) {
             const currentOrder = await this.orderRepository.findById(id);
@@ -229,6 +273,7 @@ export default class OrderService {
             await this.#syncMembership("completePurchase", order);
         } else if (orderStatus === "CANCELLED" || orderStatus === "REJECTED") {
             await this.#syncMembership("cancelPurchase", order);
+            await this.restoreStock(id);
         }
         if (this.notificationService) {
             const orderUserId = order.user?._id ? order.user._id.toString() : order.user.toString();
@@ -359,6 +404,7 @@ export default class OrderService {
                 isCancelRequested: false,
             });
             await this.#syncMembership("cancelPurchase", cancelledOrder);
+            await this.restoreStock(id);
 
             if (this.notificationService) {
                 await this.notificationService.createAndEmitNotification({
